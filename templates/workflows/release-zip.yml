@@ -1,0 +1,110 @@
+# Reusable release packager for FleetHacker Edge-Ops tools.
+# Caller example (in a tool repo):
+#   on: { push: { tags: ['v*'] } }
+#   permissions: { contents: write }
+#   jobs:
+#     release:
+#       uses: fleethacker-data-crucible/edge-ops/.github/workflows/release-zip.yml@main
+#       with: { tool-name: ToolName }
+name: release-zip
+
+on:
+  workflow_call:
+    inputs:
+      tool-name:
+        description: "Name used in the zip filename (e.g. SnipHero)"
+        required: true
+        type: string
+      version:
+        description: "Version without 'v'. Default: tag name, then VERSION file."
+        required: false
+        type: string
+        default: ""
+      source-dir:
+        description: "Folder to package, relative to the repo root"
+        required: false
+        type: string
+        default: "."
+      exclude:
+        description: "Extra space-separated zip exclude patterns"
+        required: false
+        type: string
+        default: ""
+      extra-assets:
+        description: "Extra space-separated files to attach to the release (e.g. large models)"
+        required: false
+        type: string
+        default: ""
+      publish:
+        description: "Create or update a GitHub Release"
+        required: false
+        type: boolean
+        default: true
+    outputs:
+      zip-name:
+        value: ${{ jobs.package.outputs.zip }}
+      version:
+        value: ${{ jobs.package.outputs.version }}
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      zip: ${{ steps.build.outputs.zip }}
+      version: ${{ steps.ver.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Resolve version
+        id: ver
+        shell: bash
+        run: |
+          v="${{ inputs.version }}"
+          if [ -z "$v" ] && [[ "${GITHUB_REF}" == refs/tags/v* ]]; then v="${GITHUB_REF#refs/tags/v}"; fi
+          if [ -z "$v" ] && [ -f VERSION ]; then v="$(head -n1 VERSION | tr -d '[:space:]v')"; fi
+          if [ -z "$v" ]; then echo "::error::No version (tag vX.Y.Z, input, or VERSION file)"; exit 1; fi
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+
+      - name: Build zip
+        id: build
+        shell: bash
+        env:
+          TOOL: ${{ inputs.tool-name }}
+          VER: ${{ steps.ver.outputs.version }}
+          SRC: ${{ inputs.source-dir }}
+          EXTRA_EXCLUDE: ${{ inputs.exclude }}
+        run: |
+          set -euo pipefail
+          name="${TOOL}-v${VER}"
+          stage="$RUNNER_TEMP/stage/$name"
+          mkdir -p "$stage" dist
+          tar -C "$SRC" --exclude='./.git' --exclude='./.github' --exclude='./dist' -cf - . | tar -C "$stage" -xf -
+          for p in $EXTRA_EXCLUDE; do rm -rf "$stage"/$p; done
+          echo "$VER" > "$stage/VERSION"
+          (cd "$RUNNER_TEMP/stage" && zip -qr -X "$GITHUB_WORKSPACE/dist/$name.zip" "$name")
+          (cd dist && sha256sum "$name.zip" > "$name.zip.sha256")
+          cat "dist/$name.zip.sha256"
+          echo "zip=$name.zip" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.tool-name }}-v${{ steps.ver.outputs.version }}
+          path: dist/*
+
+      - name: Publish release
+        if: ${{ inputs.publish }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: v${{ steps.ver.outputs.version }}
+          EXTRA: ${{ inputs.extra-assets }}
+        run: |
+          set -euo pipefail
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --title "${{ inputs.tool-name }} $TAG" --generate-notes --target "$GITHUB_SHA"
+          fi
+          gh release upload "$TAG" dist/* $EXTRA --clobber
