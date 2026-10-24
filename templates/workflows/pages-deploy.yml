@@ -1,0 +1,45 @@
+# GitHub Pages deploy for edge-ops (manual trigger only).
+# Go-live: move this file to .github/workflows/pages-deploy.yml and set Settings > Pages > Source = GitHub Actions.
+name: pages-deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Build and upload the Pages artifact only (no deploy)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+        id: pages
+      - name: Build _site
+        shell: pwsh
+        run: ./scripts/Build-Site.ps1 -BasePath '${{ steps.pages.outputs.base_path }}/'
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    if: ${{ !inputs.dry_run }}
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v4
+        id: deployment

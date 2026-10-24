@@ -66,6 +66,26 @@ jobs:
   `python3 -c "import json;d=json.load(open('catalog.json'));open('assets/catalog-data.js','w').write('window.EDGE_OPS_CATALOG = '+json.dumps(d,indent=2)+';\n')"`
   (or run the PowerShell equivalent in CONVENTIONS.md).
 
+## GitHub Pages site
+
+- Landing page: `index.html` + `assets/`. Each tool also gets its own page, rendered from `templates/pages/tool-page.html` using `catalog.json`. The 404 page comes from `templates/pages/404.html`.
+- Build locally (Windows PowerShell 5.1 or pwsh 7):
+  `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Build-Site.ps1` → `_site/` (git-ignored).
+- Deploy: `templates/workflows/pages-deploy.yml` (manual `workflow_dispatch` only; `dry_run: true` builds and uploads the artifact without deploying).
+- Preview of the look and feel: https://fleethacker-data-crucible.github.io/edge-ops-draft/
+
+## Go-live checklist (Nov 5, 2026, 12:00 PM ET)
+
+1. Merge PR #1 into `main`.
+2. Move both workflows into `.github/workflows/` (web UI, or a token with `workflow` scope):
+   `templates/workflows/release-zip.yml` → `.github/workflows/release-zip.yml` and
+   `templates/workflows/pages-deploy.yml` → `.github/workflows/pages-deploy.yml`.
+3. Settings → General → Danger Zone → **Change visibility → Public**.
+4. Settings → Pages → **Source = GitHub Actions**.
+5. Actions → **pages-deploy** → Run workflow (try `dry_run: true` first if you like, then run it for real).
+6. Check https://fleethacker-data-crucible.github.io/edge-ops/ and each `tools/<id>.html` page.
+7. Optional: archive or delete the `edge-ops-draft` preview repo.
+
 ## License
 
 MIT. See [LICENSE](LICENSE).

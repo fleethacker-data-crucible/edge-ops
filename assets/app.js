@@ -9,7 +9,7 @@
     function draw(){
       var s=q.value.toLowerCase(),c=cat.value;grid.innerHTML='';
       data.tools.filter(function(t){return(!c||t.category===c)&&(!s||(t.name+' '+t.summary).toLowerCase().indexOf(s)>=0);}).forEach(function(t){
-        var d=el('article','card');d.appendChild(el('span','cat',CATS[t.category]||t.category));d.appendChild(el('h2',null,t.name));d.appendChild(el('p',null,t.summary));
+        var d=el('article','card');d.appendChild(el('span','cat',CATS[t.category]||t.category));var h=el('h2'),ha=el('a',null,t.name);ha.href='tools/'+t.id+'.html';h.appendChild(ha);d.appendChild(h);d.appendChild(el('p',null,t.summary));
         var b=el('div','badges');FLAGS.forEach(function(f){if(t.requirements[f[0]])b.appendChild(el('span','b '+f[2],f[1]));});
         if(!t.requirements.admin)b.appendChild(el('span','b ok','No admin'));
         if(t.defaultPort)b.appendChild(el('span','b','port '+t.defaultPort));
