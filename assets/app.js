@@ -1,0 +1,28 @@
+(function(){
+  'use strict';
+  var CATS={'browser-only':'Browser-only','ps-host-browser-ui':'PowerShell host + browser UI','data-ai':'Data & AI','security':'Security'};
+  var FLAGS=[['ps51','PS 5.1','ok'],['chromeEngine','Chrome/Edge','ok'],['batch','.bat launcher','ok'],['vbs','.vbs','warn'],['admin','Admin','bad'],['installs','Installs','bad'],['network','Network','warn'],['csharpRuntimeCompile','C# runtime compile','warn'],['gpu','GPU','warn'],['outlook','Outlook','warn']];
+  function el(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e;}
+  function render(data){
+    var grid=document.getElementById('grid'),q=document.getElementById('q'),cat=document.getElementById('cat');
+    Object.keys(CATS).forEach(function(k){var o=el('option',null,CATS[k]);o.value=k;cat.appendChild(o);});
+    function draw(){
+      var s=q.value.toLowerCase(),c=cat.value;grid.innerHTML='';
+      data.tools.filter(function(t){return(!c||t.category===c)&&(!s||(t.name+' '+t.summary).toLowerCase().indexOf(s)>=0);}).forEach(function(t){
+        var d=el('article','card');d.appendChild(el('span','cat',CATS[t.category]||t.category));d.appendChild(el('h2',null,t.name));d.appendChild(el('p',null,t.summary));
+        var b=el('div','badges');FLAGS.forEach(function(f){if(t.requirements[f[0]])b.appendChild(el('span','b '+f[2],f[1]));});
+        if(!t.requirements.admin)b.appendChild(el('span','b ok','No admin'));
+        if(t.defaultPort)b.appendChild(el('span','b','port '+t.defaultPort));
+        b.appendChild(el('span','b',t.status));d.appendChild(b);
+        d.appendChild(el('p',null,'Launch: '+t.launcher+(t.external?' — source: '+t.externalSource:'')));
+        var l=el('div','links'),a=el('a',null,'Repository');a.href=t.repo;l.appendChild(a);
+        if(t.releases){var r=el('a',null,'Latest release (zip)');r.href=t.releases;l.appendChild(r);}
+        d.appendChild(l);grid.appendChild(d);
+      });
+    }
+    q.addEventListener('input',draw);cat.addEventListener('change',draw);draw();
+  }
+  var fallback=function(){render(window.EDGE_OPS_CATALOG);};
+  if(location.protocol==='file:'||!window.fetch){fallback();return;}
+  fetch('catalog.json',{cache:'no-cache'}).then(function(r){if(!r.ok)throw 0;return r.json();}).then(render,fallback);
+})();
