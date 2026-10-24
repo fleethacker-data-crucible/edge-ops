@@ -50,7 +50,7 @@ All tools are prototypes or previews unless stated otherwise. Get local authoriz
 
 - [CONVENTIONS.md](CONVENTIONS.md): repo, README, launcher, and release rules.
 - [templates/TOOL-README-TEMPLATE.md](templates/TOOL-README-TEMPLATE.md): the README layout every tool uses.
-- [.github/workflows/release-zip.yml](.github/workflows/release-zip.yml): reusable release packaging. In a tool repo:
+- [.github/workflows/release-zip.yml](templates/workflows/release-zip.yml) (staged in `templates/workflows/` until moved by a token with `workflow` scope): reusable release packaging. In a tool repo:
 
 ```yaml
 on: { push: { tags: ['v*'] } }
