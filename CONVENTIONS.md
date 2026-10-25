@@ -56,10 +56,11 @@ Every `.ps1`/`.psm1` must run on stock **Windows PowerShell 5.1** (`powershell.e
 
 ## Local servers
 - **Bind rule:** HttpListener on `http://localhost:<port>/` (or TcpListener on `IPAddress.Loopback`), never `+` / `*` / `0.0.0.0`. `http://localhost:` needs no URL ACL or admin (keystone, data-noodler). **Enforced:** `Start-LoopbackListener` calls `Assert-LoopbackPrefix` before `Prefixes.Add`, which accepts only `localhost`, `127.0.0.1` or `[::1]` and throws on `+`, `*`, `0.0.0.0` or any other host. This matters because, when elevated, `http://+:` and `http://*:` really do listen on every interface.
-- Pick the port as described in [PORTS.md](PORTS.md#port-handling-standard): preferred port, then the tool's range. Snippet: [templates/ports/LoopbackPort.ps1](templates/ports/LoopbackPort.ps1).
+- **Port blocks:** each tool owns one contiguous block in [PORTS.md](PORTS.md) and walks upward only inside it. Block full means a clear error. No random fallback and no port 0 fallback. Use `Resolve-FleetPort` from [tools/fleet-port/FleetPort.psm1](tools/fleet-port/FleetPort.psm1) (copy it into the tool if the tool can't import from the hub).
+- **Self-detection:** serve `GET /__fleethacker/id` (`{tool, version, pid, path}`) and `POST /__fleethacker/shutdown` (`Invoke-FleetIdEndpoint`). Before skipping a busy port, probe it; if it is this tool, apply the tool's one declared policy: `reuse` (default for single-user UI tools), `restart`, `multi` or `exclusive` (tools holding a lease: GPU, Outlook). See [PORTS.md](PORTS.md#self-detection-and-policies).
 - Check every request the way keystone's `Test-KeystoneWebRequest` does: `[Net.IPAddress]::IsLoopback($Request.RemoteEndPoint.Address)`, `Host` is `localhost:<port>` (or `127.0.0.1:<port>`), and `Origin`, when present, is the same origin.
 - Free-port checks should test **both** IPv4 (`127.0.0.1`) and IPv6 (`::1`) loopback, because `localhost` can resolve to either (`Test-LoopbackPortFree` in the snippet).
-- A tool may stop **its own** previous instance through a `.pid` file, after checking that process's command line (data-noodler). Never stop or take over another program.
+- A tool may stop **its own** previous instance only through its policy: the shutdown endpoint first, then `Stop-Process` on the self-reported pid after checking that process's command line or path (a `.pid` file plus the same check is fine until the tool serves the id endpoint). Never stop or take over another program.
 - Closing the window or exiting stops the server and removes the `.pid` file.
 - Host skeleton: [templates/host/Start-ToolName.ps1](templates/host/Start-ToolName.ps1).
 
