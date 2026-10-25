@@ -1,85 +1,60 @@
 <#
 .SYNOPSIS
-  Reusable loopback port selection for FleetHacker tools (Windows PowerShell 5.1).
+  Loopback port selection for FleetHacker tools (Windows PowerShell 5.1). ASCII only.
 .DESCRIPTION
-  Modeled on SnipHero's SnipHero.Transport.Server (modules/LocalHttp.ps1):
-  - binds ONLY to 127.0.0.1 (IPAddress.Loopback), never + or *;
-  - tries the preferred port, then the next ports in sequence;
-  - moves on only for AddressAlreadyInUse / AccessDenied / AddressNotAvailable;
-  - finally lets the OS assign a free port (bind to 0);
-  - returns the started listener, so the socket is held from selection to
-    shutdown (no check-then-bind race). Never stops another process.
-  No Add-Type, no HttpListener URL ACL, no admin rights.
-  Dot-source it: . "$PSScriptRoot\LoopbackPort.ps1"
+  Follows phoenix-lai (src\WebServer.cs StartOnFreePort) and data-noodler (server\server.ps1):
+  - an HttpListener with ONE prefix, http://127.0.0.1:<port>/ (never +, *, 0.0.0.0, or localhost);
+  - try the tool's preferred port (settings.json or -Port), then scan the tool's range from PORTS.md;
+  - a port that is taken throws HttpListenerException; move to the next one;
+  - keep the started listener (no probe-then-bind race) and report the port you actually got.
+  No admin rights: no URL ACL, no netsh, no firewall change.
+  Dot-source it: . (Join-Path $PSScriptRoot 'LoopbackPort.ps1')
 #>
-Set-StrictMode -Version 2.0
 
-function New-LoopbackListener {
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Opens a loopback socket only; no system state change.')]
+function Start-LoopbackListener {
     [CmdletBinding()]
-    [OutputType([System.Net.Sockets.TcpListener])]
+    [OutputType([System.Net.HttpListener])]
     param(
         [ValidateRange(1024, 65535)][int]$PreferredPort = 8771,
-        [ValidateRange(1, 500)][int]$ScanCount = 20,
-        [int]$Backlog = 32
+        [ValidateRange(1024, 65535)][int]$RangeStart = 8771,
+        [ValidateRange(1024, 65535)][int]$RangeEnd = 8779
     )
-    $retryable = @(
-        [System.Net.Sockets.SocketError]::AddressAlreadyInUse,
-        [System.Net.Sockets.SocketError]::AccessDenied,
-        [System.Net.Sockets.SocketError]::AddressNotAvailable
-    )
-    $last = $null
-    for ($i = 0; $i -lt $ScanCount; $i++) {
-        $port = $PreferredPort + $i
-        if ($port -gt 65535) { $port = 1024 + ($port - 65536) }
-        $listener = New-Object System.Net.Sockets.TcpListener ([System.Net.IPAddress]::Loopback), $port
+    $candidates = @($PreferredPort) + @($RangeStart..$RangeEnd | Where-Object { $_ -ne $PreferredPort })
+    foreach ($p in $candidates) {
+        $l = New-Object System.Net.HttpListener
+        $l.Prefixes.Add("http://127.0.0.1:$p/")
         try {
-            $listener.Start($Backlog)
-            return $listener
-        } catch [System.Net.Sockets.SocketException] {
-            $last = $_.Exception
-            $listener.Stop()
-            if ($retryable -notcontains $last.SocketErrorCode) { throw }
+            $l.Start()
+            return $l
+        } catch [System.Net.HttpListenerException] {
+            $l.Close()
         } catch {
-            $inner = $_.Exception.InnerException
-            $listener.Stop()
-            if ($inner -is [System.Net.Sockets.SocketException] -and $retryable -contains $inner.SocketErrorCode) {
-                $last = $inner
-                continue
-            }
-            throw
+            $l.Close()
+            if ($_.Exception.InnerException -isnot [System.Net.HttpListenerException]) { throw }
         }
     }
-    $listener = New-Object System.Net.Sockets.TcpListener ([System.Net.IPAddress]::Loopback), 0
-    try {
-        $listener.Start($Backlog)
-        return $listener
-    } catch {
-        throw (New-Object System.InvalidOperationException ('Unable to bind a loopback TCP listener. Check workstation restrictions and localhost access.', $last))
-    }
+    throw "No free local port: tried $PreferredPort and $RangeStart-$RangeEnd."
 }
 
 function Get-ListenerPort {
     [CmdletBinding()]
     [OutputType([int])]
-    param([Parameter(Mandatory = $true)][System.Net.Sockets.TcpListener]$Listener)
-    return ([System.Net.IPEndPoint]$Listener.LocalEndpoint).Port
+    param([Parameter(Mandatory = $true)][System.Net.HttpListener]$Listener)
+    $prefix = @($Listener.Prefixes)[0]
+    return ([Uri]$prefix).Port
 }
 
-function Get-ListenerAddress {
+function Get-ListenerHost {
     [CmdletBinding()]
     [OutputType([string])]
-    param([Parameter(Mandatory = $true)][System.Net.Sockets.TcpListener]$Listener)
-    return ([System.Net.IPEndPoint]$Listener.LocalEndpoint).Address.ToString()
+    param([Parameter(Mandatory = $true)][System.Net.HttpListener]$Listener)
+    return ([Uri](@($Listener.Prefixes)[0])).Host
 }
 
-<# Example (in Start-ToolName.ps1):
-. "$PSScriptRoot\LoopbackPort.ps1"
-$listener = New-LoopbackListener -PreferredPort $Port
-$actual = Get-ListenerPort -Listener $listener
-if ($actual -ne $Port) { Write-Host "Port $Port is busy; using free loopback port $actual." -ForegroundColor Yellow }
-$url = "http://127.0.0.1:$actual/"
-if (-not $NoBrowser) { Start-Process $url }
-try { while ($true) { $client = $listener.AcceptTcpClient(); $client.Close() } }
-finally { $listener.Stop() }
-#>
+# Reject anything whose Host header is not this listener (DNS-rebinding guard, as in both repos).
+function Test-LocalRequest {
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param([Parameter(Mandatory = $true)]$Request, [Parameter(Mandatory = $true)][int]$Port)
+    return ($Request.Headers['Host'] -eq "127.0.0.1:$Port")
+}

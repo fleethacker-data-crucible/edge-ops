@@ -17,15 +17,17 @@ Default loopback ports, taken from each tool's README and launch scripts. Every 
 
 ## Port handling standard
 
-Reference implementation: sniphero `modules/LocalHttp.ps1` (`SnipHero.Transport.Server`) and `Start-SnipHero.ps1`. The no-`Add-Type` version is [templates/ports/LoopbackPort.ps1](templates/ports/LoopbackPort.ps1).
+Reference: phoenix-lai `src\WebServer.cs` (`StartOnFreePort`) and data-noodler `server\server.ps1`. Snippet: [templates/ports/LoopbackPort.ps1](templates/ports/LoopbackPort.ps1).
 
-1. **Loopback only.** Bind a `System.Net.Sockets.TcpListener` to `[IPAddress]::Loopback` (127.0.0.1). Never `+`, `*`, `0.0.0.0` or `localhost` prefixes. `HttpListener` on `http://localhost:<port>/` can need a URL ACL (admin), so avoid it for new tools.
-2. **Preferred port first.** Take `-Port <n>` (default from the table above; new tools start at **8771**).
-3. **Fall back.** If the bind fails with `AddressAlreadyInUse`, `AccessDenied` or `AddressNotAvailable`, try the next port (up to 20 by default). If none is free, bind to port `0` and let the OS pick one. Any other socket error is rethrown.
-4. **No race.** Keep the bound listener and serve on it. Don't probe a port, close it and rebind.
-5. **Tell the user.** Print `Port <n> is busy; using free loopback port <m>.` and open or print the **actual** URL `http://127.0.0.1:<m>/`.
-6. **Never** stop, kill or take over another process holding the port.
-7. **Validate requests.** Reject requests whose Host is not `127.0.0.1:<actual port>` (DNS-rebinding guard, as in sniphero).
-8. **Test it.** [templates/tests/LoopbackPort.Tests.ps1](templates/tests/LoopbackPort.Tests.ps1) checks the 127.0.0.1 bind and the fallback.
+1. **Listener:** `HttpListener` with the single prefix `http://127.0.0.1:<port>/`. Never `+`, `*`, `0.0.0.0` or `localhost`. No URL ACL, no admin.
+2. **Preferred port:** `-Port <n>`, else the port remembered in `settings.json`, else the default in the table above. New tools start at **8771**.
+3. **Fallback:** if the bind throws `HttpListenerException`, try the next port in the tool's **own range** (phoenix-lai: server UI 8765-8789, client 8790-8799). If the range is exhausted, stop with a clear error in the log and a message box. A user-chosen "random" mode that picks a free 5-digit port, as data-noodler's site does, is also fine.
+4. **No race:** keep the listener that started. Don't probe a port, close it and rebind.
+5. **Report:** log the port you actually got and open or print `http://127.0.0.1:<port>/`.
+6. **Own instance only:** a `.pid` file plus a command-line check may stop the tool's own previous instance. Never stop another program.
+7. **Validate:** reject requests whose `Host` is not `127.0.0.1:<port>`, and check `Origin`.
+8. **Test:** [templates/tests/LoopbackPort.Tests.ps1](templates/tests/LoopbackPort.Tests.ps1).
 
-Known gap: keystone binds `http://localhost:8769/` with HttpListener. It should move to this pattern in its lint/CI PR.
+### Known overlaps and exceptions (not changed here)
+- The phoenix-lai web UI scans **8765-8789**, which overlaps SnipHero (8765), MailHawk (8766) and Keystone (8769). Fallback keeps them working side by side, but a real registry entry needs a decision. See [STANDARDS-EXCEPTIONS.md](STANDARDS-EXCEPTIONS.md).
+- data-noodler (`localhost:8079` and the site port) and the phoenix-lai API (`localhost:1234`) bind `localhost`, and keystone binds `localhost:8769`. These are flagged, not standardized.
