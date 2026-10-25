@@ -1,0 +1,10 @@
+# FleetHacker standard .gitignore additions (copy into <repo>/.gitignore)
+Logs/
+logs/
+*.log
+testResults.xml
+temp/
+*.tmp
+Thumbs.db
+desktop.ini
+.vs/
