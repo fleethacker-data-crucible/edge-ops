@@ -54,3 +54,10 @@ dkms.conf
 # debug information files
 *.dwo
 _site/
+
+# Local environment files (secrets)
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
