@@ -10,7 +10,7 @@ window.EDGE_OPS_CATALOG = {
       "category": "browser-only",
       "summary": "Workforce capability discovery prototype; offline build served on loopback by a PowerShell 5.1 script, or run as a single standalone HTML file. No installs or admin.",
       "launcher": "Launch-Synapse.bat",
-      "defaultPort": 8765,
+      "defaultPort": 8767,
       "requirements": {
         "ps51": true,
         "chromeEngine": true,
