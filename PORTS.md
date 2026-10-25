@@ -13,6 +13,8 @@ Default loopback ports, taken from each tool's README and launch scripts. Every 
 | — | Synapse | n/a (runs from `file://`) | |
 | — | ARC | n/a (CLI/WPF) | |
 
+**Reserved: 9300-9399** for Chrome remote-debugging ports in tests (`Start-IsolatedChrome`, [tools/test-harness](tools/test-harness/)). Tools must not default to this range.
+
 **Suggested range for new tools:** 8770–8799. Keystone documents 8770 as its alternate port, so start new tools at 8771.
 
 ## Port handling standard
