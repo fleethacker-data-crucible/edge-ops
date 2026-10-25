@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FleetHacker UI Kit v0.1.0 – Demo</title>
+<link rel="icon" href="assets/favicon-32.png">
+<link rel="stylesheet" href="kit.css">
+<script src="kit.js" defer></script>
+</head>
+<body>
+<a class="fh-skip" href="#main">Skip to main content</a>
+<header class="fh-header">
+  <a class="fh-brand" href="demo.html"><img src="assets/coin-64.png" alt="" width="40" height="40">FleetHacker Data Crucible</a>
+  <nav class="fh-nav" aria-label="Primary">
+    <ul><li><a href="demo.html" aria-current="page">Demo</a></li><li><a href="README.md">Docs</a></li><li><a href="#tables">Tables</a></li></ul>
+  </nav>
+  <span class="fh-spacer"></span>
+  <button type="button" class="fh-btn" data-fh-theme-toggle>Dark mode</button>
+</header>
+<main id="main" class="fh-container">
+  <section class="fh-section" aria-labelledby="h-intro">
+    <h1 id="h-intro">UI Kit v0.1.0</h1>
+    <p class="fh-muted">One CSS file, one JS file, no build step. Works offline from <code>file://</code>.</p>
+  </section>
+
+  <section class="fh-section" aria-labelledby="h-btn"><h2 id="h-btn">Buttons</h2>
+    <div class="fh-row">
+      <button type="button" class="fh-btn fh-btn--primary">Primary</button>
+      <button type="button" class="fh-btn">Default</button>
+      <button type="button" class="fh-btn fh-btn--ghost">Ghost</button>
+      <button type="button" class="fh-btn fh-btn--danger">Delete</button>
+      <button type="button" class="fh-btn" disabled>Disabled</button>
+      <a class="fh-btn" href="#h-forms">Link as button</a>
+    </div>
+  </section>
+
+  <section class="fh-section" aria-labelledby="h-alerts"><h2 id="h-alerts">Alerts &amp; badges</h2>
+    <div class="fh-alert" role="note"><strong>Info</strong><p>Neutral information.</p></div>
+    <div class="fh-alert fh-alert--ok" role="note"><strong>Success</strong><p>Saved.</p></div>
+    <div class="fh-alert fh-alert--warn" role="note"><strong>Warning</strong><p>Check your input.</p></div>
+    <div class="fh-alert fh-alert--bad" role="alert"><strong>Error</strong><p>Something failed.</p></div>
+    <div class="fh-row"><span class="fh-badge">neutral</span><span class="fh-badge fh-badge--ok">ok</span><span class="fh-badge fh-badge--warn">warn</span><span class="fh-badge fh-badge--bad">bad</span><span class="fh-badge fh-badge--info">info</span></div>
+  </section>
+
+  <section class="fh-section" aria-labelledby="h-cards"><h2 id="h-cards">Cards</h2>
+    <div class="fh-grid">
+      <article class="fh-card"><span class="fh-card__eyebrow">Capture</span><h3>sniphero</h3><p class="fh-muted">Screen snipping tool.</p><div class="fh-row"><span class="fh-badge fh-badge--ok">offline</span></div><a href="#h-cards">Open sniphero</a></article>
+      <article class="fh-card"><span class="fh-card__eyebrow">Knowledge</span><h3>synapse</h3><p class="fh-muted">Linked notes.</p><div class="fh-row"><span class="fh-badge fh-badge--warn">beta</span></div><a href="#h-cards">Open synapse</a></article>
+      <article class="fh-card"><img src="assets/banner-molten.jpg" alt="Molten metal pouring in a crucible" width="1200" height="800" loading="lazy"><h3>Brand imagery</h3><p class="fh-muted">From dumping-grounds.</p></article>
+    </div>
+  </section>
+
+  <section class="fh-section" aria-labelledby="h-forms"><h2 id="h-forms">Forms</h2>
+    <form onsubmit="event.preventDefault();FH.toast('Form submitted',{type:'ok'})">
+      <div class="fh-field"><label for="f-name">Name</label><input class="fh-input" id="f-name" autocomplete="name" aria-describedby="f-name-hint"><span class="fh-hint" id="f-name-hint">Your full name.</span></div>
+      <div class="fh-field"><label for="f-email">Email (required)</label><input class="fh-input" id="f-email" type="email" required aria-invalid="true" aria-describedby="f-email-err" autocomplete="email"><span class="fh-error" id="f-email-err">Enter a valid email address.</span></div>
+      <div class="fh-field"><label for="f-tool">Tool</label><select class="fh-select" id="f-tool"><option>sniphero</option><option>synapse</option><option>talkforge</option></select></div>
+      <div class="fh-field"><label for="f-notes">Notes</label><textarea class="fh-textarea" id="f-notes" rows="3"></textarea></div>
+      <fieldset><legend class="fh-legend">Options</legend>
+        <label class="fh-check"><input type="checkbox" checked> Work offline</label>
+        <label class="fh-check"><input type="radio" name="r" checked> Dark</label>
+        <label class="fh-check"><input type="radio" name="r"> Light</label>
+      </fieldset>
+      <button class="fh-btn fh-btn--primary" type="submit">Submit</button>
+    </form>
+  </section>
+
+  <section class="fh-section" aria-labelledby="h-tables" id="tables"><h2 id="h-tables">Tables</h2>
+    <div class="fh-table-wrap" role="region" aria-labelledby="t-cap" tabindex="0">
+      <table class="fh-table"><caption id="t-cap">Tool status</caption>
+        <thead><tr><th scope="col">Tool</th><th scope="col">Version</th><th scope="col">Status</th></tr></thead>
+        <tbody><tr><th scope="row">sniphero</th><td>1.2.0</td><td><span class="fh-badge fh-badge--ok">ready</span></td></tr>
+        <tr><th scope="row">synapse</th><td>0.9.1</td><td><span class="fh-badge fh-badge--warn">review</span></td></tr>
+        <tr><th scope="row">mailhawk</th><td>0.3.0</td><td><span class="fh-badge fh-badge--bad">blocked</span></td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="fh-section" aria-labelledby="h-tabs"><h2 id="h-tabs">Tabs</h2>
+    <div class="fh-tabs">
+      <div role="tablist" aria-label="Sample tabs">
+        <button type="button" role="tab" id="tab-a" aria-controls="panel-a" aria-selected="true">Overview</button>
+        <button type="button" role="tab" id="tab-b" aria-controls="panel-b" aria-selected="false" tabindex="-1">Settings</button>
+        <button type="button" role="tab" id="tab-c" aria-controls="panel-c" aria-selected="false" tabindex="-1">Logs</button>
+      </div>
+      <div role="tabpanel" id="panel-a" aria-labelledby="tab-a" tabindex="0"><p>Use Left/Right arrows, Home and End.</p></div>
+      <div role="tabpanel" id="panel-b" aria-labelledby="tab-b" tabindex="0" hidden><p>Settings panel.</p></div>
+      <div role="tabpanel" id="panel-c" aria-labelledby="tab-c" tabindex="0" hidden><p>Logs panel.</p></div>
+    </div>
+  </section>
+
+  <section class="fh-section" aria-labelledby="h-disc"><h2 id="h-disc">Disclosure</h2>
+    <button type="button" class="fh-disclosure__btn" aria-expanded="false" aria-controls="disc-1">Show details</button>
+    <div id="disc-1" hidden><p>Hidden details revealed.</p></div>
+  </section>
+
+  <section class="fh-section" aria-labelledby="h-dlg"><h2 id="h-dlg">Dialog &amp; toast</h2>
+    <div class="fh-row">
+      <button type="button" class="fh-btn fh-btn--primary" data-fh-dialog-open="dlg-1">Open dialog</button>
+      <button type="button" class="fh-btn" data-fh-toast="Saved successfully" data-fh-toast-type="ok">Show toast</button>
+      <button type="button" class="fh-btn" data-fh-toast="Upload failed" data-fh-toast-type="bad">Show error toast</button>
+    </div>
+    <dialog class="fh-dialog" id="dlg-1" aria-labelledby="dlg-1-title" aria-describedby="dlg-1-desc">
+      <h2 id="dlg-1-title">Confirm action</h2>
+      <p id="dlg-1-desc">Esc or Cancel closes this dialog; focus returns to the opener.</p>
+      <div class="fh-dialog__actions"><button type="button" class="fh-btn" data-fh-dialog-close value="cancel">Cancel</button><button type="button" class="fh-btn fh-btn--primary" data-fh-dialog-close value="ok">Confirm</button></div>
+    </dialog>
+  </section>
+</main>
+<footer class="fh-footer"><p>FleetHacker Data Crucible · UI Kit v0.1.0</p></footer>
+</body>
+</html>
