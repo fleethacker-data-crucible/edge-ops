@@ -6,7 +6,7 @@ The repo itself is tidy: `catalog.json` is valid and matches `assets/catalog-dat
 
 ## 1. Visibility
 
-- [ ] **`fleethacker-data-crucible/edge-ops-draft` is public.** It can be cloned without credentials. If that's not intended, make it private. If it is, check that the ARC wording ("CAC PIN", "maintained on git.mil" in `catalog.json:13`, `assets/catalog-data.js`, `tools/powershell-arc.html`) is fine to publish.
+- [x] **`fleethacker-data-crucible/edge-ops-draft` is public.** Intended. The ARC catalog wording was scrubbed of internal-host and smart-card references, and the preview was rebuilt and its history rewritten on 2026-10-25.
 - [ ] **Packaging:** make sure `release-zip.yml` can't ship dev or personal files (see section 3).
 
 ## 2. Port registry (`PORTS.md`, `catalog.json`)
