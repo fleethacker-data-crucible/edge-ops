@@ -55,7 +55,7 @@ Every `.ps1`/`.psm1` must run on stock **Windows PowerShell 5.1** (`powershell.e
 - Common switches: `-Port <n>`, `-NoBrowser`, `-CheckOnly` (self-check, no server).
 
 ## Local servers
-- **Bind rule:** HttpListener on `http://localhost:<port>/` (or TcpListener on `IPAddress.Loopback`), never `+` / `*` / `0.0.0.0`. `http://localhost:` needs no URL ACL or admin (keystone, data-noodler).
+- **Bind rule:** HttpListener on `http://localhost:<port>/` (or TcpListener on `IPAddress.Loopback`), never `+` / `*` / `0.0.0.0`. `http://localhost:` needs no URL ACL or admin (keystone, data-noodler). **Enforced:** `Start-LoopbackListener` calls `Assert-LoopbackPrefix` before `Prefixes.Add`, which accepts only `localhost`, `127.0.0.1` or `[::1]` and throws on `+`, `*`, `0.0.0.0` or any other host. This matters because, when elevated, `http://+:` and `http://*:` really do listen on every interface.
 - Pick the port as described in [PORTS.md](PORTS.md#port-handling-standard): preferred port, then the tool's range. Snippet: [templates/ports/LoopbackPort.ps1](templates/ports/LoopbackPort.ps1).
 - Check every request the way keystone's `Test-KeystoneWebRequest` does: `[Net.IPAddress]::IsLoopback($Request.RemoteEndPoint.Address)`, `Host` is `localhost:<port>` (or `127.0.0.1:<port>`), and `Origin`, when present, is the same origin.
 - Free-port checks should test **both** IPv4 (`127.0.0.1`) and IPv6 (`::1`) loopback, because `localhost` can resolve to either (`Test-LoopbackPortFree` in the snippet).
