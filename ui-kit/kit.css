@@ -1,4 +1,4 @@
-/*! FleetHacker UI Kit v0.2.0 | derived from data-noodler (ui/css/theme.css) + phoenix-lai (html/css/chat.css, server.css)
+/*! FleetHacker UI Kit v0.2.1 | derived from data-noodler (ui/css/theme.css) + phoenix-lai (html/css/chat.css, server.css)
     No build step, offline (file://), Chrome-engine. Everything sits in @layer kit, so a tool's own unlayered CSS always wins. */
 @layer kit{
 @font-face{font-family:"Exo 2";src:url(fonts/exo2.woff2) format("woff2");font-weight:400 700;font-display:swap}
@@ -160,9 +160,21 @@ dialog>footer{padding:4px 24px 20px;display:flex;justify-content:flex-end;gap:va
 @media (forced-colors:active){
  button,.btn,input,select,textarea,.badge,.box,.toast,.notice{border:1px solid ButtonText}
  [role=tab]{border:0;border-bottom:3px solid transparent;forced-color-adjust:none;background:Canvas;color:CanvasText}
- [role=tab][aria-selected=true]{border-bottom:6px solid Highlight;font-weight:700;text-decoration:underline;text-underline-offset:4px}
+ [role=tab][aria-selected=true],[role=tablist] [role=tab][aria-selected=true]{background:Canvas;color:CanvasText;border-bottom:6px solid Highlight;font-weight:700;text-decoration:underline;text-underline-offset:4px}
  .snav [aria-current=page]{outline:2px solid Highlight}
  dialog{border:2px solid CanvasText}dialog::backdrop{background:transparent}
- :focus-visible{outline-color:Highlight}
+ :focus-visible{outline:2px solid Highlight;outline-offset:2px}
+ .progress{border:1px solid CanvasText;background:Canvas}
+ .progress>i{forced-color-adjust:none;background:Highlight}
+ .dd-menu{border:1px solid CanvasText}
+ .dd-menu>[role=menuitem]:hover{outline:1px solid CanvasText;outline-offset:-1px}
+ .dd-menu>[role=menuitem]:focus,.dd-menu>[role=menuitem]:focus-visible{outline:2px solid Highlight;outline-offset:-3px;box-shadow:none}
+ .dd-menu [aria-disabled=true]{color:GrayText}
+ table.grid tr[aria-selected=true] td,table.grid tr.sel td,table.grid tr.open td{forced-color-adjust:none;background:Highlight;color:HighlightText}
+ table.grid th[aria-sort=ascending],table.grid th[aria-sort=descending]{text-decoration:underline}
+ button[aria-pressed=true],.btn[aria-pressed=true]{forced-color-adjust:none;background:Highlight;color:HighlightText;border-color:Highlight}
+ button:disabled,.btn[aria-disabled=true]{color:GrayText;border-color:GrayText}
+ .toast.warn,.toast.err{border-width:3px}
+ .snav [aria-current=page]{outline-offset:-2px;text-decoration:underline}
 }
 }
