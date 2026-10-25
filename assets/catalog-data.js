@@ -82,7 +82,7 @@ window.EDGE_OPS_CATALOG = {
       "category": "ps-host-browser-ui",
       "summary": "Outlook triage into a human-reviewed action queue.",
       "launcher": "MailHawk.bat",
-      "defaultPort": 8766,
+      "defaultPort": 8771,
       "requirements": {
         "ps51": true,
         "chromeEngine": true,
