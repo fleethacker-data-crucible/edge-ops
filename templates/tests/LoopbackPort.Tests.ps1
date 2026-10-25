@@ -61,6 +61,13 @@ Describe 'Bind rule guard' {
     ) {
         { Start-LoopbackListener -PreferredPort 8771 -RangeStart 8771 -RangeEnd 8771 -ListenHost $H } | Should -Throw -ExpectedMessage '*Bind rule*'
     }
+    It 'throws the bind-rule error for a bad host even when every port is busy' {
+        $hold = New-Object System.Net.Sockets.TcpListener ([System.Net.IPAddress]::Loopback), 8775
+        $hold.Start()
+        try {
+            { Start-LoopbackListener -PreferredPort 8775 -RangeStart 8775 -RangeEnd 8775 -ListenHost '+' } | Should -Throw -ExpectedMessage '*Bind rule*'
+        } finally { $hold.Stop() }
+    }
 }
 
 Describe 'PowerShell 5.1 rules' {
