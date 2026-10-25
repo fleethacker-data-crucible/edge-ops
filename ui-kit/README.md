@@ -1,4 +1,4 @@
-# FleetHacker UI Kit v0.1.0
+# FleetHacker UI Kit v0.1.1
 
 One CSS file and one JS file. No npm, no build step, no CDN, no web fonts. It works offline from `file://` in Chrome-engine browsers (Chrome and Edge).
 
@@ -7,7 +7,7 @@ One CSS file and one JS file. No npm, no build step, no CDN, no web fonts. It wo
 |---|---|
 | `kit.css` | Design tokens (`--fh-*`) for dark (default) and light themes, base styles and reset, layout, nav, buttons, forms, tables, cards, badges, alerts, tabs, disclosure, dialog, toast, focus, reduced-motion, high-contrast and forced-colors |
 | `kit.js` | A classic script, not an ES module, so it loads from `file://`. Adds `window.FH` with theme toggle, dialog, tabs, disclosure and `FH.toast()` |
-| `assets/` | Brand images reduced from `dumping-grounds` (coin logo, favicon, molten-metal banner) |
+| `assets/` | Brand images reduced from `dumping-grounds` (`coin-192.png` hero/logo, `coin-64.png` header logo, favicon, molten-metal banner) |
 | `demo.html` | Shows every component. Open it directly in a browser |
 | `check-contrast.py` | Checks every token color pair against WCAG 2.1 AA |
 | `VERSION` | The kit version. The same version is stamped at the top of `kit.css` and `kit.js` |
@@ -17,6 +17,9 @@ One CSS file and one JS file. No npm, no build step, no CDN, no web fonts. It wo
 2. Add `<link rel="stylesheet" href="kit/kit.css">` and `<script src="kit/kit.js" defer></script>`.
 3. Use the `fh-` classes and the markup patterns in `demo.html`. Apply tool-specific CSS after `kit.css`, and override tokens only if you re-run the contrast check.
 4. Record the kit version you copied, for example in the tool's README. To upgrade, replace the folder.
+
+## Theme toggle
+`<button data-fh-theme-toggle>`: the label reads "Dark mode: on/off" and `aria-pressed` stays in sync.
 
 ## Accessibility rules (Section 508 / WCAG 2.1 AA)
 - Set `<html lang>`, give every page a unique `<title>`, add a skip link (`.fh-skip`) to `#main`, and use landmarks (`header`, `nav[aria-label]`, `main`, `footer`).
