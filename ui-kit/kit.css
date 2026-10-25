@@ -1,4 +1,4 @@
-/*! FleetHacker UI Kit v0.2.1 | derived from data-noodler (ui/css/theme.css) + phoenix-lai (html/css/chat.css, server.css)
+/*! FleetHacker UI Kit v0.2.2 | derived from data-noodler (ui/css/theme.css) + phoenix-lai (html/css/chat.css, server.css)
     No build step, offline (file://), Chrome-engine. Everything sits in @layer kit, so a tool's own unlayered CSS always wins. */
 @layer kit{
 @font-face{font-family:"Exo 2";src:url(fonts/exo2.woff2) format("woff2");font-weight:400 700;font-display:swap}
@@ -101,6 +101,8 @@ table.grid th[aria-sort=ascending] button::after{content:"\25B2";font-size:9px}
 table.grid th[aria-sort=descending] button::after{content:"\25BC";font-size:9px}
 table.grid tr.click{cursor:pointer}
 table.grid tbody tr:hover td,table.grid tr.open td{background:var(--panel-2)}
+table.grid tr.sel td{background:var(--sel)}
+table.grid tr.sel td:first-child{box-shadow:inset 3px 0 0 var(--brand)}
 table.grid td.num,table.grid th.num{text-align:right}
 table.data td{font-family:var(--mono);font-size:12px}
 /* ---- badges (data-noodler --bc model; mix 40% not 50% for AA) ---- */
@@ -171,7 +173,8 @@ dialog>footer{padding:4px 24px 20px;display:flex;justify-content:flex-end;gap:va
  .dd-menu>[role=menuitem]:focus,.dd-menu>[role=menuitem]:focus-visible{outline:2px solid Highlight;outline-offset:-3px;box-shadow:none}
  .dd-menu [aria-disabled=true]{color:GrayText}
  table.grid tr[aria-selected=true] td,table.grid tr.sel td,table.grid tr.open td{forced-color-adjust:none;background:Highlight;color:HighlightText}
- table.grid th[aria-sort=ascending],table.grid th[aria-sort=descending]{text-decoration:underline}
+ table.grid th[aria-sort=ascending]>button,table.grid th[aria-sort=descending]>button{text-decoration:underline;text-underline-offset:3px}
+ tr[aria-selected=true] .badge,tr.sel .badge,tr.open .badge{forced-color-adjust:none;background:transparent;color:HighlightText;border-color:HighlightText}
  button[aria-pressed=true],.btn[aria-pressed=true]{forced-color-adjust:none;background:Highlight;color:HighlightText;border-color:Highlight}
  button:disabled,.btn[aria-disabled=true]{color:GrayText;border-color:GrayText}
  .toast.warn,.toast.err{border-width:3px}
