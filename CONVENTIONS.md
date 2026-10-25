@@ -77,7 +77,56 @@ Every `.ps1`/`.psm1` must run on stock **Windows PowerShell 5.1** (`powershell.e
 ## Tests
 - A self-check mode in the entry script (`-CheckOnly`, phoenix-lai `src\run.ps1`): static locality and safety checks with no server.
 - Pester 5 smoke tests in `tests\*.Tests.ps1` (start from [templates/tests/](templates/tests/)): every `.ps1` parses on 5.1, the server binds loopback only (fails only on `+`, `*`, `0.0.0.0` or a non-loopback address; `localhost` is fine).
+- Browser, desktop, Outlook and GPU tests on the shared VM follow [Test isolation](#test-isolation-shared-windows-test-vm).
 - CI: [templates/workflows/ci.yml](templates/workflows/ci.yml) on windows-latest with `shell: powershell` (5.1). It triggers on `main` and `master`. The tests path is `TESTS_PATH`, default `tests`, falling back to `templates/tests`; finding 0 tests is a warning. The token can't write `.github/workflows`, so the file is staged under `templates/`.
+
+## Test isolation (shared Windows test VM)
+Source: [tools/test-harness/](tools/test-harness/) (Zombie Admin's harness). Chrome debug ports 9300-9399 are reserved in [PORTS.md](PORTS.md).
+
+Several bots and CI runners share the Windows test VM. These rules keep their browser and UI tests from interfering with each other.
+
+### Setup
+- Module: `tools/test-harness/FleetTestHarness.psm1` (Windows PowerShell 5.1+). `Import-Module .\FleetTestHarness.psm1`
+- One-time elevated setup: `Install-FleetLockRoot.ps1` creates `C:\ProgramData\fleethacker\locks` and grants Users Modify.
+- Override the lock folder with `$env:FLEET_LOCK_ROOT` (the tests do this).
+
+### Browser tests: always use isolated Chrome
+```powershell
+$c = Start-IsolatedChrome -Agent uikit -RunId $env:GITHUB_RUN_ID -Headless -Url 'file:///D:/x/demo.html'
+try { # drive via CDP at http://127.0.0.1:$($c.Port) ($c.DevToolsUrl)
+} finally { Stop-IsolatedChrome $c | Out-Null }
+```
+- Profile: `%LOCALAPPDATA%\fleethacker\chrome\<agent>-<runid>`, always fresh and deleted on stop.
+- Debug port: picked at random from **9300-9399**, checked free (Get-NetTCPConnection plus a TcpListener probe), and leased as `port-<n>` while Chrome starts.
+- Never use the user's default profile or a fixed debug port. Never `Stop-Process chrome`. Stop only kills processes whose command line contains your profile path.
+
+### Leases for resources that can't be shared
+| Resource | Use for |
+|---|---|
+| `desktop-focus` | anything that needs the interactive desktop or foreground: screenshots, SendKeys/UI Automation, markup tests (lasso), High Contrast or theme toggles |
+| `outlook-com` | Outlook COM automation (mailhawk) |
+| `gpu` | GPU-heavy work (phoenix-lai) |
+| `port-<n>` | a fixed tool port when port fallback is disabled |
+
+```powershell
+$l = Enter-FleetLock desktop-focus -Owner "uikit/$env:GITHUB_RUN_ID" -TimeoutSec 600 -Heartbeat
+try { ... } finally { Exit-FleetLock $l | Out-Null }
+```
+- Aliases: `Acquire-FleetLock`, `Renew-FleetLock`, `Release-FleetLock`.
+- File `<resource>.json`: owner, pid, host, acquired, heartbeat (ISO 8601 UTC), token.
+- Creation is atomic (`FileMode.CreateNew`). Stale means the heartbeat is older than 5 min or the owner PID is dead on this host. Takeover is serialized by a `<resource>.takeover` guard and a rename to a tombstone, so only one taker wins.
+- Holding for more than ~4 min: pass `-Heartbeat` (renews every 30 s while the owner PID lives) or call `Update-FleetLock` yourself.
+- `Exit-FleetLock` verifies the token and won't release someone else's lock.
+- Status: `Get-FleetLocks | Format-Table` (has an IsStale column).
+
+### Rules
+1. Always lease `desktop-focus` for screenshot, SendKeys, focus, or display-setting tests.
+2. Always use isolated Chrome for browser tests.
+3. Always release and stop in `finally`.
+4. Keep leases short; acquire just before the critical section.
+5. Don't delete lock files by hand; let stale takeover handle crashed owners.
+
+> **No-admin caveat:** `Install-FleetLockRoot.ps1` is a one-time setup script that writes to `C:\ProgramData` and changes an ACL. It is test-VM infrastructure, not tool runtime. Without elevation, set `$env:FLEET_LOCK_ROOT` to a per-user folder such as `$env:LOCALAPPDATA\fleethacker\locks` (which only coordinates runners under the same Windows account).
 
 ## Releases
 - Tag `vX.Y.Z` → the reusable workflow `edge-ops/.github/workflows/release-zip.yml` builds:
