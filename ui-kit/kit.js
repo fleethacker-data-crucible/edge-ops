@@ -1,13 +1,13 @@
-/*! FleetHacker UI Kit v0.1.0 | vanilla, no deps, classic script (works from file://) */
+/*! FleetHacker UI Kit v0.1.1 | vanilla, no deps, classic script (works from file://) */
 (function(){'use strict';
-var FH=window.FH={version:'0.1.0'};var KEY='fh-theme';
+var FH=window.FH={version:'0.1.1'};var KEY='fh-theme';
 function $$(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s));}
 /* Theme toggle: <button data-fh-theme-toggle> */
 FH.setTheme=function(t){var d=document.documentElement;if(t)d.setAttribute('data-theme',t);else d.removeAttribute('data-theme');try{t?localStorage.setItem(KEY,t):localStorage.removeItem(KEY);}catch(e){}
- $$('[data-fh-theme-toggle]').forEach(function(b){var dark=FH.currentTheme()==='dark';b.setAttribute('aria-pressed',String(dark));});};
+ $$('[data-fh-theme-toggle]').forEach(function(b){var dark=FH.currentTheme()==='dark';b.setAttribute('aria-pressed',String(dark));b.textContent='Dark mode: '+(dark?'on':'off');});};
 FH.currentTheme=function(){var a=document.documentElement.getAttribute('data-theme');if(a)return a;return matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';};
 try{var saved=localStorage.getItem(KEY);if(saved)document.documentElement.setAttribute('data-theme',saved);}catch(e){}
-function initTheme(){$$('[data-fh-theme-toggle]').forEach(function(b){b.setAttribute('aria-pressed',String(FH.currentTheme()==='dark'));
+function initTheme(){$$('[data-fh-theme-toggle]').forEach(function(b){var dk=FH.currentTheme()==='dark';b.setAttribute('aria-pressed',String(dk));b.textContent='Dark mode: '+(dk?'on':'off');
  b.addEventListener('click',function(){FH.setTheme(FH.currentTheme()==='dark'?'light':'dark');FH.toast('Theme: '+FH.currentTheme());});});}
 /* Dialog: <button data-fh-dialog-open="id">, native <dialog class="fh-dialog" aria-labelledby>; [data-fh-dialog-close] */
 function initDialogs(){$$('[data-fh-dialog-open]').forEach(function(b){b.addEventListener('click',function(){var d=document.getElementById(b.getAttribute('data-fh-dialog-open'));if(!d)return;d._opener=b;d.showModal();var f=d.querySelector('[autofocus],button,input,select,textarea,a[href]');if(f)f.focus();});});
