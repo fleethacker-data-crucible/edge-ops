@@ -47,7 +47,7 @@ Set-Content $pidFile $PID
 $listener = Start-LoopbackListener -PreferredPort $settings.port -RangeStart 8771 -RangeEnd 8779
 $actual = Get-ListenerPort -Listener $listener
 if ($actual -ne $settings.port) { Add-Log 'sys' "Port $($settings.port) is busy; using $actual." }
-$url = "http://127.0.0.1:$actual/"
+$url = "http://localhost:$actual/"
 Add-Log 'sys' "Serving $url (PID $PID, PowerShell $($PSVersionTable.PSVersion))"
 if (-not $NoBrowser) { Start-Process $url }
 try {

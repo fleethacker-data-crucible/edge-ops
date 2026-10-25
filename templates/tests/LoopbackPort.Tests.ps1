@@ -7,10 +7,10 @@ BeforeAll {
 }
 
 Describe 'Start-LoopbackListener' {
-    It 'binds to 127.0.0.1 only' {
+    It 'binds to localhost only (one loopback prefix)' {
         $l = Start-LoopbackListener -PreferredPort 8771 -RangeStart 8771 -RangeEnd 8779
         try {
-            Get-ListenerHost -Listener $l | Should -Be '127.0.0.1'
+            Get-ListenerHost -Listener $l | Should -Be 'localhost'
             @($l.Prefixes).Count | Should -Be 1
         } finally { $l.Close() }
     }
@@ -22,9 +22,21 @@ Describe 'Start-LoopbackListener' {
             $second = Start-LoopbackListener -PreferredPort $taken -RangeStart 8771 -RangeEnd 8779
             try {
                 Get-ListenerPort -Listener $second | Should -Not -Be $taken
-                Get-ListenerHost -Listener $second | Should -Be '127.0.0.1'
+                Get-ListenerHost -Listener $second | Should -Be 'localhost'
             } finally { $second.Close() }
         } finally { $first.Close() }
+    }
+
+    It 'treats a port held on IPv4 loopback as busy' {
+        $b = New-Object System.Net.Sockets.TcpListener ([System.Net.IPAddress]::Loopback), 0
+        $b.Start()
+        try { Test-LoopbackPortFree -Port ([System.Net.IPEndPoint]$b.LocalEndpoint).Port | Should -BeFalse } finally { $b.Stop() }
+    }
+
+    It 'treats a port held on IPv6 loopback as busy' {
+        $b = New-Object System.Net.Sockets.TcpListener ([System.Net.IPAddress]::IPv6Loopback), 0
+        try { $b.Start() } catch { Set-ItResult -Skipped -Because 'IPv6 loopback not available'; return }
+        try { Test-LoopbackPortFree -Port ([System.Net.IPEndPoint]$b.LocalEndpoint).Port | Should -BeFalse } finally { $b.Stop() }
     }
 
     It 'rejects ports below 1024' {

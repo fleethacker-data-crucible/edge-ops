@@ -11,7 +11,7 @@ These apply to every tool repository in `fleethacker-data-crucible` that is list
 - **Version marker** at the root (`VERSION` semver, or `__version.info`), plus a `CHANGELOG.md`. See *Settings and versioning*.
 
 ## Reference repos
-The standard is modeled on the two most settled tools, **phoenix-lai** and **data-noodler**. When this file and those repos disagree, the repos win, unless the repo pattern breaks a hard constraint (PS 5.1, no admin, offline, 127.0.0.1 only). Those exceptions are listed in [STANDARDS-EXCEPTIONS.md](STANDARDS-EXCEPTIONS.md).
+The standard is modeled on the two most settled tools, **phoenix-lai** and **data-noodler**. When this file and those repos disagree, the repos win, unless the repo pattern breaks a hard constraint (PS 5.1, no admin, offline, loopback-only bind). Those exceptions are listed in [STANDARDS-EXCEPTIONS.md](STANDARDS-EXCEPTIONS.md).
 
 ## Folder layout
 ```
@@ -55,9 +55,10 @@ Every `.ps1`/`.psm1` must run on stock **Windows PowerShell 5.1** (`powershell.e
 - Common switches: `-Port <n>`, `-NoBrowser`, `-CheckOnly` (self-check, no server).
 
 ## Local servers
-- `System.Net.HttpListener` with a single prefix **`http://127.0.0.1:<port>/`** (phoenix-lai `src\WebServer.cs`). Never `+`, `*`, `0.0.0.0` or `localhost`. A `TcpListener` on `[IPAddress]::Loopback` is also fine.
+- **Bind rule:** HttpListener on `http://localhost:<port>/` (or TcpListener on `IPAddress.Loopback`), never `+` / `*` / `0.0.0.0`. `http://localhost:` needs no URL ACL or admin (keystone, data-noodler).
 - Pick the port as described in [PORTS.md](PORTS.md#port-handling-standard): preferred port, then the tool's range. Snippet: [templates/ports/LoopbackPort.ps1](templates/ports/LoopbackPort.ps1).
-- Reject requests whose `Host` header is not `127.0.0.1:<port>`, and check `Origin` (both reference repos do).
+- Check every request the way keystone's `Test-KeystoneWebRequest` does: `[Net.IPAddress]::IsLoopback($Request.RemoteEndPoint.Address)`, `Host` is `localhost:<port>` (or `127.0.0.1:<port>`), and `Origin`, when present, is the same origin.
+- Free-port checks should test **both** IPv4 (`127.0.0.1`) and IPv6 (`::1`) loopback, because `localhost` can resolve to either (`Test-LoopbackPortFree` in the snippet).
 - A tool may stop **its own** previous instance through a `.pid` file, after checking that process's command line (data-noodler). Never stop or take over another program.
 - Closing the window or exiting stops the server and removes the `.pid` file.
 - Host skeleton: [templates/host/Start-ToolName.ps1](templates/host/Start-ToolName.ps1).
@@ -75,7 +76,7 @@ Every `.ps1`/`.psm1` must run on stock **Windows PowerShell 5.1** (`powershell.e
 
 ## Tests
 - A self-check mode in the entry script (`-CheckOnly`, phoenix-lai `src\run.ps1`): static locality and safety checks with no server.
-- Pester 5 smoke tests in `tests\*.Tests.ps1` (start from [templates/tests/](templates/tests/)): every `.ps1` parses on 5.1, no wildcard bind, and the server binds 127.0.0.1.
+- Pester 5 smoke tests in `tests\*.Tests.ps1` (start from [templates/tests/](templates/tests/)): every `.ps1` parses on 5.1, the server binds loopback only (fails only on `+`, `*`, `0.0.0.0` or a non-loopback address; `localhost` is fine).
 - CI: [templates/workflows/ci.yml](templates/workflows/ci.yml) on windows-latest with `shell: powershell` (5.1). It triggers on `main` and `master`. The tests path is `TESTS_PATH`, default `tests`, falling back to `templates/tests`; finding 0 tests is a warning. The token can't write `.github/workflows`, so the file is staged under `templates/`.
 
 ## Releases
