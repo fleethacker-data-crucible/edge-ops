@@ -138,6 +138,26 @@ try { ... } finally { Exit-FleetLock $l | Out-Null }
 - Big binaries (models, packages) go in release assets, **never** in git history.
 - The hub links to `releases/latest`.
 
+## Branch pruning
+- Template: `templates/workflows/prune-merged-branches.yml`. It's the **one canonical copy**.
+- **Adopt it:** copy the file unchanged to `.github/workflows/prune-merged-branches.yml` in the tool repo.
+  - Pushing that path needs a token with `workflow` scope (Zombie Admin pushes).
+  - After the merge, run it once by hand with `dry_run` left on.
+- **Keep every copy identical:** never edit it per repo. Change the template here, then roll the same bytes out to every repo.
+- **Runs:**
+  - Weekly scheduled runs (Mondays 09:17 UTC) delete for real.
+  - Manual runs (`workflow_dispatch`) default to `dry_run: true`, which only logs.
+- **Token:** `GITHUB_TOKEN` only, with `contents: write` and `pull-requests: read`. It runs on `ubuntu-latest` (not a PS tool).
+- **Never deleted:**
+  - the default branch, `main`, `master`, `hub/**`, `preview/**`, `release/**`;
+  - protected branches;
+  - branches a ruleset blocks from deletion;
+  - any branch that is the head (same repo) or **base** of an open PR. Deleting a base closes its PRs.
+- **Deleted only if:**
+  - a same-repo PR from the branch merged at its current head SHA, or
+  - its head is reachable from the default branch. With no PR history, the branch must also not sit at the default tip, and its head must be at least 14 days old.
+- **Errors:** each branch fails soft (a 403/422 is logged and the run continues). The job summary lists every decision.
+
 ## Regenerate the catalog fallback (PowerShell 5.1)
 ```powershell
 $json = Get-Content .\catalog.json -Raw
