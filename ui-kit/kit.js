@@ -1,4 +1,4 @@
-/*! FleetHacker UI Kit v0.2.0 | vanilla, no deps, classic script (works from file://). Global: Kit.
+/*! FleetHacker UI Kit v0.2.1 | vanilla, no deps, classic script (works from file://). Global: Kit.
     API mirrors data-noodler's UI/Menus/Theme helpers so adoption is a rename:
       Kit.toast(msg, kind='', ms=5000)            kind: '' info | 'ok' | 'warn' | 'err' ('error' accepted)
       await Kit.confirm(msg, {danger, ok, cancel}) -> true/false
@@ -9,7 +9,7 @@
       [role=tablist], button.disclosure[aria-controls], table.grid th[aria-sort] > button (sortable). */
 (function () {
   'use strict';
-  var Kit = window.Kit = { version: '0.2.0' };
+  var Kit = window.Kit = { version: '0.2.1' };
   var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
   var root = document.documentElement;
 

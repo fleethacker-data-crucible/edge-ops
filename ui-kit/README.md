@@ -1,4 +1,4 @@
-# FleetHacker UI Kit v0.2.0
+# FleetHacker UI Kit v0.2.1
 
 The kit is one CSS file and one JS file. It needs no npm, no build step and no CDN, and it works offline from `file://` in Chrome and Edge. Its tokens, components and patterns come from the two most settled UIs in the org, **data-noodler** and **phoenix-lai**. The kit adds a few changes on top of them so that it meets WCAG 2.1 AA and Section 508; see "Deviations" below.
 
@@ -11,7 +11,7 @@ The kit is one CSS file and one JS file. It needs no npm, no build step and no C
 | `assets/` | `coin-64.png` (used as `img.logo`) and `favicon-32.png`, both taken from `dumping-grounds`. |
 | `demo.html` | Shows every component. Open it directly in a browser. |
 | `check-contrast.py` | Checks every token pair and badge colour against AA. It exits non-zero if any pair fails. |
-| `VERSION` | `0.2.0`. The same version is stamped at the top of `kit.css` and `kit.js`. |
+| `VERSION` | `0.2.1`. The same version is stamped at the top of `kit.css` and `kit.js`. |
 
 ## Adopting it
 1. Copy the `ui-kit/` folder into the tool, for example as `vendor/ui-kit/`, and record the version.
@@ -68,3 +68,7 @@ The kit is one CSS file and one JS file. It needs no npm, no build step and no C
 - Dialogs use native `<dialog aria-labelledby>`. Esc closes the dialog and focus returns to its opener.
 - Tabs and menus follow the WAI-ARIA APG patterns: arrow keys, Home/End and Esc. Toasts are in a polite live region, and errors use `role=alert`.
 - After any token change, run `python3 check-contrast.py`, then run axe-core in headless Chrome from a temporary folder outside the repo.
+
+## Changelog
+- **0.2.1**: forced-colors (Windows High Contrast) fixes. The progress track gets a CanvasText border and the fill is drawn in Highlight. Menu items show a Highlight outline on focus and an outline on hover, and disabled items use GrayText. Selected and open table rows, and `aria-pressed` buttons, use Highlight/HighlightText. The active sort column is underlined. Disabled buttons use GrayText. Warn and err toasts get a thicker border. The current side-nav item is underlined. The selected tab is forced to CanvasText on Canvas (previously its text vanished). Focus rings use 2px Highlight with an offset.
+- **0.2.0**: rebased on data-noodler and phoenix-lai.
