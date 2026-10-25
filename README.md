@@ -27,14 +27,12 @@ This is the **hub** for the `fleethacker-data-crucible` utility suite. Every too
 | [Keystone](https://github.com/fleethacker-data-crucible/keystone) | PS host + browser UI | Git sync workspace without git.exe | `Launch-Keystone.bat` | 8769 | May need a URL reservation |
 | [Data Noodler](https://github.com/fleethacker-data-crucible/data-noodler) | Data & AI | Flat-file analytics (CSV/Parquet/Arrow/SQLite) | `Data Noodler.lnk` | 8079 | Compiles C# at run time |
 | [Phoenix LAI](https://github.com/fleethacker-data-crucible/phoenix-lai) | Data & AI | Local GPU LLM server (OpenAI API) + chat client | `Phoenix_LAI_Server.lnk` | 1234 | GPU; compiles C# at run time |
-| [ARC](https://github.com/fleethacker-data-crucible/powershell-arc) | Security | CAC + TOTP secret vault (CLI/WPF) | `pm.ps1` | — | **External**: source on git.mil |
 
 ## Categories
 
 - **Browser-only:** HTML/JS that runs from `file://` or a tiny static server.
 - **PowerShell host + browser UI:** a PS 5.1 `HttpListener`/`TcpListener` on loopback serving a local web UI.
 - **Data & AI:** heavier tools. Some compile bundled C# through the built-in .NET Framework at run time; some app-control policies block this.
-- **Security:** credential and secret tooling.
 
 ## Running on a whitelisted Windows machine
 

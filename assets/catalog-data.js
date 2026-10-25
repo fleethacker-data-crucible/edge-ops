@@ -171,31 +171,6 @@ window.EDGE_OPS_CATALOG = {
       "external": false,
       "repo": "https://github.com/fleethacker-data-crucible/phoenix-lai",
       "releases": "https://github.com/fleethacker-data-crucible/phoenix-lai/releases/latest"
-    },
-    {
-      "id": "powershell-arc",
-      "name": "ARC (Access Resource Control)",
-      "category": "security",
-      "summary": "Password/secret vault with CAC PIN + TOTP unlock, DPAPI/AES storage, CLI and WPF GUI. Source is maintained on git.mil.",
-      "launcher": "pm.ps1",
-      "defaultPort": null,
-      "requirements": {
-        "ps51": true,
-        "chromeEngine": false,
-        "batch": false,
-        "vbs": false,
-        "admin": false,
-        "installs": false,
-        "network": false,
-        "csharpRuntimeCompile": false,
-        "gpu": false,
-        "outlook": false
-      },
-      "status": "external",
-      "external": true,
-      "externalSource": "git.mil: common_scripts/powershell/arc/",
-      "repo": "https://github.com/fleethacker-data-crucible/powershell-arc",
-      "releases": null
     }
   ]
 };
