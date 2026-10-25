@@ -1,12 +1,15 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>FleetHacker Edge-Ops — Utility Suite</title>
+<link rel="icon" href="ui-kit/assets/favicon-32.png">
+<link rel="stylesheet" href="ui-kit/kit.css">
 <link rel="stylesheet" href="assets/style.css"></head>
 <body>
+<a class="skip" href="#grid">Skip to tools</a>
 <header><h1>FleetHacker Edge-Ops</h1>
 <p>Standalone utilities for app-whitelisted Windows: PowerShell 5.1, a Chrome-engine browser, and .bat/.vbs only when needed. No admin, no installs.</p>
 <div class="controls"><input id="q" type="search" placeholder="Filter tools…" aria-label="Filter tools"><select id="cat" aria-label="Category"><option value="">All categories</option></select></div></header>
-<main id="grid" aria-live="polite"></main>
+<main id="grid" tabindex="-1" aria-label="Tools" aria-live="polite"></main>
 <footer><a href="https://github.com/fleethacker-data-crucible/edge-ops">edge-ops on GitHub</a> · <a href="https://github.com/fleethacker-data-crucible/edge-ops/blob/main/CONVENTIONS.md">Conventions</a> · <a href="https://github.com/fleethacker-data-crucible/edge-ops/blob/main/PORTS.md">Ports</a> · MIT</footer>
 <script src="assets/catalog-data.js"></script>
 <script src="assets/app.js"></script>
