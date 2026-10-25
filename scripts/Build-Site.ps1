@@ -10,11 +10,12 @@
 #>
 [CmdletBinding()]
 param(
-  [string]$Root = (Split-Path -Parent $PSScriptRoot),
+  [string]$Root = '',   # default: repo root (set below; $PSScriptRoot is empty in param defaults under 5.1 -File)
   [string]$OutDir = '_site',
   [string]$BasePath = ''   # e.g. '/edge-ops/' for an absolute 404 base; empty = relative
 )
 $ErrorActionPreference = 'Stop'
+if (-not $Root) { $Root = Split-Path -Parent $PSScriptRoot }
 Set-StrictMode -Version 2
 
 function Enc([object]$v) { if ($null -eq $v) { return '' } return [System.Net.WebUtility]::HtmlEncode([string]$v) }
