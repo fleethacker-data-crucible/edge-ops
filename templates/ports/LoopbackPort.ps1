@@ -30,19 +30,35 @@ function Test-LoopbackPortFree {
     return $true
 }
 
+# Bind-rule guard: accept only http://localhost|127.0.0.1|[::1]:<port>/ prefixes.
+# Rejects +, *, 0.0.0.0 and any other host. Elevated, http://+: and http://*: really do listen on all interfaces.
+function Assert-LoopbackPrefix {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][string]$Prefix)
+    $m = [regex]::Match($Prefix, '^https?://(\[[^\]]*\]|[^:/]+)(:\d+)?/', 'IgnoreCase')
+    if (-not $m.Success) { throw "Bind rule: unparseable listener prefix '$Prefix'." }
+    $h = $m.Groups[1].Value.ToLowerInvariant()
+    if (@('localhost', '127.0.0.1', '[::1]') -notcontains $h) {
+        throw "Bind rule: listener host '$h' is not allowed; use localhost, 127.0.0.1 or [::1] (never +, * or 0.0.0.0)."
+    }
+}
+
 function Start-LoopbackListener {
     [CmdletBinding()]
     [OutputType([System.Net.HttpListener])]
     param(
         [ValidateRange(1024, 65535)][int]$PreferredPort = 8771,
         [ValidateRange(1024, 65535)][int]$RangeStart = 8771,
-        [ValidateRange(1024, 65535)][int]$RangeEnd = 8779
+        [ValidateRange(1024, 65535)][int]$RangeEnd = 8779,
+        [string]$ListenHost = 'localhost'
     )
     $candidates = @($PreferredPort) + @($RangeStart..$RangeEnd | Where-Object { $_ -ne $PreferredPort })
     foreach ($p in $candidates) {
         if (-not (Test-LoopbackPortFree -Port $p)) { continue }
+        $prefix = "http://${ListenHost}:$p/"
+        Assert-LoopbackPrefix -Prefix $prefix
         $l = New-Object System.Net.HttpListener
-        $l.Prefixes.Add("http://localhost:$p/")
+        $l.Prefixes.Add($prefix)
         try {
             $l.Start()
             return $l
