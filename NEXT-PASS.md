@@ -6,7 +6,7 @@ The repo itself is tidy: `catalog.json` is valid and matches `assets/catalog-dat
 
 ## 1. Visibility
 
-- [x] **`fleethacker-data-crucible/edge-ops-draft` is public.** Intended. The ARC catalog wording was scrubbed of internal-host and smart-card references, and the preview was rebuilt and its history rewritten on 2026-10-25.
+- [x] **`fleethacker-data-crucible/edge-ops-draft` is public.** Intended. The catalog wording was scrubbed of internal-host and smart-card references, and the preview was rebuilt and its history rewritten on 2026-10-25.
 - [ ] **Packaging:** make sure `release-zip.yml` can't ship dev or personal files (see section 3).
 
 ## 2. Port registry (`PORTS.md`, `catalog.json`)
@@ -46,7 +46,7 @@ The repo itself is tidy: `catalog.json` is valid and matches `assets/catalog-dat
 ## 5. Links and cleanup
 
 - [ ] **Tool cards break when opened from disk.** `assets/app.js:12` links them to `tools/<id>.html`, which exists only in `_site/` output, but `README.md:7` says `index.html` works from disk.
-- [ ] **Check the org repos exist before go-live.** Catalog links point at `fleethacker-data-crucible/<repo>`, while current work lives in forks; missing org repos would 404. The ARC link (`catalog.json:13`) likely 404s, since its source is elsewhere.
+- [ ] **Check the org repos exist before go-live.** Catalog links point at `fleethacker-data-crucible/<repo>`, while current work lives in forks; missing org repos would 404.
 - [ ] **`.gitignore` is GitHub's C/C++ template.** Only `_site/` (line 56) is relevant; trim the rest.
 - [ ] **`README.md:79` says "Merge PR #1"**, which is already merged.
 - [ ] **Images won't load on an offline network.** README and `templates/TOOL-README-TEMPLATE.md` pull them from raw.githubusercontent.com and shields.io.

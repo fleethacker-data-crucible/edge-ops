@@ -20,21 +20,19 @@ This is the **hub** for the `fleethacker-data-crucible` utility suite. Every too
 
 | Tool | Category | What it does | Launch | Default port | Notes |
 |---|---|---|---|---|---|
-| [Synapse](https://github.com/fleethacker-data-crucible/synapse) | Browser-only | Workforce capability discovery prototype | `Synapse-Standalone.html` | — | Single file, no server |
+| [Synapse](https://github.com/fleethacker-data-crucible/synapse) | Browser-only | Workforce capability discovery prototype | `Launch-Synapse.bat` (or `dist\Synapse-Standalone.html`) | 8767 | Loopback PS 5.1 server, or single file with no server |
 | [TalkForge](https://github.com/fleethacker-data-crucible/talkforge) | Browser-only | In-browser neural text-to-speech (Piper/WASM), offline | `serve.bat` | 25000 | Models ship in releases |
 | [SnipHero Studio](https://github.com/fleethacker-data-crucible/sniphero) | PS host + browser UI | Screenshot capture and annotation | `SnipHero.bat` | 8765 | Picks a free port if busy |
 | [MailHawk](https://github.com/fleethacker-data-crucible/mailhawk) | PS host + browser UI | Outlook triage into a reviewed action queue | `MailHawk.bat` | 8766 | Needs Outlook |
 | [Keystone](https://github.com/fleethacker-data-crucible/keystone) | PS host + browser UI | Git sync workspace without git.exe | `Launch-Keystone.bat` | 8769 | May need a URL reservation |
 | [Data Noodler](https://github.com/fleethacker-data-crucible/data-noodler) | Data & AI | Flat-file analytics (CSV/Parquet/Arrow/SQLite) | `Data Noodler.lnk` | 8079 | Compiles C# at run time |
 | [Phoenix LAI](https://github.com/fleethacker-data-crucible/phoenix-lai) | Data & AI | Local GPU LLM server (OpenAI API) + chat client | `Phoenix_LAI_Server.lnk` | 1234 | GPU; compiles C# at run time |
-| [ARC](https://github.com/fleethacker-data-crucible/powershell-arc) | Security | CAC + TOTP secret vault (CLI/WPF) | `pm.ps1` | — | **External**: source on git.mil |
 
 ## Categories
 
 - **Browser-only:** HTML/JS that runs from `file://` or a tiny static server.
 - **PowerShell host + browser UI:** a PS 5.1 `HttpListener`/`TcpListener` on loopback serving a local web UI.
 - **Data & AI:** heavier tools. Some compile bundled C# through the built-in .NET Framework at run time; some app-control policies block this.
-- **Security:** credential and secret tooling.
 
 ## Running on a whitelisted Windows machine
 
