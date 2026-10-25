@@ -1,114 +1,145 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>FleetHacker UI Kit v0.1.1 – Demo</title>
+<title>FleetHacker UI Kit v0.2.0 – Demo</title>
 <link rel="icon" href="assets/favicon-32.png">
 <link rel="stylesheet" href="kit.css">
 <script src="kit.js" defer></script>
 </head>
 <body>
-<a class="fh-skip" href="#main">Skip to main content</a>
-<header class="fh-header">
-  <a class="fh-brand" href="demo.html"><img src="assets/coin-64.png" alt="" width="40" height="40">FleetHacker Data Crucible</a>
-  <nav class="fh-nav" aria-label="Primary">
-    <ul><li><a href="demo.html" aria-current="page">Demo</a></li><li><a href="README.md">Docs</a></li><li><a href="#tables">Tables</a></li></ul>
-  </nav>
-  <span class="fh-spacer"></span>
-  <button type="button" class="fh-btn" data-fh-theme-toggle>Dark mode: on</button>
+<a class="skip" href="#main">Skip to main content</a>
+<div class="app">
+<header class="topbar">
+  <a class="brand" href="demo.html"><img class="logo" src="assets/coin-64.png" alt="" width="40" height="40"><span><h1>UI Kit</h1><span class="sub">FleetHacker Data Crucible · v0.2.0</span></span></a>
+  <span class="spacer"></span>
+  <div class="stats" role="group" aria-label="Kit facts">
+    <div class="stat"><span class="label">Build step</span><b>None</b></div>
+    <div class="stat"><span class="label">Works from</span><b>file://</b></div>
+  </div>
+  <button type="button" class="ghost" data-kit-theme-toggle>Light mode: off</button>
 </header>
-<main id="main" class="fh-container">
-  <section class="fh-section" aria-labelledby="h-intro">
-    <img src="assets/coin-192.png" alt="FleetHacker Data Crucible challenge coin" width="96" height="96" style="float:right">
-    <h1 id="h-intro">UI Kit v0.1.1</h1>
-    <p class="fh-muted">One CSS file, one JS file, no build step. Works offline from <code>file://</code>.</p>
-  </section>
-
-  <section class="fh-section" aria-labelledby="h-btn"><h2 id="h-btn">Buttons</h2>
-    <div class="fh-row">
-      <button type="button" class="fh-btn fh-btn--primary">Primary</button>
-      <button type="button" class="fh-btn">Default</button>
-      <button type="button" class="fh-btn fh-btn--ghost">Ghost</button>
-      <button type="button" class="fh-btn fh-btn--danger">Delete</button>
-      <button type="button" class="fh-btn" disabled>Disabled</button>
-      <a class="fh-btn" href="#h-forms">Link as button</a>
-    </div>
-  </section>
-
-  <section class="fh-section" aria-labelledby="h-alerts"><h2 id="h-alerts">Alerts &amp; badges</h2>
-    <div class="fh-alert" role="note"><strong>Info</strong><p>Neutral information.</p></div>
-    <div class="fh-alert fh-alert--ok" role="note"><strong>Success</strong><p>Saved.</p></div>
-    <div class="fh-alert fh-alert--warn" role="note"><strong>Warning</strong><p>Check your input.</p></div>
-    <div class="fh-alert fh-alert--bad" role="alert"><strong>Error</strong><p>Something failed.</p></div>
-    <div class="fh-row"><span class="fh-badge">neutral</span><span class="fh-badge fh-badge--ok">ok</span><span class="fh-badge fh-badge--warn">warn</span><span class="fh-badge fh-badge--bad">bad</span><span class="fh-badge fh-badge--info">info</span></div>
-  </section>
-
-  <section class="fh-section" aria-labelledby="h-cards"><h2 id="h-cards">Cards</h2>
-    <div class="fh-grid">
-      <article class="fh-card"><span class="fh-card__eyebrow">Capture</span><h3>sniphero</h3><p class="fh-muted">Screen snipping tool.</p><div class="fh-row"><span class="fh-badge fh-badge--ok">offline</span></div><a href="#h-cards">Open sniphero</a></article>
-      <article class="fh-card"><span class="fh-card__eyebrow">Knowledge</span><h3>synapse</h3><p class="fh-muted">Linked notes.</p><div class="fh-row"><span class="fh-badge fh-badge--warn">beta</span></div><a href="#h-cards">Open synapse</a></article>
-      <article class="fh-card"><img src="assets/banner-molten.jpg" alt="Molten metal pouring in a crucible" width="1200" height="800" loading="lazy"><h3>Brand imagery</h3><p class="fh-muted">From dumping-grounds.</p></article>
-    </div>
-  </section>
-
-  <section class="fh-section" aria-labelledby="h-forms"><h2 id="h-forms">Forms</h2>
-    <form onsubmit="event.preventDefault();FH.toast('Form submitted',{type:'ok'})">
-      <div class="fh-field"><label for="f-name">Name</label><input class="fh-input" id="f-name" autocomplete="name" aria-describedby="f-name-hint"><span class="fh-hint" id="f-name-hint">Your full name.</span></div>
-      <div class="fh-field"><label for="f-email">Email (required)</label><input class="fh-input" id="f-email" type="email" required aria-invalid="true" aria-describedby="f-email-err" autocomplete="email"><span class="fh-error" id="f-email-err">Enter a valid email address.</span></div>
-      <div class="fh-field"><label for="f-tool">Tool</label><select class="fh-select" id="f-tool"><option>sniphero</option><option>synapse</option><option>talkforge</option></select></div>
-      <div class="fh-field"><label for="f-notes">Notes</label><textarea class="fh-textarea" id="f-notes" rows="3"></textarea></div>
-      <fieldset><legend class="fh-legend">Options</legend>
-        <label class="fh-check"><input type="checkbox" checked> Work offline</label>
-        <label class="fh-check"><input type="radio" name="r" checked> Dark</label>
-        <label class="fh-check"><input type="radio" name="r"> Light</label>
-      </fieldset>
-      <button class="fh-btn fh-btn--primary" type="submit">Submit</button>
-    </form>
-  </section>
-
-  <section class="fh-section" aria-labelledby="h-tables" id="tables"><h2 id="h-tables">Tables</h2>
-    <div class="fh-table-wrap" role="region" aria-labelledby="t-cap" tabindex="0">
-      <table class="fh-table"><caption id="t-cap">Tool status</caption>
-        <thead><tr><th scope="col">Tool</th><th scope="col">Version</th><th scope="col">Status</th></tr></thead>
-        <tbody><tr><th scope="row">sniphero</th><td>1.2.0</td><td><span class="fh-badge fh-badge--ok">ready</span></td></tr>
-        <tr><th scope="row">synapse</th><td>0.9.1</td><td><span class="fh-badge fh-badge--warn">review</span></td></tr>
-        <tr><th scope="row">mailhawk</th><td>0.3.0</td><td><span class="fh-badge fh-badge--bad">blocked</span></td></tr></tbody>
-      </table>
-    </div>
-  </section>
-
-  <section class="fh-section" aria-labelledby="h-tabs"><h2 id="h-tabs">Tabs</h2>
-    <div class="fh-tabs">
-      <div role="tablist" aria-label="Sample tabs">
-        <button type="button" role="tab" id="tab-a" aria-controls="panel-a" aria-selected="true">Overview</button>
-        <button type="button" role="tab" id="tab-b" aria-controls="panel-b" aria-selected="false" tabindex="-1">Settings</button>
-        <button type="button" role="tab" id="tab-c" aria-controls="panel-c" aria-selected="false" tabindex="-1">Logs</button>
+<div class="split" style="flex:1">
+  <nav class="box" aria-label="Demo sections" style="border:0;border-right:1px solid var(--border);border-radius:0">
+    <div class="snav-group" id="nav-g">Components</div>
+    <ul class="snav" aria-labelledby="nav-g">
+      <li><a href="#main" aria-current="page">Overview</a></li>
+      <li><a href="#h-btn">Buttons</a></li>
+      <li><a href="#h-forms">Forms</a></li>
+      <li><a href="#h-tables">Tables</a></li>
+      <li><a href="#h-tabs">Tabs &amp; disclosure</a></li>
+      <li><a href="#h-dlg">Dialogs, menus &amp; toasts</a></li>
+    </ul>
+  </nav>
+  <main id="main" class="main stack" tabindex="-1">
+    <section aria-labelledby="h-btn"><h2 id="h-btn">Buttons</h2>
+      <div class="row">
+        <button type="button">Default</button>
+        <button type="button" class="primary">Primary (brand)</button>
+        <button type="button" class="ghost">Ghost</button>
+        <button type="button" class="go">Save</button>
+        <button type="button" class="danger">Delete</button>
+        <button type="button" class="small">Small</button>
+        <button type="button" disabled>Disabled</button>
+        <a class="btn ghost" href="#h-forms">Link as button</a>
       </div>
-      <div role="tabpanel" id="panel-a" aria-labelledby="tab-a" tabindex="0"><p>Use Left/Right arrows, Home and End.</p></div>
-      <div role="tabpanel" id="panel-b" aria-labelledby="tab-b" tabindex="0" hidden><p>Settings panel.</p></div>
-      <div role="tabpanel" id="panel-c" aria-labelledby="tab-c" tabindex="0" hidden><p>Logs panel.</p></div>
-    </div>
-  </section>
+    </section>
 
-  <section class="fh-section" aria-labelledby="h-disc"><h2 id="h-disc">Disclosure</h2>
-    <button type="button" class="fh-disclosure__btn" aria-expanded="false" aria-controls="disc-1">Show details</button>
-    <div id="disc-1" hidden><p>Hidden details revealed.</p></div>
-  </section>
+    <section aria-labelledby="h-status"><h2 id="h-status">Status: notices, badges, progress</h2>
+      <div class="notice" role="note"><b>Info</b><span>Neutral information.</span></div>
+      <div class="notice ok" role="note"><b>Saved</b><span>All changes written to disk.</span></div>
+      <div class="notice warn" role="note"><b>Check</b><span>Two rows have empty keys.</span></div>
+      <div class="notice err" role="note"><b>Error</b><span>The import failed.</span></div>
+      <div class="row">
+        <span class="badge green">Production</span><span class="badge yellow">Internal</span><span class="badge blue">Testing</span><span class="badge orange">Confidential</span>
+        <span class="badge red">Restricted</span><span class="badge pink">Planning</span><span class="badge purple">CUI</span><span class="badge gold">Development</span><span class="badge white">Not started</span><span class="badge grey">Archived</span>
+      </div>
+      <p class="muted" id="prog-l">Import progress</p>
+      <div class="progress" role="progressbar" aria-labelledby="prog-l" aria-valuemin="0" aria-valuemax="100" aria-valuenow="60"><i style="width:60%"></i></div>
+    </section>
 
-  <section class="fh-section" aria-labelledby="h-dlg"><h2 id="h-dlg">Dialog &amp; toast</h2>
-    <div class="fh-row">
-      <button type="button" class="fh-btn fh-btn--primary" data-fh-dialog-open="dlg-1">Open dialog</button>
-      <button type="button" class="fh-btn" data-fh-toast="Saved successfully" data-fh-toast-type="ok">Show toast</button>
-      <button type="button" class="fh-btn" data-fh-toast="Upload failed" data-fh-toast-type="bad">Show error toast</button>
-    </div>
-    <dialog class="fh-dialog" id="dlg-1" aria-labelledby="dlg-1-title" aria-describedby="dlg-1-desc">
-      <h2 id="dlg-1-title">Confirm action</h2>
-      <p id="dlg-1-desc">Esc or Cancel closes this dialog; focus returns to the opener.</p>
-      <div class="fh-dialog__actions"><button type="button" class="fh-btn" data-fh-dialog-close value="cancel">Cancel</button><button type="button" class="fh-btn fh-btn--primary" data-fh-dialog-close value="ok">Confirm</button></div>
-    </dialog>
-  </section>
-</main>
-<footer class="fh-footer"><p>FleetHacker Data Crucible · UI Kit v0.1.1</p></footer>
+    <section aria-labelledby="h-boxes"><h2 id="h-boxes">Boxes &amp; layout</h2>
+      <div class="grid2">
+        <article class="box stack"><h3>data-noodler</h3><p class="muted">Pipelines, grids and dashboards.</p><div class="row"><span class="badge green">Reference</span></div></article>
+        <article class="box stack"><h3>phoenix-lai</h3><p class="muted">Local AI chat and server console.</p><div class="row"><span class="badge gold">Reference</span></div></article>
+      </div>
+    </section>
+
+    <section aria-labelledby="h-forms"><h2 id="h-forms">Forms</h2>
+      <form class="box stack" id="demo-form">
+        <label class="field">Project name<input name="name" autocomplete="off" aria-describedby="name-hint"><span class="hint" id="name-hint">Shown in the header.</span></label>
+        <label class="field">Owner email (required)<input name="email" type="email" required aria-invalid="true" aria-describedby="email-err" autocomplete="email"><span class="error" id="email-err">Enter a valid email address.</span></label>
+        <label class="field">Engine<select name="engine"><option>DuckDB</option><option>SQLite</option></select></label>
+        <label class="field">Query<textarea name="q" rows="3">SELECT * FROM fleet;</textarea></label>
+        <fieldset><legend>Options</legend>
+          <div class="row"><label class="check"><input type="checkbox" checked> Work offline</label>
+          <label class="check"><input type="radio" name="mode" checked> Dark</label>
+          <label class="check"><input type="radio" name="mode"> Light</label></div>
+        </fieldset>
+        <div class="row end"><button type="reset" class="ghost">Reset</button><button type="submit" class="go">Save</button></div>
+      </form>
+    </section>
+
+    <section aria-labelledby="h-tables"><h2 id="h-tables">Tables</h2>
+      <div class="table-wrap" role="region" aria-labelledby="t-cap" tabindex="0">
+        <table class="grid"><caption id="t-cap">Tool status (sortable)</caption>
+          <thead><tr><th scope="col" aria-sort="ascending"><button type="button">Tool</button></th><th scope="col" class="num" aria-sort="none"><button type="button">Rows</button></th><th scope="col">Status</th></tr></thead>
+          <tbody>
+            <tr><td>data-noodler</td><td class="num">1204</td><td><span class="badge green">Ready</span></td></tr>
+            <tr><td>lasso</td><td class="num">87</td><td><span class="badge yellow">Review</span></td></tr>
+            <tr><td>phoenix-lai</td><td class="num">530</td><td><span class="badge gold">Beta</span></td></tr>
+            <tr><td>synapse</td><td class="num">42</td><td><span class="badge red">Blocked</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <pre class="log" tabindex="0" role="region" aria-label="Sample log"><span class="t">23:41:07</span> pipeline started
+<span class="t">23:41:08</span> <span class="ok">loaded 1204 rows</span>
+<span class="t">23:41:09</span> <span class="err">2 rows rejected</span></pre>
+    </section>
+
+    <section aria-labelledby="h-tabs"><h2 id="h-tabs">Tabs &amp; disclosure</h2>
+      <div role="tablist" aria-label="Settings sections">
+        <button type="button" role="tab" id="tab-a" aria-controls="panel-a" aria-selected="true">General</button>
+        <button type="button" role="tab" id="tab-b" aria-controls="panel-b" aria-selected="false" tabindex="-1">Appearance</button>
+        <button type="button" role="tab" id="tab-c" aria-controls="panel-c" aria-selected="false" tabindex="-1">Providers</button>
+      </div>
+      <div role="tabpanel" id="panel-a" aria-labelledby="tab-a" tabindex="0"><p>Arrow keys, Home and End move between tabs.</p></div>
+      <div role="tabpanel" id="panel-b" aria-labelledby="tab-b" tabindex="0" hidden><p>Theme, font size, grid background.</p></div>
+      <div role="tabpanel" id="panel-c" aria-labelledby="tab-c" tabindex="0" hidden><p>Local and remote model providers.</p></div>
+      <button type="button" class="disclosure" aria-expanded="false" aria-controls="disc-1">Advanced details</button>
+      <div id="disc-1" hidden><p class="muted">Hidden details revealed.</p></div>
+    </section>
+
+    <section aria-labelledby="h-dlg"><h2 id="h-dlg">Dialogs, menus &amp; toasts</h2>
+      <div class="row">
+        <button type="button" data-kit-dialog-open="dlg-1">Open dialog</button>
+        <button type="button" class="danger" id="confirm-btn">Delete project…</button>
+        <span class="dd-wrap"><button type="button" class="ghost" id="menu-btn">Actions ▾</button>
+          <div class="dd-menu"><div data-act="rename">Rename</div><div data-act="dup">Duplicate</div><div data-act="export" class="off">Export (soon)</div><div data-act="del" class="danger">Delete</div></div></span>
+        <button type="button" class="ghost" data-kit-toast="Heads up: information toast">Info toast</button>
+        <button type="button" class="go" data-kit-toast="Saved" data-kit-toast-kind="ok">OK toast</button>
+        <button type="button" class="ghost" data-kit-toast="Disk almost full" data-kit-toast-kind="warn">Warn toast</button>
+        <button type="button" class="danger" data-kit-toast="Upload failed" data-kit-toast-kind="err">Error toast</button>
+      </div>
+      <dialog id="dlg-1" aria-labelledby="dlg-1-t" aria-describedby="dlg-1-d">
+        <header><h2 id="dlg-1-t">New project</h2></header>
+        <div class="body"><p id="dlg-1-d">Esc or Cancel closes; focus returns to the opener.</p><label class="field">Name<input autofocus></label></div>
+        <footer><button type="button" class="ghost" data-kit-dialog-close value="cancel">Cancel</button><button type="button" class="go" data-kit-dialog-close value="ok">Create</button></footer>
+      </dialog>
+    </section>
+  </main>
+</div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  document.getElementById('demo-form').addEventListener('submit', function (e) { e.preventDefault(); Kit.toast('Form saved', 'ok'); });
+  document.getElementById('confirm-btn').addEventListener('click', async function () {
+    var yes = await Kit.confirm('Delete this project? This cannot be undone.', { danger: true, ok: 'Delete' });
+    Kit.toast(yes ? 'Project deleted' : 'Kept', yes ? 'err' : '');
+  });
+  document.addEventListener('kit-pick', function (e) { Kit.toast('Menu: ' + e.detail); });
+});
+</script>
 </body>
 </html>
