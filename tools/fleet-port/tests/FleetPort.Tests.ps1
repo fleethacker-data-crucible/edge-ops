@@ -1,4 +1,4 @@
-# Pester 5. Runs on Windows PowerShell 5.1 and pwsh. Ports 8838-8859 are used as scratch blocks.
+# Pester 5. Runs on Windows PowerShell 5.1 and pwsh. Ports 8835-8859 are used as scratch blocks.
 BeforeAll {
     Import-Module (Join-Path $PSScriptRoot '..\FleetPort.psm1') -Force
 
@@ -91,6 +91,16 @@ Describe 'Resolve-FleetPort' {
             $r.Note | Should -BeLike 'Stale launcher:*1.9.2*1.10.0*'
             @($w).Count | Should -Be 1
             Test-FleetSelf -Port 8838 -Tool 'demo' | Should -Not -BeNullOrEmpty
+        } finally { Stop-FakeTool $t }
+    }
+
+    It 'multi policy starts another copy on the next port even when a NEWER copy is running' {
+        $t = Start-FakeTool 8835 'demo' '2.0.0'
+        try {
+            $script:r = Resolve-FleetPort @common -Version '1.0.0' -Start 8835 -Policy multi -WarningVariable w -WarningAction SilentlyContinue
+            $r.Action | Should -Be 'Start'
+            $r.Port | Should -Be 8836
+            @($w).Count | Should -Be 0
         } finally { Stop-FakeTool $t }
     }
 

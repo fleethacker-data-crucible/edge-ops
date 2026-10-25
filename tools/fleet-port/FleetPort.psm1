@@ -11,7 +11,7 @@
           reuse     same version: return Action 'Reuse' (open the browser to it and exit);
                     older or unparseable version: stop it gracefully, then start on that port
           restart   always stop it gracefully, then start on that port
-          multi     leave it running, try the next port
+          multi     leave it running, try the next port (whatever its version: built for parallelism)
           exclusive same version: Reuse; older version: throw (never auto-stop; holds a lease)
     Block full -> a clear error. Binds http://localhost:<port>/ only. No random or OS-ephemeral fallback.
     Graceful stop: POST /__fleethacker/shutdown (header X-FleetHacker-Shutdown: 1). If the port is still
@@ -61,28 +61,39 @@ function Test-FleetPortFree {
 
 function Invoke-FleetLocalRequest {
     param([int]$Port, [string]$Path, [string]$Method = 'GET', [int]$TimeoutMs = 1500, [hashtable]$Headers = @{})
-    try {
-        $req = [System.Net.HttpWebRequest]::Create("http://localhost:$Port$Path")
-        $req.Method = $Method
-        $req.Proxy = $null                      # never send loopback probes through a proxy
-        $req.Timeout = $TimeoutMs
-        $req.ReadWriteTimeout = $TimeoutMs
-        $req.AllowAutoRedirect = $false
-        foreach ($k in $Headers.Keys) { $req.Headers[$k] = [string]$Headers[$k] }
-        if ($Method -eq 'POST') { $req.ContentLength = 0 }
-        $resp = $req.GetResponse()
+    # Try 127.0.0.1 first, then [::1] only if IPv4 refused the connection. Always send Host: localhost:<port>,
+    # which http.sys needs to match a localhost prefix. (Going to ::1 first would cost ~2 s on Windows,
+    # which retries a refused connect.)
+    foreach ($ip in @('127.0.0.1', '[::1]')) {
         try {
-            $sr = New-Object System.IO.StreamReader($resp.GetResponseStream())
-            $body = $sr.ReadToEnd()
-            return New-Object PSObject -Property @{ Status = [int]$resp.StatusCode; Body = $body }
-        } finally { $resp.Close() }
-    } catch [System.Net.WebException] {
-        $r = $_.Exception.Response
-        if ($r) { $code = [int]$r.StatusCode; $r.Close(); return New-Object PSObject -Property @{ Status = $code; Body = '' } }
-        return $null
-    } catch {
-        return $null
+            $req = [System.Net.HttpWebRequest]::Create("http://${ip}:$Port$Path")
+            $req.Host = "localhost:$Port"
+            $req.Method = $Method
+            $req.Proxy = $null                      # never send loopback probes through a proxy
+            $req.Timeout = $TimeoutMs
+            $req.ReadWriteTimeout = $TimeoutMs
+            $req.AllowAutoRedirect = $false
+            foreach ($k in $Headers.Keys) { $req.Headers[$k] = [string]$Headers[$k] }
+            if ($Method -eq 'POST') { $req.ContentLength = 0 }
+            $resp = $req.GetResponse()
+            try {
+                $sr = New-Object System.IO.StreamReader($resp.GetResponseStream())
+                $body = $sr.ReadToEnd()
+                return New-Object PSObject -Property @{ Status = [int]$resp.StatusCode; Body = $body }
+            } finally { $resp.Close() }
+        } catch [System.Net.WebException] {
+            $we = $_.Exception
+            if ($we -isnot [System.Net.WebException] -and $we.InnerException -is [System.Net.WebException]) { $we = $we.InnerException }
+            $r = $we.Response
+            if ($r) { $code = [int]$r.StatusCode; $r.Close(); return New-Object PSObject -Property @{ Status = $code; Body = '' } }
+            # Refused is ConnectFailure on .NET Framework and UnknownError on .NET Core; a timeout means
+            # something holds the IPv4 port, so do not spend another timeout on ::1.
+            if ($we.Status -eq [System.Net.WebExceptionStatus]::Timeout) { return $null }
+        } catch {
+            return $null
+        }
     }
+    return $null
 }
 
 # Probes GET /__fleethacker/id. Returns $null when nothing FleetHacker answers, else

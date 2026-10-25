@@ -16,4 +16,4 @@ while ($listener.IsListening) {
 }
 ```
 
-Tests: `Invoke-Pester tools/fleet-port/tests` (Pester 5; uses scratch ports 8840-8859).
+Tests: `Invoke-Pester tools/fleet-port/tests` (Pester 5; uses scratch ports 8835-8859).
