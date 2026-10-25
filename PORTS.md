@@ -21,7 +21,7 @@ Default loopback ports, taken from each tool's README and launch scripts. Every 
 
 Reference: phoenix-lai `src\WebServer.cs` (`StartOnFreePort`) and data-noodler `server\server.ps1`. Snippet: [templates/ports/LoopbackPort.ps1](templates/ports/LoopbackPort.ps1).
 
-1. **Listener:** HttpListener on `http://localhost:<port>/` (or TcpListener on `IPAddress.Loopback`), never `+` / `*` / `0.0.0.0`. No URL ACL, no admin.
+1. **Listener:** HttpListener on `http://localhost:<port>/` (or TcpListener on `IPAddress.Loopback`), never `+` / `*` / `0.0.0.0`. No URL ACL, no admin. Enforced by `Assert-LoopbackPrefix` in [templates/ports/LoopbackPort.ps1](templates/ports/LoopbackPort.ps1) before `Prefixes.Add` (only `localhost`, `127.0.0.1`, `[::1]`; elevated `+`/`*` prefixes would otherwise really listen on all interfaces).
 2. **Preferred port:** `-Port <n>`, else the port remembered in `settings.json`, else the default in the table above. New tools start at **8771**.
 3. **Fallback:** a port is free only if it is free on **both** IPv4 and IPv6 loopback. If it is busy, or the bind throws `HttpListenerException`, try the next port in the tool's **own range** (phoenix-lai: server UI 8765-8789, client 8790-8799). If the range is exhausted, stop with a clear error in the log and a message box. A user-chosen "random" mode that picks a free 5-digit port, as data-noodler's site does, is also fine.
 4. **No race:** keep the listener that started. Don't probe a port, close it and rebind.

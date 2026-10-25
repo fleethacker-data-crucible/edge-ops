@@ -44,6 +44,25 @@ Describe 'Start-LoopbackListener' {
     }
 }
 
+Describe 'Bind rule guard' {
+    It 'rejects wildcard or non-loopback prefix <Prefix>' -TestCases @(
+        @{ Prefix = 'http://+:8771/' }, @{ Prefix = 'http://*:8771/' }, @{ Prefix = 'http://0.0.0.0:8771/' },
+        @{ Prefix = 'http://[::]:8771/' }, @{ Prefix = 'http://192.168.1.10:8771/' }, @{ Prefix = 'http://myhost:8771/' }
+    ) {
+        { Assert-LoopbackPrefix -Prefix $Prefix } | Should -Throw -ExpectedMessage '*Bind rule*'
+    }
+    It 'accepts loopback prefix <Prefix>' -TestCases @(
+        @{ Prefix = 'http://localhost:8771/' }, @{ Prefix = 'http://127.0.0.1:8771/' }, @{ Prefix = 'http://[::1]:8771/' }
+    ) {
+        { Assert-LoopbackPrefix -Prefix $Prefix } | Should -Not -Throw
+    }
+    It 'Start-LoopbackListener refuses -ListenHost <H> before binding' -TestCases @(
+        @{ H = '+' }, @{ H = '*' }, @{ H = '0.0.0.0' }
+    ) {
+        { Start-LoopbackListener -PreferredPort 8771 -RangeStart 8771 -RangeEnd 8771 -ListenHost $H } | Should -Throw -ExpectedMessage '*Bind rule*'
+    }
+}
+
 Describe 'PowerShell 5.1 rules' {
     It 'repository scripts pass PSScriptAnalyzer with the shared settings' -Skip:(-not (Get-Module -ListAvailable PSScriptAnalyzer)) {
         $root = Join-Path $PSScriptRoot '..'
