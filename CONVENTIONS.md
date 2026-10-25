@@ -118,6 +118,8 @@ try { ... } finally { Exit-FleetLock $l | Out-Null }
 - Holding for more than ~4 min: pass `-Heartbeat` (renews every 30 s while the owner PID lives) or call `Update-FleetLock` yourself.
 - `Exit-FleetLock` verifies the token and won't release someone else's lock.
 - Status: `Get-FleetLocks | Format-Table` (has an IsStale column).
+- **Lock-root permissions:** Users:Modify on the lock folder lets *any* local user delete or overwrite other users' lock files. That's acceptable because this is a cooperative lock between our own runners, not a security boundary. Don't rely on it to keep out a hostile process.
+- **Test isolation caveat:** the harness's own Pester tests set `FLEET_LOCK_ROOT` to a temp folder but still launch Chrome on the real 9300-9399 ports. Their `port-<n>` leases are invisible to other jobs, so a concurrent job may pick the same port; the free-port probe is the only guard. Avoid running the harness tests alongside other browser jobs on the shared VM.
 
 ### Rules
 1. Always lease `desktop-focus` for screenshot, SendKeys, focus, or display-setting tests.
