@@ -15,8 +15,9 @@
           exclusive same version: Reuse; older version: throw (never auto-stop; holds a lease)
     Block full -> a clear error. Binds http://localhost:<port>/ only. No random or OS-ephemeral fallback.
     Graceful stop: POST /__fleethacker/shutdown (header X-FleetHacker-Shutdown: 1). If the port is still
-    held, Stop-Process only on the self-reported pid, and only after its command line / path matches the
-    self-reported path.
+    held, Stop-Process only on the self-reported pid, and only when the reported path is absolute, it EXACTLY
+    equals that pid's -File script (parsed from Win32_Process.CommandLine) or ExecutablePath, and that pid
+    owns the listening port. Never a substring match.
     Functions: Get-FleetPortBlock, Test-FleetPortFree, Test-FleetSelf, Stop-FleetInstance, Resolve-FleetPort,
                Invoke-FleetIdEndpoint (drop-in for an HttpListener request loop).
 #>
@@ -144,25 +145,136 @@ function Wait-FleetPortFree {
     return (Test-FleetPortFree -Port $Port)
 }
 
-# Graceful first (shutdown endpoint), then Stop-Process on the self-reported pid only if its
-# command line or executable path contains the self-reported path. Returns $true once the port is free.
+# Absolute, normalized Windows path (drive root 'C:\...' or UNC '\\server\share\...'), or $null.
+# Relative or bare values such as 'powershell' or 'tool.ps1' are rejected.
+function ConvertTo-FleetAbsolutePath {
+    param([string]$Path)
+    if (-not $Path) { return $null }
+    $p = $Path.Trim().Trim('"').Replace('/', '\')
+    if ($p -notmatch '^(?:[A-Za-z]:\\|\\\\[^\\?.]+\\[^\\]+)') { return $null }
+    if ($env:OS -eq 'Windows_NT') {
+        try { $p = [System.IO.Path]::GetFullPath($p) } catch { return $null }
+    } elseif ($p -match '\\\.{1,2}(\\|$)') {
+        return $null                            # cannot normalize '.' / '..' segments off Windows; refuse
+    }
+    return $p.TrimEnd('\')
+}
+
+# Splits a Windows command line the way CommandLineToArgvW / the MSVC runtime does:
+# whitespace separates arguments; "..." groups; 2n backslashes + quote -> n backslashes and a quote toggle;
+# 2n+1 backslashes + quote -> n backslashes and a literal quote; other backslashes are literal.
+function Split-FleetCommandLine {
+    param([string]$CommandLine)
+    $out = New-Object System.Collections.Generic.List[string]
+    if (-not $CommandLine) { return , $out.ToArray() }
+    $sb = New-Object System.Text.StringBuilder
+    $inQuote = $false; $have = $false; $i = 0; $n = $CommandLine.Length
+    while ($i -lt $n) {
+        $c = $CommandLine[$i]
+        if ($c -eq '\') {
+            $j = $i; while ($j -lt $n -and $CommandLine[$j] -eq '\') { $j++ }
+            $count = $j - $i
+            if ($j -lt $n -and $CommandLine[$j] -eq '"') {
+                [void]$sb.Append('\', [int][Math]::Floor($count / 2))
+                if ($count % 2 -eq 1) { [void]$sb.Append('"'); $i = $j + 1 } else { $i = $j }
+            } else { [void]$sb.Append('\', $count); $i = $j }
+            $have = $true; continue
+        }
+        if ($c -eq '"') {
+            if ($inQuote -and ($i + 1) -lt $n -and $CommandLine[$i + 1] -eq '"') { [void]$sb.Append('"'); $i += 2; $have = $true; continue }
+            $inQuote = -not $inQuote; $have = $true; $i++; continue
+        }
+        if (-not $inQuote -and ($c -eq ' ' -or $c -eq "`t")) {
+            if ($have) { $out.Add($sb.ToString()); [void]$sb.Clear(); $have = $false }
+            $i++; continue
+        }
+        [void]$sb.Append($c); $have = $true; $i++
+    }
+    if ($have) { $out.Add($sb.ToString()) }
+    return , $out.ToArray()
+}
+
+# The script passed to powershell.exe / pwsh.exe with -File (or -f), or $null. Returns $null when the host is not
+# PowerShell, or when -Command / -EncodedCommand comes first (then the path is only an argument, not the script).
+function Get-FleetScriptFromCommandLine {
+    param([string]$CommandLine)
+    [string[]]$argv = Split-FleetCommandLine $CommandLine
+    if ($null -eq $argv -or $argv.Count -lt 3) { return $null }
+    $exeLeaf = ($argv[0] -split '[\\/]')[-1]
+    if (@('powershell', 'powershell.exe', 'pwsh', 'pwsh.exe') -notcontains $exeLeaf.ToLowerInvariant()) { return $null }
+    for ($k = 1; $k -lt $argv.Count - 1; $k++) {
+        $a = $argv[$k].ToLowerInvariant()
+        if ($a -eq '-file' -or $a -eq '-f' -or $a -eq '/file') { return $argv[$k + 1] }
+        if ($a -match '^[-/](c|command|e|ec|encodedcommand|commandwithargs|cwa)$') { return $null }
+        if ($a -match '^[-/](executionpolicy|ep|ex|windowstyle|w|version|v|inputformat|if|outputformat|of|psconsolefile|configurationname|workingdirectory|wd|settingsfile)$') { $k++; continue }
+        if ($a -notmatch '^[-/]') { return $null }   # a bare argument before -File: not a -File launch
+    }
+    return $null
+}
+
+# $true only when the process IS the tool at $Path: an exact (case-insensitive) match of the normalized path
+# against the -File script of a PowerShell host, or against ExecutablePath for a compiled tool. Never a substring.
+function Test-FleetProcessIdentity {
+    param([string]$Path, [string]$CommandLine, [string]$ExecutablePath)
+    $want = ConvertTo-FleetAbsolutePath $Path
+    if (-not $want) { return $false }
+    $exe = ConvertTo-FleetAbsolutePath $ExecutablePath
+    if ($exe -and [string]::Equals($exe, $want, [StringComparison]::OrdinalIgnoreCase)) { return $true }
+    $script = ConvertTo-FleetAbsolutePath (Get-FleetScriptFromCommandLine $CommandLine)
+    if ($script -and [string]::Equals($script, $want, [StringComparison]::OrdinalIgnoreCase)) { return $true }
+    return $false
+}
+
+function Get-FleetProcessInfo {
+    param([int]$ProcessId)
+    $p = Get-CimInstance Win32_Process -Filter "ProcessId = $ProcessId" -ErrorAction SilentlyContinue
+    if (-not $p) { return $null }
+    New-Object PSObject -Property @{ CommandLine = [string]$p.CommandLine; ExecutablePath = [string]$p.ExecutablePath }
+}
+
+# PIDs listening on the port. Empty when unknown (no Get-NetTCPConnection), which makes Stop-FleetInstance refuse.
+# Note: an http.sys (HttpListener) port is owned by PID 4 (System), so a forced stop is always refused there and
+# HttpListener tools can only be stopped through their shutdown endpoint.
+function Get-FleetPortOwner {
+    param([int]$Port)
+    if (-not (Get-Command Get-NetTCPConnection -ErrorAction SilentlyContinue)) { return @() }
+    @(Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue | ForEach-Object { [int]$_.OwningProcess } | Sort-Object -Unique)
+}
+
+# Graceful first (shutdown endpoint). If the port is still held after GraceMs, Stop-Process is used only when ALL hold:
+#   - the self-reported path is absolute and normalized,
+#   - the self-reported pid is not this process,
+#   - that pid IS the tool (Test-FleetProcessIdentity: exact -File script or ExecutablePath match),
+#   - that pid owns the listening port (Get-NetTCPConnection).
+# Otherwise it refuses with a warning. Returns $true once the port is free. The three script blocks are for tests.
 function Stop-FleetInstance {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]$Instance,
         [int]$GraceMs = 5000,
-        [switch]$NoForce
+        [switch]$NoForce,
+        [scriptblock]$GetProcessInfo = { param($i) Get-FleetProcessInfo -ProcessId $i },
+        [scriptblock]$GetPortOwner = { param($p) Get-FleetPortOwner -Port $p },
+        [scriptblock]$KillProcess = { param($i) Stop-Process -Id $i -Force -ErrorAction SilentlyContinue }
     )
     [void](Invoke-FleetLocalRequest -Port $Instance.Port -Path $script:ShutdownPath -Method 'POST' -Headers @{ 'X-FleetHacker-Shutdown' = '1' })
     if (Wait-FleetPortFree -Port $Instance.Port -TimeoutMs $GraceMs) { return $true }
-    if ($NoForce -or -not $Instance.Pid -or -not $Instance.Path) { return $false }
-    if ($Instance.Pid -eq $PID) { return $false }
-    $p = Get-CimInstance Win32_Process -Filter "ProcessId = $([int]$Instance.Pid)" -ErrorAction SilentlyContinue
-    if (-not $p) { return (Wait-FleetPortFree -Port $Instance.Port -TimeoutMs 1000) }
-    $cmd = [string]$p.CommandLine; $exe = [string]$p.ExecutablePath
-    $match = ($cmd.IndexOf($Instance.Path, [StringComparison]::OrdinalIgnoreCase) -ge 0) -or ($exe -ieq $Instance.Path)
-    if (-not $match) { Write-Warning "PID $($Instance.Pid) does not match '$($Instance.Path)'; not stopping it."; return $false }
-    Stop-Process -Id $Instance.Pid -Force -ErrorAction SilentlyContinue
+    if ($NoForce) { return $false }
+    $procId = [int]$Instance.Pid
+    $tag = "$($Instance.Tool) pid $procId on port $($Instance.Port)"
+    if ($procId -le 4 -or $procId -eq $PID) { Write-Warning "Not stopping ${tag}: invalid pid."; return $false }
+    $path = ConvertTo-FleetAbsolutePath $Instance.Path
+    if (-not $path) { Write-Warning "Not stopping ${tag}: reported path '$($Instance.Path)' is not an absolute path."; return $false }
+    $info = & $GetProcessInfo $procId
+    if (-not $info) { Write-Warning "Not stopping ${tag}: process not found."; return $false }
+    if (-not (Test-FleetProcessIdentity -Path $path -CommandLine $info.CommandLine -ExecutablePath $info.ExecutablePath)) {
+        Write-Warning "Not stopping ${tag}: it is not '$path' (no exact -File or executable match)."; return $false
+    }
+    $owners = @(& $GetPortOwner $Instance.Port)
+    if ($owners -notcontains $procId) {
+        Write-Warning "Not stopping ${tag}: the port is held by pid(s) '$($owners -join ', ')', not $procId."; return $false
+    }
+    & $KillProcess $procId
     return (Wait-FleetPortFree -Port $Instance.Port -TimeoutMs 3000)
 }
 

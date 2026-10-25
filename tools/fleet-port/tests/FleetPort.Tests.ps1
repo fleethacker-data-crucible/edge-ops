@@ -15,7 +15,7 @@ BeforeAll {
             try {
                 while ($l.IsListening) {
                     $ctx = $l.GetContext()
-                    $h = Invoke-FleetIdEndpoint -Context $ctx -Tool $tool -Version $version -Path 'fake-tool.ps1'
+                    $h = Invoke-FleetIdEndpoint -Context $ctx -Tool $tool -Version $version -Path 'C:\FleetHacker\fake-tool\fake-tool.ps1'
                     if ($h -eq 'shutdown') { break }
                     if (-not $h) { $ctx.Response.StatusCode = 200; $ctx.Response.Close() }
                 }
@@ -142,5 +142,88 @@ Describe 'Get-FleetPortBlock (registry)' {
     }
     It 'rejects an unknown tool' {
         { Get-FleetPortBlock -Tool 'no-such-tool' } | Should -Throw -ExpectedMessage '*has no port block*'
+    }
+}
+
+Describe 'Stop-FleetInstance forced-stop safety' {
+    BeforeAll {
+        $script:toolPath = 'C:\FleetHacker\demo\Start-Demo.ps1'
+        # Hold the port with a silent foreign listener so the graceful shutdown never frees it.
+        function Invoke-ForcedStop([string]$ReportedPath, [string]$CommandLine, [string]$ExecutablePath, [int[]]$Owners) {
+            $calls = @{ Killed = @() }
+            $hold = New-Object Net.Sockets.TcpListener ([Net.IPAddress]::Loopback), 8834
+            $hold.Start()
+            try {
+                $inst = New-Object PSObject -Property @{ Tool = 'demo'; Version = '0.9'; Pid = 4242; Path = $ReportedPath; Port = 8834 }
+                $info = New-Object PSObject -Property @{ CommandLine = $CommandLine; ExecutablePath = $ExecutablePath }
+                $ok = Stop-FleetInstance -Instance $inst -GraceMs 200 -WarningAction SilentlyContinue `
+                    -GetProcessInfo ({ param($i) $null = $i; $info }.GetNewClosure()) `
+                    -GetPortOwner ({ param($p) $null = $p; $Owners }.GetNewClosure()) `
+                    -KillProcess ({ param($i) $calls.Killed += $i }.GetNewClosure())
+            } finally { $hold.Stop() }
+            return @{ Ok = $ok; Killed = @($calls.Killed) }
+        }
+        $script:psExe = 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe'
+    }
+
+    It 'kills only on an exact -File match (quoted path, different case) when the pid owns the port' {
+        $r = Invoke-ForcedStop $toolPath "`"$psExe`" -NoProfile -ExecutionPolicy Bypass -File `"c:\fleethacker\DEMO\Start-Demo.ps1`" -Port 8834" $psExe @(4242)
+        $r.Killed | Should -Be @(4242)
+    }
+
+    It 'kills a compiled tool on an exact ExecutablePath match' {
+        $r = Invoke-ForcedStop 'C:\FleetHacker\demo\demo.exe' '"C:\FleetHacker\demo\demo.exe" --serve' 'C:\FleetHacker\demo\demo.exe' @(4242)
+        $r.Killed | Should -Be @(4242)
+    }
+
+    It "refuses when the reported path is just 'powershell'" {
+        $r = Invoke-ForcedStop 'powershell' "`"$psExe`" -NoProfile" $psExe @(4242)
+        $r.Ok | Should -BeFalse
+        $r.Killed.Count | Should -Be 0
+    }
+
+    It 'refuses a relative reported path' {
+        $r = Invoke-ForcedStop 'demo\Start-Demo.ps1' "`"$psExe`" -File demo\Start-Demo.ps1" $psExe @(4242)
+        $r.Ok | Should -BeFalse
+        $r.Killed.Count | Should -Be 0
+    }
+
+    It 'refuses when the path is only a non -File argument' {
+        $r = Invoke-ForcedStop $toolPath "`"$psExe`" -NoProfile -Command `"& '$toolPath'`"" $psExe @(4242)
+        $r.Killed.Count | Should -Be 0
+        $r = Invoke-ForcedStop $toolPath "`"$psExe`" -File C:\Other\Editor.ps1 -Open `"$toolPath`"" $psExe @(4242)
+        $r.Killed.Count | Should -Be 0
+        $r = Invoke-ForcedStop $toolPath "notepad.exe `"$toolPath`"" 'C:\Windows\notepad.exe' @(4242)
+        $r.Killed.Count | Should -Be 0
+    }
+
+    It 'reads -File after options that take a value' {
+        $got = InModuleScope FleetPort { Get-FleetScriptFromCommandLine 'powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "C:\t\a.ps1" -Port 1' }
+        $got | Should -Be 'C:\t\a.ps1'
+        InModuleScope FleetPort { Get-FleetScriptFromCommandLine 'cmd.exe /c powershell -File C:\t\a.ps1' } | Should -BeNullOrEmpty
+    }
+
+    It 'refuses a longer path that merely starts with the reported path' {
+        $r = Invoke-ForcedStop 'C:\FleetHacker\demo' "`"$psExe`" -File `"C:\FleetHacker\demo\Start-Demo.ps1`"" $psExe @(4242)
+        $r.Killed.Count | Should -Be 0
+    }
+
+    It 'refuses when the pid does not own the port' {
+        $r = Invoke-ForcedStop $toolPath "`"$psExe`" -File `"$toolPath`"" $psExe @(4, 777)
+        $r.Ok | Should -BeFalse
+        $r.Killed.Count | Should -Be 0
+    }
+}
+
+Describe 'Split-FleetCommandLine' {
+    It 'parses quotes and backslashes like CommandLineToArgvW' -TestCases @(
+        @{ Line = 'a "b c" d'; Want = @('a', 'b c', 'd') }
+        @{ Line = '"C:\Program Files\x.exe" -File "C:\a b\t.ps1"'; Want = @('C:\Program Files\x.exe', '-File', 'C:\a b\t.ps1') }
+        @{ Line = 'x "a\"b" c\\d'; Want = @('x', 'a"b', 'c\\d') }
+        @{ Line = 'x "C:\dir\\"'; Want = @('x', 'C:\dir\') }
+    ) {
+        $got = InModuleScope FleetPort -Parameters @{ Line = $Line } { Split-FleetCommandLine $Line }
+        ($got -join '|') | Should -Be ($Want -join '|')
+        @($got).Count | Should -Be $Want.Count
     }
 }

@@ -40,7 +40,7 @@ Helper: [tools/fleet-port/FleetPort.psm1](tools/fleet-port/FleetPort.psm1) (`Get
 | **multi** | leave it, try the next port | leave it, try the next port |
 | **exclusive** (holds a lease) | open the browser to it and exit | clear error; never auto-stop |
 
-- **Stopping:** shutdown endpoint first. Only if the port is still held after the grace period may a tool use `Stop-Process`, and only on the **self-reported pid**, after checking that the process command line or path matches the self-reported `path`. Never stop a program that did not identify itself as this tool.
+- **Stopping:** shutdown endpoint first. Only if the port is still held after the grace period may a tool use `Stop-Process` on the **self-reported pid**, and only when all of these hold: the reported `path` is absolute and normalized (drive or UNC root; values like `powershell` or `tools\x.ps1` are refused); it **exactly** equals (case-insensitive) that pid's `-File` script, parsed from `Win32_Process.CommandLine` with Windows quoting rules, or its `ExecutablePath` for a compiled tool, and never a substring match; and that pid owns the listening port (`Get-NetTCPConnection -LocalPort <p> -State Listen`). Otherwise it refuses with a warning. An http.sys (HttpListener) port is owned by PID 4, so HttpListener tools can only be stopped through their shutdown endpoint, by design. Tools must report `path` as their absolute `$PSCommandPath` (or exe path).
 
 ## Port handling standard
 
