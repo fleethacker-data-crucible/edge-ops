@@ -1,4 +1,4 @@
-# Pester 5. Runs on Windows PowerShell 5.1 and pwsh. Ports 8835-8859 are used as scratch blocks.
+# Pester 5. Runs on Windows PowerShell 5.1 and pwsh. Ports 8834-8859 are used as scratch blocks.
 BeforeAll {
     Import-Module (Join-Path $PSScriptRoot '..\FleetPort.psm1') -Force
 
@@ -225,5 +225,113 @@ Describe 'Split-FleetCommandLine' {
         $got = InModuleScope FleetPort -Parameters @{ Line = $Line } { Split-FleetCommandLine $Line }
         ($got -join '|') | Should -Be ($Want -join '|')
         @($got).Count | Should -Be $Want.Count
+    }
+}
+
+# Canned `netsh http show servicestate view=requestq` output lives in tests\netsh\ (English layout; port 8834, pid 4242).
+Describe 'http.sys (PID 4) ports: netsh request-queue proof' {
+    BeforeAll {
+        $script:netshDir = Join-Path $PSScriptRoot 'netsh'
+        function Get-Canned([string]$Name) { [IO.File]::ReadAllText((Join-Path $script:netshDir $Name)) }
+        $script:toolPath = 'C:\FleetHacker\demo\Start-Demo.ps1'
+        $script:psExe = 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe'
+        # Port 8834 is held by a silent foreign listener, so the graceful shutdown never frees it; the owner is PID 4 (http.sys).
+        function Invoke-HttpSysStop([string]$NetshText, $SelfAnswer = 'same', [string]$CommandLine = '') {
+            if (-not $CommandLine) { $CommandLine = "`"$script:psExe`" -NoProfile -File `"$script:toolPath`"" }
+            $calls = @{ Killed = @() }
+            $hold = New-Object Net.Sockets.TcpListener ([Net.IPAddress]::Loopback), 8834
+            $hold.Start()
+            try {
+                $inst = New-Object PSObject -Property @{ Tool = 'demo'; Version = '0.9'; Pid = 4242; Path = $script:toolPath; Port = 8834 }
+                $info = New-Object PSObject -Property @{ CommandLine = $CommandLine; ExecutablePath = $script:psExe }
+                $self = switch ($SelfAnswer) {
+                    'same' { New-Object PSObject -Property @{ IsSelf = $true; Tool = 'demo'; Pid = 4242 } }
+                    'otherpid' { New-Object PSObject -Property @{ IsSelf = $true; Tool = 'demo'; Pid = 4243 } }
+                    default { $null }
+                }
+                $err = $null; $ok = $null
+                try {
+                    $ok = Stop-FleetInstance -Instance $inst -GraceMs 200 -WarningAction SilentlyContinue `
+                        -GetProcessInfo ({ param($i) $null = $i; $info }.GetNewClosure()) `
+                        -GetPortOwner ({ param($p) $null = $p; @(4) }) `
+                        -GetHttpSysQueues ({ $NetshText }.GetNewClosure()) `
+                        -GetSelf ({ param($p, $t) $null = $p; $null = $t; $self }.GetNewClosure()) `
+                        -KillProcess ({ param($i) $calls.Killed += $i }.GetNewClosure())
+                } catch { $err = $_.Exception.Message }
+            } finally { $hold.Stop() }
+            return @{ Ok = $ok; Error = $err; Killed = @($calls.Killed) }
+        }
+        $script:closeMsg = 'An older demo v0.9 is still running; close its window and relaunch.*'
+    }
+
+    It 'parses the English layout: the queue for http://localhost:8834/ belongs to pid 4242' {
+        InModuleScope FleetPort -Parameters @{ T = (Get-Canned 'requestq-en-8834.txt') } { Get-FleetHttpSysQueuePid -Text $T -Port 8834 } | Should -Be 4242
+        InModuleScope FleetPort -Parameters @{ T = (Get-Canned 'requestq-en-8834.txt') } { Get-FleetHttpSysQueuePid -Text $T -Port 8900 } | Should -Be 9100
+        InModuleScope FleetPort -Parameters @{ T = (Get-Canned 'requestq-en-8834.txt') } { Get-FleetHttpSysQueuePid -Text $T -Port 8835 } | Should -BeNullOrEmpty
+    }
+
+    It 'refuses to identify a queue from <Name>' -TestCases @(
+        @{ Name = 'requestq-en-8834-malformed.txt' }
+        @{ Name = 'requestq-en-8834-emptyqueue.txt' }
+        @{ Name = 'requestq-en-8834-ambiguous.txt' }
+        @{ Name = 'requestq-accessdenied.txt' }
+        @{ Name = 'requestq-de-8834.txt' }
+    ) {
+        InModuleScope FleetPort -Parameters @{ T = (Get-Canned $Name) } { Get-FleetHttpSysQueuePid -Text $T -Port 8834 } | Should -BeNullOrEmpty
+    }
+
+    It 'kills when queue pid, exact -File path and /__fleethacker/id all match (after the graceful attempt)' {
+        $r = Invoke-HttpSysStop (Get-Canned 'requestq-en-8834.txt')
+        $r.Error | Should -BeNullOrEmpty
+        $r.Killed | Should -Be @(4242)
+    }
+
+    It 'refuses with the close-it-yourself message when the queue belongs to another pid' {
+        $r = Invoke-HttpSysStop (Get-Canned 'requestq-en-8834-otherpid.txt')
+        $r.Killed.Count | Should -Be 0
+        $r.Error | Should -BeLike $closeMsg
+        $r.Error | Should -BeLike '*held by pid 5555*'
+    }
+
+    It 'refuses with the message for <Name>' -TestCases @(
+        @{ Name = 'requestq-en-8834-malformed.txt' }
+        @{ Name = 'requestq-en-8834-emptyqueue.txt' }
+        @{ Name = 'requestq-en-8834-ambiguous.txt' }
+        @{ Name = 'requestq-accessdenied.txt' }
+        @{ Name = 'requestq-de-8834.txt' }
+    ) {
+        $r = Invoke-HttpSysStop (Get-Canned $Name)
+        $r.Killed.Count | Should -Be 0
+        $r.Error | Should -BeLike $closeMsg
+    }
+
+    It 'refuses with the message when netsh fails (no output)' {
+        $r = Invoke-HttpSysStop $null
+        $r.Killed.Count | Should -Be 0
+        $r.Error | Should -BeLike $closeMsg
+    }
+
+    It 'refuses when /__fleethacker/id no longer answers or reports another pid' {
+        foreach ($answer in 'none', 'otherpid') {
+            $r = Invoke-HttpSysStop (Get-Canned 'requestq-en-8834.txt') $answer
+            $r.Killed.Count | Should -Be 0
+            $r.Error | Should -BeLike $closeMsg
+        }
+    }
+
+    It 'still requires the exact -File path even when the queue matches' {
+        $r = Invoke-HttpSysStop (Get-Canned 'requestq-en-8834.txt') 'same' "`"$psExe`" -NoProfile -Command `"& '$toolPath'`""
+        $r.Killed.Count | Should -Be 0
+        $r.Ok | Should -BeFalse
+    }
+
+    It 'Resolve-FleetPort passes the message through and starts nothing' {
+        $reg = Join-Path ([IO.Path]::GetTempPath()) ('fp-' + [guid]::NewGuid().ToString('N') + '.psd1')
+        Set-Content -LiteralPath $reg -Value "@{ 'demo' = @{ Start = 8836; Size = 1; Policy = 'reuse' } }" -Encoding Ascii
+        $fake = Start-FakeTool -Port 8836 -Tool 'demo' -Version '0.9'
+        try {
+            { Resolve-FleetPort -Tool 'demo' -Version '1.0' -RegistryPath $reg -NoListener -StopInstance { param($i, $g) $null = $g; throw "An older $($i.Tool) v$($i.Version) is still running; close its window and relaunch." } } |
+                Should -Throw -ExpectedMessage 'An older demo v0.9 is still running; close its window and relaunch.'
+        } finally { Stop-FakeTool $fake; Remove-Item -LiteralPath $reg -ErrorAction SilentlyContinue }
     }
 }

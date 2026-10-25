@@ -233,20 +233,66 @@ function Get-FleetProcessInfo {
 }
 
 # PIDs listening on the port. Empty when unknown (no Get-NetTCPConnection), which makes Stop-FleetInstance refuse.
-# Note: an http.sys (HttpListener) port is owned by PID 4 (System), so a forced stop is always refused there and
-# HttpListener tools can only be stopped through their shutdown endpoint.
+# Note: an http.sys (HttpListener) port is owned by PID 4 (System); see Stop-FleetInstance for the netsh proof.
 function Get-FleetPortOwner {
     param([int]$Port)
     if (-not (Get-Command Get-NetTCPConnection -ErrorAction SilentlyContinue)) { return @() }
     @(Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue | ForEach-Object { [int]$_.OwningProcess } | Sort-Object -Unique)
 }
 
+# Raw `netsh http show servicestate view=requestq` output, or $null when netsh is missing or fails
+# (non-zero exit, for example access denied). Read-only.
+function Get-FleetHttpSysRequestQueueText {
+    $sys = [Environment]::SystemDirectory
+    if (-not $sys) { return $null }
+    $netsh = Join-Path $sys 'netsh.exe'
+    if (-not (Test-Path -LiteralPath $netsh)) { return $null }
+    try { $out = & $netsh http show servicestate view=requestq 2>&1 } catch { return $null }
+    if ($LASTEXITCODE -ne 0) { return $null }
+    return (@($out | ForEach-Object { [string]$_ }) -join "`n")
+}
+
+<#
+  Pid of the http.sys request queue that registered exactly http://localhost:<Port>/, or $null unless that is certain.
+  Only the English layout is understood ("Snapshot of HTTP service state (Request Queue View):", "Request queue name:",
+  "Processes:", "ID: <pid>, image: ...", "Registered URLs:"). Refuses ($null) when: the header is missing (other language,
+  error text, access denied), no queue or more than one queue registers a URL on that port, the queue registers another
+  host on that port (+, *, 127.0.0.1 ...), or the queue does not list exactly one process.
+#>
+function Get-FleetHttpSysQueuePid {
+    param([string]$Text, [int]$Port)
+    if (-not $Text -or $Text -notmatch '(?m)^\s*Snapshot of HTTP service state \(Request Queue View\):\s*$') { return $null }
+    $queues = New-Object System.Collections.Generic.List[object]
+    $cur = $null
+    foreach ($raw in ($Text -split "`r?`n")) {
+        $line = $raw.TrimEnd()
+        if ($line -match '^Request queue name:') { $cur = @{ Pids = New-Object System.Collections.Generic.List[int]; Urls = New-Object System.Collections.Generic.List[string]; Attached = -1 }; $queues.Add($cur); continue }
+        if (-not $cur) { continue }
+        if ($line -match '^\s+Number of active processes attached:\s*(\d+)\s*$') { $cur.Attached = [int]$Matches[1]; continue }
+        if ($line -match '^\s+ID:\s*(\d+),\s*image:') { $cur.Pids.Add([int]$Matches[1]); continue }
+        if ($line -match '^\s+(HTTPS?://\S+)$') { $cur.Urls.Add($Matches[1]) }
+    }
+    $onPort = @($queues | Where-Object { @($_.Urls | Where-Object { $_ -match (':' + $Port + '/') }).Count -gt 0 })
+    if ($onPort.Count -ne 1) { return $null }
+    $q = $onPort[0]
+    $want = "http://localhost:$Port/"
+    $portUrls = @($q.Urls | Where-Object { $_ -match (':' + $Port + '/') } | Sort-Object -Unique)
+    if ($portUrls.Count -ne 1 -or -not [string]::Equals($portUrls[0], $want, [StringComparison]::OrdinalIgnoreCase)) { return $null }
+    $pids = @($q.Pids | Sort-Object -Unique)
+    if ($pids.Count -ne 1) { return $null }
+    if ($q.Attached -ne -1 -and $q.Attached -ne 1) { return $null }
+    return [int]$pids[0]
+}
+
 # Graceful first (shutdown endpoint). If the port is still held after GraceMs, Stop-Process is used only when ALL hold:
 #   - the self-reported path is absolute and normalized,
 #   - the self-reported pid is not this process,
 #   - that pid IS the tool (Test-FleetProcessIdentity: exact -File script or ExecutablePath match),
-#   - that pid owns the listening port (Get-NetTCPConnection).
-# Otherwise it refuses with a warning. Returns $true once the port is free. The three script blocks are for tests.
+#   - that pid owns the listening port (Get-NetTCPConnection), OR the port is owned only by PID 4 (http.sys) and
+#     the netsh request queue for http://localhost:<port>/ belongs to exactly that pid (Get-FleetHttpSysQueuePid),
+#   - and, for http.sys, /__fleethacker/id on the port still reports the same tool and pid just before the kill.
+# Otherwise it refuses with a warning and returns $false. For an http.sys port whose proof fails it THROWS (nothing is
+# killed): "An older <Tool> v<X> is still running; close its window and relaunch." The script blocks are for tests.
 function Stop-FleetInstance {
     [CmdletBinding()]
     param(
@@ -255,7 +301,9 @@ function Stop-FleetInstance {
         [switch]$NoForce,
         [scriptblock]$GetProcessInfo = { param($i) Get-FleetProcessInfo -ProcessId $i },
         [scriptblock]$GetPortOwner = { param($p) Get-FleetPortOwner -Port $p },
-        [scriptblock]$KillProcess = { param($i) Stop-Process -Id $i -Force -ErrorAction SilentlyContinue }
+        [scriptblock]$KillProcess = { param($i) Stop-Process -Id $i -Force -ErrorAction SilentlyContinue },
+        [scriptblock]$GetHttpSysQueues = { Get-FleetHttpSysRequestQueueText },
+        [scriptblock]$GetSelf = { param($p, $t) Test-FleetSelf -Port $p -Tool $t }
     )
     [void](Invoke-FleetLocalRequest -Port $Instance.Port -Path $script:ShutdownPath -Method 'POST' -Headers @{ 'X-FleetHacker-Shutdown' = '1' })
     if (Wait-FleetPortFree -Port $Instance.Port -TimeoutMs $GraceMs) { return $true }
@@ -271,6 +319,17 @@ function Stop-FleetInstance {
         Write-Warning "Not stopping ${tag}: it is not '$path' (no exact -File or executable match)."; return $false
     }
     $owners = @(& $GetPortOwner $Instance.Port)
+    if ($owners.Count -eq 1 -and $owners[0] -eq 4) {
+        # http.sys holds the port for the HttpListener process. Kill only with the request-queue proof.
+        $closeMsg = "An older $($Instance.Tool) v$($Instance.Version) is still running; close its window and relaunch."
+        $queuePid = Get-FleetHttpSysQueuePid -Text ([string](& $GetHttpSysQueues)) -Port $Instance.Port
+        if ($null -eq $queuePid) { throw "$closeMsg (pid $procId on port $($Instance.Port) ignored the shutdown request; its http.sys request queue could not be identified with certainty from 'netsh http show servicestate view=requestq', so nothing was stopped.)" }
+        if ($queuePid -ne $procId) { throw "$closeMsg (pid $procId on port $($Instance.Port) ignored the shutdown request; netsh shows the request queue for http://localhost:$($Instance.Port)/ held by pid $queuePid, so nothing was stopped.)" }
+        $again = & $GetSelf $Instance.Port $Instance.Tool
+        if (-not $again -or -not $again.IsSelf -or [int]$again.Pid -ne $procId) { throw "$closeMsg (pid $procId on port $($Instance.Port): /__fleethacker/id no longer reports that tool and pid, so nothing was stopped.)" }
+        & $KillProcess $procId
+        return (Wait-FleetPortFree -Port $Instance.Port -TimeoutMs 3000)
+    }
     if ($owners -notcontains $procId) {
         Write-Warning "Not stopping ${tag}: the port is held by pid(s) '$($owners -join ', ')', not $procId."; return $false
     }
