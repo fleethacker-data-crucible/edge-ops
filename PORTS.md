@@ -25,6 +25,7 @@ Reference: phoenix-lai `src\WebServer.cs` (`StartOnFreePort`) and data-noodler `
 4. **No race:** keep the listener that started. Don't probe a port, close it and rebind.
 5. **Report:** log the port you actually got and open or print `http://localhost:<port>/`.
 6. **Own instance only:** a `.pid` file plus a command-line check may stop the tool's own previous instance. Never stop another program.
+- **Verifying the bind:** a valid http.sys `localhost` listener shows in `netstat` as `0.0.0.0:<port>` / `[::]:<port>` owned by PID 4 (System), so netstat can't prove a loopback-only bind. Check with `netsh http show servicestate` (registered URLs should be `http://localhost:<port>/`) and by sending a request from a non-loopback address, which must fail.
 7. **Validate (keystone pattern):** the caller passes `IPAddress.IsLoopback`, `Host` is `localhost:<port>`, and `Origin` matches.
 8. **Test:** [templates/tests/LoopbackPort.Tests.ps1](templates/tests/LoopbackPort.Tests.ps1).
 
