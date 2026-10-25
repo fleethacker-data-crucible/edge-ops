@@ -253,11 +253,40 @@ function Get-FleetHttpSysRequestQueueText {
 }
 
 <#
-  Pid of the http.sys request queue that registered exactly http://localhost:<Port>/, or $null unless that is certain.
+  One URL from the "Registered URLs:" list, parsed deliberately, or $null when it is not a form we understand.
+  Forms (http.sys URL prefix strings, as netsh prints them in upper case):
+    HTTP://LOCALHOST:8845/                  host:port
+    HTTP://127.0.0.1:25000:127.0.0.1/       host:port:ip (IP-bound prefix; TalkForge registers this form)
+    HTTP://[::1]:8845/                      bracketed IPv6 host
+    HTTP://*:5357/<path>/, HTTP://+:80/     wildcards
+  Returns @{ Scheme; Host; Port; BoundIp; Path; Loopback }. Loopback is true only when the host is localhost,
+  127.0.0.1 or [::1] AND, for the host:port:ip form, the bound ip is 127.0.0.1 or ::1 too. + and * are never loopback.
+#>
+function ConvertFrom-FleetHttpSysUrl {
+    param([string]$Url)
+    $m = [regex]::Match([string]$Url, '^(?i)(https?)://(\[[0-9a-f:.]+\]|[^:/\[\]]+):(\d{1,5})(?::(\[[0-9a-f:.]+\]|[0-9a-f:.]+))?(/.*)$')
+    if (-not $m.Success) { return $null }
+    $port = [int]$m.Groups[3].Value
+    if ($port -lt 1 -or $port -gt 65535) { return $null }
+    $hostName = $m.Groups[2].Value.ToLowerInvariant()
+    $boundIp = $null
+    if ($m.Groups[4].Success) { $boundIp = $m.Groups[4].Value.Trim('[', ']').ToLowerInvariant() }
+    $loopHosts = @('localhost', '127.0.0.1', '[::1]')
+    $loop = ($loopHosts -contains $hostName)
+    if ($loop -and $null -ne $boundIp) { $loop = (@('127.0.0.1', '::1') -contains $boundIp) }
+    return @{ Scheme = $m.Groups[1].Value.ToLowerInvariant(); Host = $hostName; Port = $port; BoundIp = $boundIp; Path = $m.Groups[5].Value; Loopback = [bool]$loop }
+}
+
+<#
+  Pid of the http.sys request queue that serves <Port> only on loopback, or $null unless that is certain.
   Only the English layout is understood ("Snapshot of HTTP service state (Request Queue View):", "Request queue name:",
-  "Processes:", "ID: <pid>, image: ...", "Registered URLs:"). Refuses ($null) when: the header is missing (other language,
-  error text, access denied), no queue or more than one queue registers a URL on that port, the queue registers another
-  host on that port (+, *, 127.0.0.1 ...), or the queue does not list exactly one process.
+  "ID: <pid>, image: ...", and the registered URL lines, which real output nests under "URL groups:").
+  Every registered URL is parsed with ConvertFrom-FleetHttpSysUrl and matched on its port number, so the host:port:ip
+  form (HTTP://127.0.0.1:25000:127.0.0.1/) counts as being on port 25000 rather than slipping past a text match.
+  Refuses ($null) when: the header is missing (other language, error text, access denied), any URL line cannot be
+  parsed, no queue or more than one queue registers a URL on that port, any URL on that port is not plain http with
+  a loopback host (localhost, 127.0.0.1, [::1]; for host:port:ip the ip must be loopback too) or has a path other than
+  "/" (for example an extra /legacy/ prefix), or the queue does not list exactly one process.
 #>
 function Get-FleetHttpSysQueuePid {
     param([string]$Text, [int]$Port)
@@ -266,18 +295,23 @@ function Get-FleetHttpSysQueuePid {
     $cur = $null
     foreach ($raw in ($Text -split "`r?`n")) {
         $line = $raw.TrimEnd()
-        if ($line -match '^Request queue name:') { $cur = @{ Pids = New-Object System.Collections.Generic.List[int]; Urls = New-Object System.Collections.Generic.List[string]; Attached = -1 }; $queues.Add($cur); continue }
+        if ($line -match '^Request queue name:') { $cur = @{ Pids = New-Object System.Collections.Generic.List[int]; Urls = New-Object System.Collections.Generic.List[object]; Attached = -1; Bad = $false }; $queues.Add($cur); continue }
         if (-not $cur) { continue }
         if ($line -match '^\s+Number of active processes attached:\s*(\d+)\s*$') { $cur.Attached = [int]$Matches[1]; continue }
         if ($line -match '^\s+ID:\s*(\d+),\s*image:') { $cur.Pids.Add([int]$Matches[1]); continue }
-        if ($line -match '^\s+(HTTPS?://\S+)$') { $cur.Urls.Add($Matches[1]) }
+        if ($line -match '^\s+(HTTPS?://\S+)$') {
+            $u = ConvertFrom-FleetHttpSysUrl $Matches[1]
+            if ($u) { $cur.Urls.Add($u) } else { $cur.Bad = $true }
+        }
     }
-    $onPort = @($queues | Where-Object { @($_.Urls | Where-Object { $_ -match (':' + $Port + '/') }).Count -gt 0 })
+    # A URL line we cannot parse could be on this port, so it makes the whole answer uncertain.
+    if (@($queues | Where-Object { $_.Bad }).Count -gt 0) { return $null }
+    $onPort = @($queues | Where-Object { @($_.Urls | Where-Object { $_.Port -eq $Port }).Count -gt 0 })
     if ($onPort.Count -ne 1) { return $null }
     $q = $onPort[0]
-    $want = "http://localhost:$Port/"
-    $portUrls = @($q.Urls | Where-Object { $_ -match (':' + $Port + '/') } | Sort-Object -Unique)
-    if ($portUrls.Count -ne 1 -or -not [string]::Equals($portUrls[0], $want, [StringComparison]::OrdinalIgnoreCase)) { return $null }
+    foreach ($u in @($q.Urls | Where-Object { $_.Port -eq $Port })) {
+        if ($u.Scheme -ne 'http' -or -not $u.Loopback -or $u.Path -ne '/') { return $null }
+    }
     $pids = @($q.Pids | Sort-Object -Unique)
     if ($pids.Count -ne 1) { return $null }
     if ($q.Attached -ne -1 -and $q.Attached -ne 1) { return $null }
@@ -289,7 +323,7 @@ function Get-FleetHttpSysQueuePid {
 #   - the self-reported pid is not this process,
 #   - that pid IS the tool (Test-FleetProcessIdentity: exact -File script or ExecutablePath match),
 #   - that pid owns the listening port (Get-NetTCPConnection), OR the port is owned only by PID 4 (http.sys) and
-#     the netsh request queue for http://localhost:<port>/ belongs to exactly that pid (Get-FleetHttpSysQueuePid),
+#     the netsh request queue serving that port only on loopback belongs to exactly that pid (Get-FleetHttpSysQueuePid),
 #   - and, for http.sys, /__fleethacker/id on the port still reports the same tool and pid just before the kill.
 # Otherwise it refuses with a warning and returns $false. For an http.sys port whose proof fails it THROWS (nothing is
 # killed): "An older <Tool> v<X> is still running; close its window and relaunch." The script blocks are for tests.
@@ -324,7 +358,7 @@ function Stop-FleetInstance {
         $closeMsg = "An older $($Instance.Tool) v$($Instance.Version) is still running; close its window and relaunch."
         $queuePid = Get-FleetHttpSysQueuePid -Text ([string](& $GetHttpSysQueues)) -Port $Instance.Port
         if ($null -eq $queuePid) { throw "$closeMsg (pid $procId on port $($Instance.Port) ignored the shutdown request; its http.sys request queue could not be identified with certainty from 'netsh http show servicestate view=requestq', so nothing was stopped.)" }
-        if ($queuePid -ne $procId) { throw "$closeMsg (pid $procId on port $($Instance.Port) ignored the shutdown request; netsh shows the request queue for http://localhost:$($Instance.Port)/ held by pid $queuePid, so nothing was stopped.)" }
+        if ($queuePid -ne $procId) { throw "$closeMsg (pid $procId on port $($Instance.Port) ignored the shutdown request; netsh shows the request queue for port $($Instance.Port) held by pid $queuePid, so nothing was stopped.)" }
         $again = & $GetSelf $Instance.Port $Instance.Tool
         if (-not $again -or -not $again.IsSelf -or [int]$again.Pid -ne $procId) { throw "$closeMsg (pid $procId on port $($Instance.Port): /__fleethacker/id no longer reports that tool and pid, so nothing was stopped.)" }
         & $KillProcess $procId

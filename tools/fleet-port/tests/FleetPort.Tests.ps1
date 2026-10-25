@@ -228,25 +228,29 @@ Describe 'Split-FleetCommandLine' {
     }
 }
 
-# Canned `netsh http show servicestate view=requestq` output lives in tests\netsh\ (English layout; port 8834, pid 4242).
+# `netsh http show servicestate view=requestq` fixtures live in tests\netsh\ (see README.md there). requestq-en-real-8845.txt
+# is a real standard-user capture (pid 9720 on http://localhost:8845/); the other *-real-* files are one-edit variants of it.
 Describe 'http.sys (PID 4) ports: netsh request-queue proof' {
     BeforeAll {
         $script:netshDir = Join-Path $PSScriptRoot 'netsh'
         function Get-Canned([string]$Name) { [IO.File]::ReadAllText((Join-Path $script:netshDir $Name)) }
+        function Get-QueuePid([string]$Text, [int]$Port) { InModuleScope FleetPort -Parameters @{ T = $Text; P = $Port } { Get-FleetHttpSysQueuePid -Text $T -Port $P } }
         $script:toolPath = 'C:\FleetHacker\demo\Start-Demo.ps1'
         $script:psExe = 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe'
-        # Port 8834 is held by a silent foreign listener, so the graceful shutdown never frees it; the owner is PID 4 (http.sys).
-        function Invoke-HttpSysStop([string]$NetshText, $SelfAnswer = 'same', [string]$CommandLine = '') {
+        $script:hsPort = 8845
+        $script:hsPid = 9720
+        # The port is held by a silent foreign listener, so the graceful shutdown never frees it; the owner is PID 4 (http.sys).
+        function Invoke-HttpSysStop([string]$NetshText, $SelfAnswer = 'same', [string]$CommandLine = '', [int]$Port = $script:hsPort, [int]$ProcId = $script:hsPid) {
             if (-not $CommandLine) { $CommandLine = "`"$script:psExe`" -NoProfile -File `"$script:toolPath`"" }
             $calls = @{ Killed = @() }
-            $hold = New-Object Net.Sockets.TcpListener ([Net.IPAddress]::Loopback), 8834
+            $hold = New-Object Net.Sockets.TcpListener ([Net.IPAddress]::Loopback), $Port
             $hold.Start()
             try {
-                $inst = New-Object PSObject -Property @{ Tool = 'demo'; Version = '0.9'; Pid = 4242; Path = $script:toolPath; Port = 8834 }
+                $inst = New-Object PSObject -Property @{ Tool = 'demo'; Version = '0.9'; Pid = $ProcId; Path = $script:toolPath; Port = $Port }
                 $info = New-Object PSObject -Property @{ CommandLine = $CommandLine; ExecutablePath = $script:psExe }
                 $self = switch ($SelfAnswer) {
-                    'same' { New-Object PSObject -Property @{ IsSelf = $true; Tool = 'demo'; Pid = 4242 } }
-                    'otherpid' { New-Object PSObject -Property @{ IsSelf = $true; Tool = 'demo'; Pid = 4243 } }
+                    'same' { New-Object PSObject -Property @{ IsSelf = $true; Tool = 'demo'; Pid = $ProcId } }
+                    'otherpid' { New-Object PSObject -Property @{ IsSelf = $true; Tool = 'demo'; Pid = $ProcId + 1 } }
                     default { $null }
                 }
                 $err = $null; $ok = $null
@@ -264,41 +268,99 @@ Describe 'http.sys (PID 4) ports: netsh request-queue proof' {
         $script:closeMsg = 'An older demo v0.9 is still running; close its window and relaunch.*'
     }
 
-    It 'parses the English layout: the queue for http://localhost:8834/ belongs to pid 4242' {
-        InModuleScope FleetPort -Parameters @{ T = (Get-Canned 'requestq-en-8834.txt') } { Get-FleetHttpSysQueuePid -Text $T -Port 8834 } | Should -Be 4242
-        InModuleScope FleetPort -Parameters @{ T = (Get-Canned 'requestq-en-8834.txt') } { Get-FleetHttpSysQueuePid -Text $T -Port 8900 } | Should -Be 9100
-        InModuleScope FleetPort -Parameters @{ T = (Get-Canned 'requestq-en-8834.txt') } { Get-FleetHttpSysQueuePid -Text $T -Port 8835 } | Should -BeNullOrEmpty
+    It 'parses the real standard-user capture: http://localhost:8845/ belongs to pid 9720' {
+        $real = Get-Canned 'requestq-en-real-8845.txt'
+        $real | Should -Match "`r`n"
+        Get-QueuePid $real 8845 | Should -Be 9720
+        Get-QueuePid ($real -replace "`r`n", "`n") 8845 | Should -Be 9720
+        # FDResPub registers HTTP://*:5357/<guid>/ - a wildcard host and a non-root path, so never a proof.
+        Get-QueuePid $real 5357 | Should -BeNullOrEmpty
+        Get-QueuePid $real 8846 | Should -BeNullOrEmpty
+    }
+
+    It 'treats the IP-bound host:port:ip prefix (HTTP://127.0.0.1:25000:127.0.0.1/) as loopback on that port' {
+        Get-QueuePid (Get-Canned 'requestq-en-real-25000-ipbound.txt') 25000 | Should -Be 10836
+        Get-QueuePid (Get-Canned 'requestq-en-real-25000-ipbound-only.txt') 25000 | Should -Be 10836
+        Get-QueuePid (Get-Canned 'requestq-en-real-25000-ipbound.txt') 8845 | Should -Be 9720
+        Get-QueuePid (Get-Canned 'requestq-en-real-25000-ipbound-lan.txt') 25000 | Should -BeNullOrEmpty
+    }
+
+    It 'parses registered URL <Url>' -TestCases @(
+        @{ Url = 'HTTP://LOCALHOST:8845/'; Port = 8845; BoundIp = $null; Path = '/'; Loopback = $true }
+        @{ Url = 'HTTP://127.0.0.1:25000:127.0.0.1/'; Port = 25000; BoundIp = '127.0.0.1'; Path = '/'; Loopback = $true }
+        @{ Url = 'HTTP://LOCALHOST:25000:127.0.0.1/'; Port = 25000; BoundIp = '127.0.0.1'; Path = '/'; Loopback = $true }
+        @{ Url = 'HTTP://[::1]:8845/'; Port = 8845; BoundIp = $null; Path = '/'; Loopback = $true }
+        @{ Url = 'HTTP://[::1]:8845:[::1]/'; Port = 8845; BoundIp = '::1'; Path = '/'; Loopback = $true }
+        @{ Url = 'HTTP://127.0.0.1:25000:10.0.0.5/'; Port = 25000; BoundIp = '10.0.0.5'; Path = '/'; Loopback = $false }
+        @{ Url = 'HTTP://10.0.0.5:25000:10.0.0.5/'; Port = 25000; BoundIp = '10.0.0.5'; Path = '/'; Loopback = $false }
+        @{ Url = 'HTTP://*:5357/00000000-0000-0000-0000-000000000000/'; Port = 5357; BoundIp = $null; Path = '/00000000-0000-0000-0000-000000000000/'; Loopback = $false }
+        @{ Url = 'HTTP://+:8845/'; Port = 8845; BoundIp = $null; Path = '/'; Loopback = $false }
+        @{ Url = 'HTTP://LOCALHOST:8845/legacy/'; Port = 8845; BoundIp = $null; Path = '/legacy/'; Loopback = $true }
+    ) {
+        $u = InModuleScope FleetPort -Parameters @{ U = $Url } { ConvertFrom-FleetHttpSysUrl $U }
+        $u | Should -Not -BeNullOrEmpty
+        $u.Port | Should -Be $Port
+        $u.BoundIp | Should -Be $BoundIp
+        $u.Path | Should -Be $Path
+        $u.Loopback | Should -Be $Loopback
+    }
+
+    It 'rejects unparseable URL <Url>' -TestCases @(
+        @{ Url = 'HTTP://LOCALHOST:88X45/' }
+        @{ Url = 'HTTP://LOCALHOST/' }
+        @{ Url = 'HTTP://LOCALHOST:70000/' }
+        @{ Url = 'HTTP://LOCALHOST:8845' }
+    ) {
+        InModuleScope FleetPort -Parameters @{ U = $Url } { ConvertFrom-FleetHttpSysUrl $U } | Should -BeNullOrEmpty
     }
 
     It 'refuses to identify a queue from <Name>' -TestCases @(
-        @{ Name = 'requestq-en-8834-malformed.txt' }
-        @{ Name = 'requestq-en-8834-emptyqueue.txt' }
-        @{ Name = 'requestq-en-8834-ambiguous.txt' }
+        @{ Name = 'requestq-en-real-8845-malformed.txt' }
+        @{ Name = 'requestq-en-real-8845-emptyqueue.txt' }
+        @{ Name = 'requestq-en-real-8845-twoprocs.txt' }
+        @{ Name = 'requestq-en-real-8845-ambiguous.txt' }
+        @{ Name = 'requestq-en-real-8845-legacy.txt' }
+        @{ Name = 'requestq-en-real-8845-twoqueues.txt' }
+        @{ Name = 'requestq-en-real-8845-badurl.txt' }
         @{ Name = 'requestq-accessdenied.txt' }
-        @{ Name = 'requestq-de-8834.txt' }
+        @{ Name = 'requestq-de-real-8845.txt' }
     ) {
-        InModuleScope FleetPort -Parameters @{ T = (Get-Canned $Name) } { Get-FleetHttpSysQueuePid -Text $T -Port 8834 } | Should -BeNullOrEmpty
+        Get-QueuePid (Get-Canned $Name) 8845 | Should -BeNullOrEmpty
     }
 
-    It 'kills when queue pid, exact -File path and /__fleethacker/id all match (after the graceful attempt)' {
-        $r = Invoke-HttpSysStop (Get-Canned 'requestq-en-8834.txt')
+    It 'force-stops a well-formed older copy when all four proof conditions pass (real capture)' {
+        $r = Invoke-HttpSysStop (Get-Canned 'requestq-en-real-8845.txt')
         $r.Error | Should -BeNullOrEmpty
-        $r.Killed | Should -Be @(4242)
+        $r.Killed | Should -Be @(9720)
+    }
+
+    It 'force-stops a TalkForge-style queue that also registers the IP-bound loopback prefix' {
+        $r = Invoke-HttpSysStop (Get-Canned 'requestq-en-real-25000-ipbound.txt') -Port 8847 -ProcId 10836
+        $r.Error | Should -BeLike '*could not be identified*'
+        $r.Killed.Count | Should -Be 0
+        $text = (Get-Canned 'requestq-en-real-25000-ipbound.txt') -replace ':25000', ':8847'
+        $r = Invoke-HttpSysStop $text -Port 8847 -ProcId 10836
+        $r.Error | Should -BeNullOrEmpty
+        $r.Killed | Should -Be @(10836)
     }
 
     It 'refuses with the close-it-yourself message when the queue belongs to another pid' {
-        $r = Invoke-HttpSysStop (Get-Canned 'requestq-en-8834-otherpid.txt')
+        $r = Invoke-HttpSysStop (Get-Canned 'requestq-en-real-8845-otherpid.txt')
         $r.Killed.Count | Should -Be 0
         $r.Error | Should -BeLike $closeMsg
         $r.Error | Should -BeLike '*held by pid 5555*'
     }
 
     It 'refuses with the message for <Name>' -TestCases @(
-        @{ Name = 'requestq-en-8834-malformed.txt' }
-        @{ Name = 'requestq-en-8834-emptyqueue.txt' }
-        @{ Name = 'requestq-en-8834-ambiguous.txt' }
+        @{ Name = 'requestq-en-real-8845-malformed.txt' }
+        @{ Name = 'requestq-en-real-8845-emptyqueue.txt' }
+        @{ Name = 'requestq-en-real-8845-twoprocs.txt' }
+        @{ Name = 'requestq-en-real-8845-ambiguous.txt' }
+        @{ Name = 'requestq-en-real-8845-legacy.txt' }
+        @{ Name = 'requestq-en-real-8845-twoqueues.txt' }
+        @{ Name = 'requestq-en-real-8845-badurl.txt' }
         @{ Name = 'requestq-accessdenied.txt' }
-        @{ Name = 'requestq-de-8834.txt' }
+        @{ Name = 'requestq-de-real-8845.txt' }
     ) {
         $r = Invoke-HttpSysStop (Get-Canned $Name)
         $r.Killed.Count | Should -Be 0
@@ -313,14 +375,14 @@ Describe 'http.sys (PID 4) ports: netsh request-queue proof' {
 
     It 'refuses when /__fleethacker/id no longer answers or reports another pid' {
         foreach ($answer in 'none', 'otherpid') {
-            $r = Invoke-HttpSysStop (Get-Canned 'requestq-en-8834.txt') $answer
+            $r = Invoke-HttpSysStop (Get-Canned 'requestq-en-real-8845.txt') $answer
             $r.Killed.Count | Should -Be 0
             $r.Error | Should -BeLike $closeMsg
         }
     }
 
     It 'still requires the exact -File path even when the queue matches' {
-        $r = Invoke-HttpSysStop (Get-Canned 'requestq-en-8834.txt') 'same' "`"$psExe`" -NoProfile -Command `"& '$toolPath'`""
+        $r = Invoke-HttpSysStop (Get-Canned 'requestq-en-real-8845.txt') 'same' "`"$psExe`" -NoProfile -Command `"& '$toolPath'`""
         $r.Killed.Count | Should -Be 0
         $r.Ok | Should -BeFalse
     }
