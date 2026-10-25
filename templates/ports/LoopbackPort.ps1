@@ -53,10 +53,11 @@ function Start-LoopbackListener {
         [string]$ListenHost = 'localhost'
     )
     $candidates = @($PreferredPort) + @($RangeStart..$RangeEnd | Where-Object { $_ -ne $PreferredPort })
+    # Bind rule first, so a bad host throws even when every port is busy.
+    Assert-LoopbackPrefix -Prefix "http://${ListenHost}:$PreferredPort/"
     foreach ($p in $candidates) {
         if (-not (Test-LoopbackPortFree -Port $p)) { continue }
         $prefix = "http://${ListenHost}:$p/"
-        Assert-LoopbackPrefix -Prefix $prefix
         $l = New-Object System.Net.HttpListener
         $l.Prefixes.Add($prefix)
         try {
