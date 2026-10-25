@@ -6,11 +6,13 @@
     walks upward only inside its block. When a port is busy it probes GET /__fleethacker/id first:
       - another program, or no answer   -> next port in the block
       - this same tool                  -> apply the tool's policy:
+          (any policy but multi) a NEWER copy is running: Action 'Reuse' with a 'stale launcher' Note
+                    (also written as a warning); never downgrade
           reuse     same version: return Action 'Reuse' (open the browser to it and exit);
-                    other version: stop it gracefully, then start on that port
+                    older or unparseable version: stop it gracefully, then start on that port
           restart   always stop it gracefully, then start on that port
           multi     leave it running, try the next port
-          exclusive same version: Reuse; other version: throw (never auto-stop; holds a lease)
+          exclusive same version: Reuse; older version: throw (never auto-stop; holds a lease)
     Block full -> a clear error. Binds http://localhost:<port>/ only. No random or OS-ephemeral fallback.
     Graceful stop: POST /__fleethacker/shutdown (header X-FleetHacker-Shutdown: 1). If the port is still
     held, Stop-Process only on the self-reported pid, and only after its command line / path matches the
@@ -103,6 +105,24 @@ function Test-FleetSelf {
         IsSelf = ([string]$id.tool -eq $Tool); Tool = [string]$id.tool; Version = $ver; Pid = $procId; Path = $path; Port = $Port })
 }
 
+# 1 if A is newer than B, -1 if older, 0 if equal, $null if either is not a dotted version
+# (a leading 'v' and a '-suffix' / '+build' are ignored). Unknown counts as "different", never "newer".
+function Compare-FleetVersion {
+    param([string]$A, [string]$B)
+    $va = ConvertTo-FleetVersion $A; $vb = ConvertTo-FleetVersion $B
+    if ($null -eq $va -or $null -eq $vb) { return $null }
+    return $va.CompareTo($vb)
+}
+
+function ConvertTo-FleetVersion {
+    param([string]$Text)
+    if ($Text -notmatch '^\s*v?(\d+(\.\d+){0,3})') { return $null }
+    $t = $Matches[1]; if ($t -notmatch '\.') { $t = "$t.0" }
+    $v = $null
+    if ([System.Version]::TryParse($t, [ref]$v)) { return $v }
+    return $null
+}
+
 function Wait-FleetPortFree {
     param([int]$Port, [int]$TimeoutMs)
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
@@ -144,7 +164,7 @@ function Start-FleetHttpListener {
 
 <#
 .SYNOPSIS
-    Walks the tool's block and applies its policy. Returns @{ Action = 'Start'|'Reuse'; Port; Url; Listener; Existing }.
+    Walks the tool's block and applies its policy. Returns @{ Action = 'Start'|'Reuse'; Port; Url; Listener; Existing; Note }. Log Note when it is set.
     Action 'Start': Listener is a started HttpListener on http://localhost:<Port>/ (or $null with -NoListener; bind it yourself).
     Action 'Reuse': open Url in the browser and exit.
 #>
@@ -181,6 +201,12 @@ function Resolve-FleetPort {
         if (-not $id.IsSelf) { $notes.Add("${p}: in use by FleetHacker tool '$($id.Tool)'"); continue }
         $same = ($id.Version -eq $Version)
         $stop = $false
+        if ($block.Policy -ne 'multi' -and -not $same -and (Compare-FleetVersion $id.Version $Version) -gt 0) {
+            # Never downgrade: a newer copy is already running, so this launcher is stale.
+            $note = "Stale launcher: $Tool $Version was started, but newer $Tool $($id.Version) is already running on port $p (pid $($id.Pid)); reusing it."
+            Write-Warning $note
+            return (New-FleetReuse $p $id $note)
+        }
         switch ($block.Policy) {
             'multi'     { $notes.Add("${p}: another $Tool instance (multi)"); continue }
             'reuse'     { if ($same) { return (New-FleetReuse $p $id) } else { $stop = $true } }
@@ -202,15 +228,15 @@ function Resolve-FleetPort {
 }
 
 function New-FleetReuse {
-    param([int]$Port, $Existing)
-    New-Object PSObject -Property ([ordered]@{ Action = 'Reuse'; Port = $Port; Url = "http://localhost:$Port/"; Listener = $null; Existing = $Existing })
+    param([int]$Port, $Existing, [string]$Note = '')
+    New-Object PSObject -Property ([ordered]@{ Action = 'Reuse'; Port = $Port; Url = "http://localhost:$Port/"; Listener = $null; Existing = $Existing; Note = $Note })
 }
 
 function Get-FleetStartResult {
     param([int]$Port, [switch]$NoListener)
     $l = $null
     if (-not $NoListener) { $l = Start-FleetHttpListener -Port $Port; if (-not $l) { return $null } }
-    New-Object PSObject -Property ([ordered]@{ Action = 'Start'; Port = $Port; Url = "http://localhost:$Port/"; Listener = $l; Existing = $null })
+    New-Object PSObject -Property ([ordered]@{ Action = 'Start'; Port = $Port; Url = "http://localhost:$Port/"; Listener = $l; Existing = $null; Note = '' })
 }
 
 <#

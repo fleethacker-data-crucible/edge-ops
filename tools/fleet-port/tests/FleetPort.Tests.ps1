@@ -1,4 +1,4 @@
-# Pester 5. Runs on Windows PowerShell 5.1 and pwsh. Ports 8840-8859 are used as scratch blocks.
+# Pester 5. Runs on Windows PowerShell 5.1 and pwsh. Ports 8838-8859 are used as scratch blocks.
 BeforeAll {
     Import-Module (Join-Path $PSScriptRoot '..\FleetPort.psm1') -Force
 
@@ -79,6 +79,18 @@ Describe 'Resolve-FleetPort' {
             $script:r = Resolve-FleetPort @common -Version '1.0' -Start 8849 -Policy reuse
             $r.Action | Should -Be 'Start'
             $r.Port | Should -Be 8849
+        } finally { Stop-FakeTool $t }
+    }
+
+    It 'reuses a NEWER running copy instead of downgrading it, and notes the stale launcher' {
+        $t = Start-FakeTool 8838 'demo' '1.10.0'
+        try {
+            $script:r = Resolve-FleetPort @common -Version '1.9.2' -Start 8838 -Policy restart -WarningVariable w -WarningAction SilentlyContinue
+            $r.Action | Should -Be 'Reuse'
+            $r.Port | Should -Be 8838
+            $r.Note | Should -BeLike 'Stale launcher:*1.9.2*1.10.0*'
+            @($w).Count | Should -Be 1
+            Test-FleetSelf -Port 8838 -Tool 'demo' | Should -Not -BeNullOrEmpty
         } finally { Stop-FakeTool $t }
     }
 

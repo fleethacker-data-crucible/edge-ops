@@ -1,6 +1,6 @@
 # Port registry
 
-**Status: PROPOSED, pending Chief of Staff approval.** This revision replaces the fallback columns of the ruling Jeremy approved on 2026-10-25 (Synapse stays on 8767; ARC is gone). Until it is approved, tools keep their current port code.
+**Status: APPROVED by Chief of Staff on 2026-10-25, except MailHawk's move to 8771-8773, which is PENDING Jeremy (MailHawk stays on 8766 until then).** This revision replaces the fallback columns of the earlier 2026-10-25 ruling (Synapse stays on 8767; ARC is gone).
 
 Each tool owns **one small contiguous block** that starts at its default. It moves up inside that block only when a port is busy, and a busy port is first probed to see whether it is **the same tool** (see [Self-detection](#self-detection-and-policies)). If the block is full, the tool stops with a clear error. There is **no random fallback and no OS-ephemeral (port 0) fallback**; the only random range is Data Noodler's site, which the user opts into.
 
@@ -15,7 +15,7 @@ Each tool owns **one small contiguous block** that starts at its default. It mov
 | Synapse (served edition) | **8767** (1 port, fixed) | reuse | `Serve-Synapse.ps1 -Port <n>` | browser data is keyed to the origin, so the port never moves; the standalone HTML still runs from `file://` |
 | Lasso dev instance | 8768 (1 port) | restart | `dev\Launch-LocalDev.bat` | was 8790 |
 | Keystone | 8769-8770 | reuse | `Launch-Keystone.bat -NoBrowser 8770` | 8770 was the manual alternative |
-| MailHawk | **8771-8773** | exclusive | `MailHawk.bat -Port <n>` | moved from 8766 (now inside Lasso's block); holds the Outlook COM lease |
+| MailHawk | **8771-8773 (PENDING Jeremy)**; today 8766 | exclusive (pending) | `MailHawk.bat -Port <n>` | **not approved yet.** 8766 is inside Lasso's new block; holds the Outlook COM lease |
 | New tool A / New tool B | 8774-8776 / 8777-8779 | reuse | - | add a row here and in `FleetPorts.psd1` when you take one |
 | Phoenix LAI server UI | **8780-8789** | exclusive | - | holds the GPU lease; was 8765-8789 |
 | Phoenix LAI client | 8790-8798 | multi | - | several clients may run at once |
@@ -32,8 +32,9 @@ Helper: [tools/fleet-port/FleetPort.psm1](tools/fleet-port/FleetPort.psm1) (`Get
 - **Shutdown endpoint:** `POST /__fleethacker/shutdown` with header `X-FleetHacker-Shutdown: 1` asks the tool to exit cleanly (close leases, remove its `.pid` file). Both endpoints require a loopback caller, a loopback `Host` and an `Origin` that is absent or same-origin.
 - **Busy port:** probe it. No answer or another tool's id means a foreign program: try the next port in the block. The same tool id means apply that tool's policy:
 
-| Policy | Same version running | Other version running |
+| Policy | Same version running | Older (or unparseable) version running |
 |---|---|---|
+| any policy except **multi**, when a **newer** copy is running | - | reuse it and log "stale launcher"; never downgrade |
 | **reuse** (default for single-user UI tools) | open the browser to it and exit | stop it gracefully, then start on that port |
 | **restart** | stop it gracefully, then start | stop it gracefully, then start |
 | **multi** | leave it, try the next port | leave it, try the next port |
@@ -57,5 +58,5 @@ Reference: phoenix-lai `src\WebServer.cs` (`StartOnFreePort`) and data-noodler `
 
 ### Notes
 - The overlaps this resolves: Phoenix LAI's old 8765-8789 scan, Lasso's 100-port scan, Synapse's served edition on 8765 (the same port as Lasso), MailHawk's 8766 (inside Lasso's new block), TalkForge's scan up to 65535, and the OS-ephemeral fallbacks.
-- Open question: when the running copy is **newer** than the one being launched, `reuse` currently stops it and starts the older one. The proposal is to reuse a newer copy instead, so an old shortcut never downgrades a running tool.
+- Versions compare as dotted numbers (`v1.10.0` > `1.9.2`; a `-suffix` is ignored). A version that does not parse counts as older, so policy applies.
 - data-noodler, phoenix-lai and keystone bind `localhost`, which meets the rule.
