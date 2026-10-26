@@ -10,7 +10,7 @@ window.EDGE_OPS_CATALOG = {
       "category": "ps-host-browser-ui",
       "summary": "A product owner's assistant that works a backlog upward to leadership and downward to stories and tasks. It runs locally: a PowerShell launcher, one .NET library, and a browser UI on 127.0.0.1.",
       "launcher": "Launch-Halyard.bat",
-      "defaultPort": "auto",
+      "defaultPort": 8773,
       "requirements": {
         "ps51": true,
         "chromeEngine": true,
