@@ -1,0 +1,27 @@
+/* Edge-Ops theme: Phoenix dark (default dark theme).
+   One theme = one file. Every colour, font, radius and shadow the hub uses is a custom property set here.
+   Loaded after ui-kit/kit.css. Tokens sit in @layer theme, which is declared after @layer kit, so they
+   override the kit's defaults; the hub's unlayered assets/style.css only consumes them.
+   Palette: phoenix-lai html/css/chat.css (609494f) dark :root, adjusted for WCAG 2.1 AA where noted.
+   To add a theme: copy this file, change the selector id and values, link it in the pages and register it
+   in assets/theme.js. To switch theme: set <html data-theme="<id>"> (the switcher does this). */
+@layer kit, theme;
+@layer theme{
+:root,:root[data-theme=phoenix-dark]{color-scheme:dark;
+ /* type */
+ --sans:"Exo 2","Segoe UI",system-ui,sans-serif;--mono:"Syne Mono",ui-monospace,Consolas,monospace;
+ /* shape */
+ --radius:5px;--radius-lg:8px;
+ --shadow:0 12px 40px #0009;--shadow-card:0 1px 2px #0006;--backdrop:#0008;
+ /* surfaces (phoenix --bg #1b1b1b, --side-bg #202020, --box #2a2a2a) */
+ --bg:#1b1b1b;--side-bg:#202020;--panel:#2a2a2a;--panel-2:#323232;--sel:#45443f;
+ --border:#3a3a3a;--border-strong:#807f89;
+ /* text (phoenix --text, --soft; --dim #74737f fails AA, so --muted is lifted) */
+ --text:#ecebf2;--text-2:#b9b8c6;--muted:#a3a2ae;
+ /* actions are blue, brand is gold (orange retired) */
+ --accent:#2f74c8;--on-accent:#ffffff;--link:#6aa6ee;--focus:#6aa6ee;
+ --brand:#e8c15a;--brand-2:#f5dc8c;--on-brand:#1a1310;
+ /* status (phoenix --ok #8fe3b0, --err #ff8a8a) */
+ --ok:#8fe3b0;--ok-bg:#287a4c;--warn:#e0b84a;--warn-bg:#8a6d0c;--err:#ff8a8a;--err-bg:#c93b3b;--on-status:#ffffff;
+ --toast-info-bg:#f2f2ef;--toast-info-fg:#1b1b1b;--badge-fg:#d8d7de;}
+}
