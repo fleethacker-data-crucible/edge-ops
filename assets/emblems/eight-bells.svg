@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Eight Bells">
+  <title>Eight Bells</title>
+  <circle cx="32" cy="32" r="29.5" fill="#0d2233" stroke="#c9a66b" stroke-width="3"/>
+  <rect x="29.5" y="12" width="5" height="6" rx="1.2" fill="#9b7a52"/>
+  <path d="M23.5 40 C23.5 26 25.5 17.5 32 17.5 C38.5 17.5 40.5 26 40.5 40 L45 44.5 H19 Z" fill="#d6a258"/>
+  <path d="M19 44.5 H45" stroke="#9b7a52" stroke-width="2"/>
+  <path d="M27.5 27.5 H30 M34 27.5 H36.5 M27.5 31.5 H30 M34 31.5 H36.5 M27 35.5 H29.5 M34.5 35.5 H37 M26.5 39.5 H29 M35 39.5 H37.5" stroke="#071420" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M32 44.5 V50.5" stroke="#f1e4c8" stroke-width="2.6" stroke-linecap="round"/>
+  <circle cx="32" cy="52.3" r="2.3" fill="#f1e4c8"/>
+</svg>

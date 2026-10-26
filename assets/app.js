@@ -11,7 +11,7 @@
       var hits=data.tools.filter(function(t){return(!c||t.category===c)&&(!s||(t.name+' '+t.summary).toLowerCase().indexOf(s)>=0);});
       if(!hits.length){grid.appendChild(el('p','empty','No tools match your search.'));return;}
       hits.forEach(function(t){
-        var d=el('article','card box');d.appendChild(el('span','cat',CATS[t.category]||t.category));var h=el('h2'),ha=el('a',null,t.name);ha.href='tools/'+t.id+'.html';h.appendChild(ha);d.appendChild(h);d.appendChild(el('p',null,t.summary));
+        var d=el('article','card box');d.appendChild(el('span','cat',CATS[t.category]||t.category));var h=el('h2'),ha=el('a',null,t.name);ha.href='tools/'+t.id+'.html';var em=el('img','emblem');em.src='assets/emblems/'+t.id+'.svg';em.alt='';em.setAttribute('aria-hidden','true');em.width=32;em.height=32;em.onerror=function(){this.remove();};h.appendChild(em);h.appendChild(ha);d.appendChild(h);d.appendChild(el('p',null,t.summary));
         var b=el('div','badges');FLAGS.forEach(function(f){if(t.requirements[f[0]])b.appendChild(el('span','badge '+f[2],f[1]));});
         if(!t.requirements.admin)b.appendChild(el('span','badge green','No admin'));
         if(t.defaultPort==='auto')b.appendChild(el('span','badge grey','free port'));else if(typeof t.defaultPort==='number')b.appendChild(el('span','badge grey','port '+t.defaultPort));
