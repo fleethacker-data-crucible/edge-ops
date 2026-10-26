@@ -46,7 +46,7 @@ The repo itself is tidy: `catalog.json` is valid and matches `assets/catalog-dat
 ## 5. Links and cleanup
 
 - [ ] **Tool cards break when opened from disk.** `assets/app.js:12` links them to `tools/<id>.html`, which exists only in `_site/` output, but `README.md:7` says `index.html` works from disk.
-- [ ] **Check the org repos exist before go-live.** Catalog links point at `fleethacker-data-crucible/<repo>`, while current work lives in forks; missing org repos would 404.
+- [ ] **Check the org repos exist before go-live.** Catalog links point at `fleethacker-data-crucible/<repo>`, while current work lives in forks; missing org repos would 404. ARC is removed from the catalog until its rewrite is republished.
 - [ ] **`.gitignore` is GitHub's C/C++ template.** Only `_site/` (line 56) is relevant; trim the rest.
 - [ ] **`README.md:79` says "Merge PR #1"**, which is already merged.
 - [ ] **Images won't load on an offline network.** README and `templates/TOOL-README-TEMPLATE.md` pull them from raw.githubusercontent.com and shields.io.

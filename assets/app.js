@@ -5,7 +5,7 @@
   function el(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e;}
   function render(data){
     var grid=document.getElementById('grid'),q=document.getElementById('q'),cat=document.getElementById('cat');
-    Object.keys(CATS).forEach(function(k){var o=el('option',null,CATS[k]);o.value=k;cat.appendChild(o);});
+    Object.keys(CATS).filter(function(k){return data.tools.some(function(t){return t.category===k;});}).forEach(function(k){var o=el('option',null,CATS[k]);o.value=k;cat.appendChild(o);});
     function draw(){
       var s=q.value.toLowerCase(),c=cat.value;grid.innerHTML='';
       var hits=data.tools.filter(function(t){return(!c||t.category===c)&&(!s||(t.name+' '+t.summary).toLowerCase().indexOf(s)>=0);});
