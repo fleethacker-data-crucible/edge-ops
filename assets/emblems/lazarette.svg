@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Lazarette">
+  <title>Lazarette</title>
+  <!-- Fleet frame: ink-dark-blue field, thin brass ring, compass rays at 3 and 9 o'clock.
+       Subject: the lazarette chest and its lock. Simplified to read at 32 px. -->
+  <path d="M8 256 L74 244 L86 256 L74 268 Z M504 256 L438 244 L426 256 L438 268 Z" fill="#c9a66b"/>
+  <circle cx="256" cy="256" r="196" fill="#0a2130"/>
+  <circle cx="256" cy="256" r="196" fill="none" stroke="#c9a66b" stroke-width="10"/>
+  <g stroke="#f4ead6" stroke-width="14" stroke-linejoin="round">
+    <path d="M118 236 V214 Q118 172 160 172 H352 Q394 172 394 214 V236 Z" fill="#14334a"/>
+    <rect x="118" y="236" width="276" height="128" rx="10" fill="#14334a"/>
+  </g>
+  <g fill="#c9a66b">
+    <rect x="164" y="176" width="20" height="184"/>
+    <rect x="328" y="176" width="20" height="184"/>
+    <rect x="222" y="214" width="68" height="80" rx="8"/>
+  </g>
+  <circle cx="256" cy="244" r="11" fill="#0a2130"/>
+  <path d="M249 248 L263 248 L267 276 L245 276 Z" fill="#0a2130"/>
+</svg>
