@@ -14,7 +14,9 @@
   var mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: light)') : null;
 
   function find(id) { for (var i = 0; i < THEMES.length; i++) { if (THEMES[i].id === id) return THEMES[i]; } return null; }
-  function load() { try { return localStorage.getItem(KEY) || 'system'; } catch (e) { return 'system'; } }
+  // Only 'system' or a registered theme id counts; anything else (a removed or renamed theme) falls back to 'system'.
+  function valid(p) { return p === 'system' || !!find(p); }
+  function load() { try { var p = localStorage.getItem(KEY); return valid(p) ? p : 'system'; } catch (e) { return 'system'; } }
   function save(p) { try { if (p === 'system') localStorage.removeItem(KEY); else localStorage.setItem(KEY, p); } catch (e) {} }
   function resolve(p) { return (p !== 'system' && find(p)) || find(DEFAULTS[mq && mq.matches ? 'light' : 'dark']) || THEMES[0]; }
   function apply(p) {
@@ -35,7 +37,7 @@
     themes: THEMES.slice(),
     get preference() { return pref; },
     get current() { return root.getAttribute('data-theme'); },
-    set: function (p) { pref = (p === 'system' || find(p)) ? p : 'system'; save(pref); return apply(pref); }
+    set: function (p) { pref = valid(p) ? p : 'system'; save(pref); return apply(pref); }
   };
 
   // Fill every <select data-theme-select> with System + the registered themes.
