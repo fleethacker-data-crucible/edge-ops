@@ -139,24 +139,18 @@ try { ... } finally { Exit-FleetLock $l | Out-Null }
 - The hub links to `releases/latest`.
 
 ## Branch pruning
-- Template: `templates/workflows/prune-merged-branches.yml`. It's the **one canonical copy**.
+- **Rule (Jeremy, Oct 26 2026):** kill after merge, but only if the branch has no commits after its merge. Delete a branch **only** if it's the head of a merged same-repo PR into the default branch **and** its current tip is exactly that PR's merged head SHA. Keep any branch with commits after its merge.
+- **No other deletes:** no stale, age-based, no-PR or "already on the default branch" deletes.
+- **Never deleted:** the default branch, `main`, `master`, `hub/**`, `preview/**`, `release/**`; protected branches; any branch that is the head (same repo) or **base** of an open PR. Deleting a base closes its PRs.
+- Template: `templates/workflows/prune-merged-branches.yml`. It's the **one canonical copy**, the same bytes as the shared file in every repo.
 - **Adopt it:** copy the file unchanged to `.github/workflows/prune-merged-branches.yml` in the tool repo.
   - Pushing that path needs a token with `workflow` scope (Zombie Admin pushes).
-  - After the merge, run it once by hand with `dry_run` left on.
+  - After the merge, run it once by hand with `dry_run` checked.
 - **Keep every copy identical:** never edit it per repo. Change the template here, then roll the same bytes out to every repo.
-- **Runs:**
-  - Weekly scheduled runs (Mondays 09:17 UTC) delete for real.
-  - Manual runs (`workflow_dispatch`) default to `dry_run: true`, which only logs.
-- **Token:** `GITHUB_TOKEN` only, with `contents: write` and `pull-requests: read`. It runs on `ubuntu-latest` (not a PS tool).
-- **Never deleted:**
-  - the default branch, `main`, `master`, `hub/**`, `preview/**`, `release/**`;
-  - protected branches;
-  - branches a ruleset blocks from deletion;
-  - any branch that is the head (same repo) or **base** of an open PR. Deleting a base closes its PRs.
-- **Deleted only if:**
-  - a same-repo PR from the branch merged at its current head SHA, or
-  - its head is reachable from the default branch. With no PR history, the branch must also not sit at the default tip, and its head must be at least 14 days old.
-- **Errors:** each branch fails soft (a 403/422 is logged and the run continues). The job summary lists every decision.
+- **Runs on** `[self-hosted, Windows, X64]` in Windows PowerShell 5.1 (`shell: powershell`). Windows runners require `shell: powershell` for every run step ([CI shells](https://github.com/fleethacker-data-crucible/fleethacker-comms-data-crucible/blob/main/STANDARDS.md#ci-shells)), so the file is PS 5.1 rather than Python or JavaScript.
+- **Triggers:** every push to `main` (deletes for real) and `workflow_dispatch` with a `dry_run` input (default off; check it to log only). Each delete logs a `PLAN delete` line first; dry runs log `DRY RUN would delete`.
+- **Token:** `GITHUB_TOKEN` only, with `contents: write` and `pull-requests: read`.
+- **Errors:** an API error stops the run; the remaining branches wait for the next run.
 
 ## Regenerate the catalog fallback (PowerShell 5.1)
 ```powershell
