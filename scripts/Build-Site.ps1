@@ -19,6 +19,13 @@ if (-not $Root) { $Root = Split-Path -Parent $PSScriptRoot }
 Set-StrictMode -Version 2
 
 function Enc([object]$v) { if ($null -eq $v) { return '' } return [System.Net.WebUtility]::HtmlEncode([string]$v) }
+# Optional catalog properties: under Set-StrictMode -Version 2 a missing property throws, so read them through PSObject.Properties.
+function Get-Opt([object]$Obj, [string]$Name) {
+  if ($null -eq $Obj) { return $null }
+  $p = $Obj.PSObject.Properties[$Name]
+  if ($null -eq $p) { return $null }
+  return $p.Value
+}
 function Write-Utf8([string]$Path, [string]$Text) {
   $enc = New-Object System.Text.UTF8Encoding($false)
   [System.IO.File]::WriteAllText($Path, $Text, $enc)
@@ -60,49 +67,51 @@ $flags = @(
 $template = [System.IO.File]::ReadAllText((Join-Path $Root 'templates/pages/tool-page.html'))
 $count = 0
 foreach ($t in $catalog.tools) {
-  $req = $t.requirements
+  $port = Get-Opt $t 'defaultPort'; $launcher = Get-Opt $t 'launcher'; $releases = Get-Opt $t 'releases'
+  $external = Get-Opt $t 'external'; $installNote = Get-Opt $t 'installNote'
+  $req = Get-Opt $t 'requirements'
   $badges = New-Object System.Text.StringBuilder
   $rows = New-Object System.Text.StringBuilder
   foreach ($f in $flags) {
-    $val = [bool]($req.($f[0]))
+    $val = [bool](Get-Opt $req $f[0])
     if ($val) { [void]$badges.Append('<span class="badge ' + $f[2] + '">' + (Enc $f[1]) + '</span>') }
     $yn = if ($val) { 'Yes' } else { 'No' }
     [void]$rows.Append('<tr><td>' + (Enc $f[1]) + '</td><td>' + $yn + '</td></tr>')
   }
-  if (-not [bool]$req.admin) { [void]$badges.Append('<span class="badge green">No admin</span>') }
+  if (-not [bool](Get-Opt $req 'admin')) { [void]$badges.Append('<span class="badge green">No admin</span>') }
   # defaultPort: a number, 'auto' (picks a free loopback port), 'local' (local server, port not stated), or null (no server).
-  if ($t.defaultPort -is [string] -and $t.defaultPort -eq 'auto') {
+  if ($port -is [string] -and $port -eq 'auto') {
     [void]$badges.Append('<span class="badge grey">free port</span>')
     $portText = 'Opens on a free 127.0.0.1 port.'
-  } elseif ($t.defaultPort -is [string] -and $t.defaultPort -eq 'local') {
+  } elseif ($port -is [string] -and $port -eq 'local') {
     $portText = 'Starts a local server on 127.0.0.1 and opens your browser.'
-  } elseif ($t.defaultPort -and -not ($t.defaultPort -is [string])) {
-    [void]$badges.Append('<span class="badge grey">port ' + $t.defaultPort + '</span>')
-    $portText = 'Your browser opens to <code>http://127.0.0.1:' + $t.defaultPort + '/</code> (or the next free loopback port). Close the console to stop.'
+  } elseif ($port -and -not ($port -is [string])) {
+    [void]$badges.Append('<span class="badge grey">port ' + $port + '</span>')
+    $portText = 'Your browser opens to <code>http://127.0.0.1:' + $port + '/</code> (or the next free loopback port). Close the console to stop.'
   } else {
     $portText = 'No local server needed.'
   }
   [void]$badges.Append('<span class="badge grey">' + (Enc $t.status) + '</span>')
 
-  if ($t.releases) { $rel = '<a href="' + (Enc $t.releases) + '">Releases &rarr; latest</a>' }
+  if ($releases) { $rel = '<a href="' + (Enc $releases) + '">Releases &rarr; latest</a>' }
   else { $rel = 'not published on GitHub (see source below)' }
   $ext = ''
-  if ($t.external) { $ext = ' &middot; External source: <code>' + (Enc $t.externalSource) + '</code>' }
+  if ($external) { $ext = ' &middot; External source: <code>' + (Enc (Get-Opt $t 'externalSource')) + '</code>' }
   $catLabel = $cats[[string]$t.category]; if (-not $catLabel) { $catLabel = Enc $t.category }
 
   $html = $template
   $map = [ordered]@{
     '{{NAME}}'=(Enc $t.name); '{{SUMMARY}}'=(Enc $t.summary); '{{CATEGORY}}'=$catLabel
-    '{{BADGES}}'=$badges.ToString(); '{{REQ_ROWS}}'=$rows.ToString(); '{{LAUNCHER}}'=(Enc $t.launcher)
+    '{{BADGES}}'=$badges.ToString(); '{{REQ_ROWS}}'=$rows.ToString(); '{{LAUNCHER}}'=(Enc $launcher)
     '{{PORT_TEXT}}'=$portText; '{{RELEASE_LINK}}'=$rel; '{{REPO}}'=(Enc $t.repo)
     '{{EXTERNAL_NOTE}}'=$ext; '{{STATUS}}'=(Enc $t.status)
   }
   foreach ($k in $map.Keys) { $html = $html.Replace($k, [string]$map[$k]) }
-  if ([bool]$req.installs) {
+  if ([bool](Get-Opt $req 'installs')) {
     # Tools that need third-party installs don't run on whitelisted workstations: no zip/launcher steps.
-    $note = if ($t.installNote) { [string]$t.installNote } else { 'Needs third-party installs; see the repo README.' }
+    $note = if ($installNote) { [string]$installNote } else { 'Needs third-party installs; see the repo README.' }
     $html = [regex]::Replace($html, '(?s)<section><h2>Run on whitelisted Windows</h2>.*?</section>', ('<section><h2>Run</h2><p>' + (Enc $note) + ' Not for app-whitelisted workstations.</p></section>'))
-  } elseif (-not $t.launcher) {
+  } elseif (-not $launcher) {
     # Repos with nothing to run yet (no UI or no code): replace the run steps with one line.
     $html = [regex]::Replace($html, '(?s)<section><h2>Run on whitelisted Windows</h2>.*?</section>', '<section><h2>Run</h2><p>Nothing to launch yet. See the source repository.</p></section>')
   }
