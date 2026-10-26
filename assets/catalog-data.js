@@ -2,19 +2,19 @@
 window.EDGE_OPS_CATALOG = {
   "suite": "FleetHacker Edge-Ops",
   "org": "fleethacker-data-crucible",
-  "updated": "2026-10-24",
+  "updated": "2026-10-26",
   "tools": [
     {
-      "id": "synapse",
-      "name": "Synapse",
-      "category": "browser-only",
-      "summary": "Workforce capability discovery prototype; single-file standalone HTML.",
-      "launcher": "Synapse-Standalone.html",
-      "defaultPort": null,
+      "id": "shellback",
+      "name": "Shellback",
+      "category": "ps-host-browser-ui",
+      "summary": "Workforce capability intelligence: employee-attested skills, kept separate from claims.",
+      "launcher": "Launch-Shellback.bat",
+      "defaultPort": 8765,
       "requirements": {
-        "ps51": false,
+        "ps51": true,
         "chromeEngine": true,
-        "batch": false,
+        "batch": true,
         "vbs": false,
         "admin": false,
         "installs": false,
@@ -25,8 +25,8 @@ window.EDGE_OPS_CATALOG = {
       },
       "status": "prototype",
       "external": false,
-      "repo": "https://github.com/fleethacker-data-crucible/synapse",
-      "releases": "https://github.com/fleethacker-data-crucible/synapse/releases/latest"
+      "repo": "https://github.com/sun-of-anton/Shellback",
+      "releases": "https://github.com/sun-of-anton/Shellback/releases/latest"
     },
     {
       "id": "talkforge",
@@ -53,11 +53,11 @@ window.EDGE_OPS_CATALOG = {
       "releases": "https://github.com/fleethacker-data-crucible/talkforge/releases/latest"
     },
     {
-      "id": "sniphero",
-      "name": "SnipHero Studio",
+      "id": "snapshackle",
+      "name": "SnapShackle",
       "category": "ps-host-browser-ui",
       "summary": "Local-first screenshot capture and annotation studio.",
-      "launcher": "SnipHero.bat",
+      "launcher": "Launch-SnapShackle.bat",
       "defaultPort": 8765,
       "requirements": {
         "ps51": true,
@@ -73,15 +73,15 @@ window.EDGE_OPS_CATALOG = {
       },
       "status": "prototype",
       "external": false,
-      "repo": "https://github.com/fleethacker-data-crucible/sniphero",
-      "releases": "https://github.com/fleethacker-data-crucible/sniphero/releases/latest"
+      "repo": "https://github.com/sun-of-anton/SnapShackle",
+      "releases": "https://github.com/sun-of-anton/SnapShackle/releases/latest"
     },
     {
-      "id": "mailhawk",
-      "name": "MailHawk",
+      "id": "packetrat",
+      "name": "PacketRat",
       "category": "ps-host-browser-ui",
       "summary": "Outlook triage into a human-reviewed action queue.",
-      "launcher": "MailHawk.bat",
+      "launcher": "Launch-PacketRat.bat",
       "defaultPort": 8766,
       "requirements": {
         "ps51": true,
@@ -97,15 +97,15 @@ window.EDGE_OPS_CATALOG = {
       },
       "status": "prototype",
       "external": false,
-      "repo": "https://github.com/fleethacker-data-crucible/mailhawk",
-      "releases": "https://github.com/fleethacker-data-crucible/mailhawk/releases/latest"
+      "repo": "https://github.com/sun-of-anton/PacketRat",
+      "releases": "https://github.com/sun-of-anton/PacketRat/releases/latest"
     },
     {
-      "id": "keystone",
-      "name": "Keystone",
+      "id": "gangplank",
+      "name": "Gangplank",
       "category": "ps-host-browser-ui",
       "summary": "Browser-first Git sync workspace with no git.exe required.",
-      "launcher": "Launch-Keystone.bat",
+      "launcher": "Launch-Gangplank.bat",
       "defaultPort": 8769,
       "requirements": {
         "ps51": true,
@@ -121,15 +121,15 @@ window.EDGE_OPS_CATALOG = {
       },
       "status": "preview",
       "external": false,
-      "repo": "https://github.com/fleethacker-data-crucible/keystone",
-      "releases": "https://github.com/fleethacker-data-crucible/keystone/releases/latest"
+      "repo": "https://github.com/sun-of-anton/Gangplank",
+      "releases": "https://github.com/sun-of-anton/Gangplank/releases/latest"
     },
     {
       "id": "data-noodler",
       "name": "Data Noodler",
       "category": "data-ai",
       "summary": "Self-contained flat-file analytics (CSV/Parquet/Arrow/SQLite) with dashboards.",
-      "launcher": "Data Noodler.lnk",
+      "launcher": "Data_Noodler.bat",
       "defaultPort": 8079,
       "requirements": {
         "ps51": true,
@@ -153,7 +153,7 @@ window.EDGE_OPS_CATALOG = {
       "name": "Phoenix LAI",
       "category": "data-ai",
       "summary": "Local Gemma models on your GPU behind an OpenAI-compatible API, plus a Chrome app-window client.",
-      "launcher": "Phoenix_LAI_Server.lnk",
+      "launcher": "Phoenix_LAI.bat",
       "defaultPort": 1234,
       "requirements": {
         "ps51": true,
