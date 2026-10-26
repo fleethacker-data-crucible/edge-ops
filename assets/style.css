@@ -1,13 +1,20 @@
-:root{--bg:#111418;--fg:#e8e6e1;--muted:#9aa3ad;--card:#1b2026;--accent:#e0822a;--ok:#3a7d44;--warn:#9a6b12;--bad:#8a2f2f}
-*{box-sizing:border-box}body{margin:0;font:15px/1.5 Segoe UI,system-ui,sans-serif;background:var(--bg);color:var(--fg)}
-header,footer{padding:1.5rem 2rem}header h1{margin:0;color:var(--accent)}header p{color:var(--muted);max-width:60rem}
-.controls{display:flex;gap:.5rem;flex-wrap:wrap}input,select{background:var(--card);color:var(--fg);border:1px solid #333a42;border-radius:6px;padding:.45rem .6rem}
-#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem;padding:0 2rem 2rem}
-.card{background:var(--card);border:1px solid #2a3038;border-radius:10px;padding:1rem;display:flex;flex-direction:column;gap:.5rem}
-.card h2{margin:0;font-size:1.15rem}.cat{font-size:.75rem;text-transform:uppercase;color:var(--accent)}.card p{margin:0;color:var(--muted)}
-.badges{display:flex;flex-wrap:wrap;gap:.3rem}.b{font-size:.72rem;padding:.1rem .45rem;border-radius:4px;background:#2a3038}.b.ok{background:var(--ok)}.b.warn{background:var(--warn)}.b.bad{background:var(--bad)}
-.links a{color:var(--accent);margin-right:.8rem}footer{color:var(--muted)}footer a{color:var(--accent)}
-a{color:var(--accent)}.back{text-decoration:none}.card h2 a{color:var(--fg);text-decoration:none}.card h2 a:hover{color:var(--accent)}
-main.tool{padding:0 2rem 2rem;max-width:60rem}main.tool h2{color:var(--accent);font-size:1.1rem}
-table.req{border-collapse:collapse}table.req td{border-bottom:1px solid #2a3038;padding:.3rem 1rem .3rem 0}
-code{background:var(--card);padding:.05rem .3rem;border-radius:4px}
+/* Edge-Ops hub on FleetHacker UI kit v0.2.2 (../ui-kit/kit.css, loaded first, all inside @layer kit).
+   The kit supplies tokens, body/fonts, links, focus ring, inputs/selects, .box panels, .badge colours,
+   .skip link and forced-colors handling. Colours, fonts, radii and shadows come from the active theme file
+   (assets/themes/<id>.css, @layer theme, chosen by <html data-theme> via assets/theme.js); this file only
+   consumes those tokens and holds hub layout (unlayered, so it wins). Never put a literal colour here. */
+:root{--fg:var(--text);--card:var(--panel)}
+header,footer{padding:1.5rem 2rem}header h1{font-size:1.6rem;font-weight:700;color:var(--brand)}header p{color:var(--text-2);max-width:60rem}
+.controls{display:flex;gap:.5rem;flex-wrap:wrap}#q{flex:1 1 14rem;max-width:24rem}
+#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:1rem;padding:0 2rem 2rem}
+.card{display:flex;flex-direction:column;gap:.5rem;min-width:0}
+.card h2{margin:0;font-size:1.15rem;text-transform:none;letter-spacing:normal}.card h2 a{color:var(--text);text-decoration:none}.card h2 a:hover{color:var(--link);text-decoration:underline}
+.cat{font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;color:var(--brand)}.card p{margin:0;color:var(--text-2);overflow-wrap:anywhere}
+.badges{display:flex;flex-wrap:wrap;gap:.3rem}
+.links{display:flex;flex-wrap:wrap;gap:.4rem .8rem}footer{color:var(--muted);border-top:1px solid var(--border)}.back{text-decoration:none}.back:hover{text-decoration:underline}
+main.tool{padding:0 2rem 2rem;max-width:60rem}main.tool li{margin-bottom:.35rem}
+table.req{border-collapse:collapse}table.req td{border-bottom:1px solid var(--border);padding:.3rem 1rem .3rem 0}
+code{background:var(--panel-2);padding:.05rem .3rem;border-radius:var(--radius);overflow-wrap:anywhere}
+main:focus{outline:none}
+.prefs{float:right;display:flex;align-items:center;gap:.4rem;margin:0 0 .5rem 1rem;color:var(--text-2)}
+@media (max-width:600px){.prefs{float:none;margin:0 0 .75rem}header,footer{padding:1rem}#grid,main.tool{padding:0 1rem 1rem}}

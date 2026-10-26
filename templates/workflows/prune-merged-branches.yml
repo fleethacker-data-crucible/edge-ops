@@ -1,0 +1,142 @@
+# FleetHacker standard: prune merged branches.
+# Canonical copy lives in edge-ops standards; keep every repo identical (do not edit per repo).
+# Scheduled runs delete for real. Manual runs default to dry_run=true (log only).
+name: Prune merged branches
+
+on:
+  schedule:
+    - cron: '17 9 * * 1' # Mondays 09:17 UTC
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Log decisions only; delete nothing'
+        type: boolean
+        required: false
+        default: true
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: prune-merged-branches
+  cancel-in-progress: false
+
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Prune merged, unprotected, unused branches
+        uses: actions/github-script@v7
+        env:
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
+          MIN_AGE_DAYS: '14'
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const { owner, repo } = context.repo;
+            const fullName = `${owner}/${repo}`;
+            const dryRun = process.env.DRY_RUN !== 'false';
+            const minAgeDays = Number(process.env.MIN_AGE_DAYS || '14');
+            const EXCLUDE_EXACT = ['main', 'master'];
+            const EXCLUDE_PREFIX = ['hub/', 'preview/', 'release/'];
+            const rows = [];
+            const record = (branch, action, reason) => {
+              rows.push({ branch, action, reason });
+              const line = `${action.padEnd(9)} ${branch}: ${reason}`;
+              if (action === 'ERROR') core.warning(line); else core.info(line);
+            };
+            const sameRepo = (pr) => ((pr.head && pr.head.repo) || {}).full_name === fullName;
+
+            core.info(`Repository ${fullName}; event=${context.eventName}; dry_run=${dryRun}`);
+            const { data: repoInfo } = await github.rest.repos.get({ owner, repo });
+            const defaultBranch = repoInfo.default_branch;
+
+            // Open PRs (paginated): never delete a head (same repo) or ANY base.
+            // Deleting a base through the API closes every PR that targets it.
+            const openPrs = await github.paginate(github.rest.pulls.list,
+              { owner, repo, state: 'open', per_page: 100 });
+            const openHeads = new Map();
+            const openBases = new Map();
+            for (const pr of openPrs) {
+              if (sameRepo(pr)) openHeads.set(pr.head.ref, pr.number);
+              if (pr.base && pr.base.ref) openBases.set(pr.base.ref, pr.number);
+            }
+            core.info(`Default branch ${defaultBranch}; ${openPrs.length} open PR(s)`);
+
+            const branches = await github.paginate(github.rest.repos.listBranches,
+              { owner, repo, per_page: 100 });
+
+            for (const branch of branches) {
+              const name = branch.name;
+              try {
+                if (name === defaultBranch) { record(name, 'KEEP', 'default branch'); continue; }
+                if (EXCLUDE_EXACT.includes(name) || EXCLUDE_PREFIX.some((p) => name.startsWith(p))) {
+                  record(name, 'KEEP', 'hard-coded exclusion (main, master, hub/**, preview/**, release/**)'); continue;
+                }
+                if (branch.protected) { record(name, 'KEEP', 'protected branch'); continue; }
+                if (openHeads.has(name)) { record(name, 'KEEP', `head of open PR #${openHeads.get(name)}`); continue; }
+                if (openBases.has(name)) { record(name, 'KEEP', `base of open PR #${openBases.get(name)}`); continue; }
+
+                const { data: rules } = await github.request('GET /repos/{owner}/{repo}/rules/branches/{branch}',
+                  { owner, repo, branch: name, per_page: 100 });
+                if (rules.some((r) => r.type === 'deletion')) {
+                  record(name, 'KEEP', 'a ruleset restricts deletion'); continue;
+                }
+
+                const sha = branch.commit.sha;
+                const short = sha.slice(0, 7);
+                const closed = await github.paginate(github.rest.pulls.list,
+                  { owner, repo, state: 'closed', head: `${owner}:${name}`, per_page: 100 });
+                const mine = closed.filter((pr) => sameRepo(pr) && pr.head.ref === name);
+                const mergedSameHead = mine.find((pr) => pr.merged_at && pr.head.sha === sha);
+                const mergedAny = mine.find((pr) => pr.merged_at);
+
+                let why = null;
+                if (mergedSameHead) {
+                  why = `PR #${mergedSameHead.number} merged into ${mergedSameHead.base.ref} at head ${short}`;
+                } else {
+                  const { data: cmp } = await github.rest.repos.compareCommitsWithBasehead(
+                    { owner, repo, basehead: `${defaultBranch}...${sha}` });
+                  const reachable = cmp.status === 'identical' || cmp.status === 'behind';
+                  if (!reachable) {
+                    record(name, 'KEEP', `${cmp.ahead_by} commit(s) not in ${defaultBranch} and no merged PR at head ${short}`);
+                    continue;
+                  }
+                  if (cmp.status === 'identical' && !mergedAny) {
+                    record(name, 'KEEP', `points at the ${defaultBranch} tip with no PR history (likely a new branch)`);
+                    continue;
+                  }
+                  if (!mergedAny) {
+                    const { data: commit } = await github.rest.git.getCommit({ owner, repo, commit_sha: sha });
+                    const ageDays = (Date.now() - Date.parse(commit.committer.date)) / 86400000;
+                    if (ageDays < minAgeDays) {
+                      record(name, 'KEEP', `reachable from ${defaultBranch} but head is ${ageDays.toFixed(1)} day(s) old with no PR history (< ${minAgeDays})`);
+                      continue;
+                    }
+                  }
+                  why = `head ${short} is reachable from ${defaultBranch}` + (mergedAny ? ` (PR #${mergedAny.number} merged)` : '');
+                }
+
+                if (dryRun) { record(name, 'WOULD-DEL', why); continue; }
+                await github.rest.git.deleteRef({ owner, repo, ref: `heads/${name}` });
+                record(name, 'DELETED', why);
+              } catch (err) {
+                // Fail soft: one 403/422 (e.g. a deletion rule) must not stop the run.
+                record(name, 'ERROR', `${err.status || ''} ${err.message}`.trim());
+              }
+            }
+
+            const count = (a) => rows.filter((r) => r.action === a).length;
+            const totals = `deleted=${count('DELETED')} would-delete=${count('WOULD-DEL')} kept=${count('KEEP')} errors=${count('ERROR')}`;
+            core.info(`Summary (${dryRun ? 'DRY RUN' : 'LIVE'}): ${totals}`);
+            await core.summary
+              .addHeading(`Prune merged branches: ${fullName} (${dryRun ? 'dry run' : 'live'})`)
+              .addRaw(totals).addBreak()
+              .addTable([
+                [{ data: 'Branch', header: true }, { data: 'Action', header: true }, { data: 'Reason', header: true }],
+                ...rows.map((r) => [r.branch, r.action, r.reason]),
+              ])
+              .write();
+            if (count('ERROR') > 0) core.warning(`${count('ERROR')} branch(es) could not be processed; see log.`);
