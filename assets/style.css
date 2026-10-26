@@ -1,6 +1,8 @@
 /* Edge-Ops hub on FleetHacker UI kit v0.2.2 (../ui-kit/kit.css, loaded first, all inside @layer kit).
    The kit supplies tokens, body/fonts, links, focus ring, inputs/selects, .box panels, .badge colours,
-   .skip link and forced-colors handling. Only hub layout lives here (unlayered, so it wins). */
+   .skip link and forced-colors handling. Colours, fonts, radii and shadows come from the active theme file
+   (assets/themes/<id>.css, @layer theme, chosen by <html data-theme> via assets/theme.js); this file only
+   consumes those tokens and holds hub layout (unlayered, so it wins). Never put a literal colour here. */
 :root{--fg:var(--text);--card:var(--panel)}
 header,footer{padding:1.5rem 2rem}header h1{font-size:1.6rem;font-weight:700;color:var(--brand)}header p{color:var(--text-2);max-width:60rem}
 .controls{display:flex;gap:.5rem;flex-wrap:wrap}#q{flex:1 1 14rem;max-width:24rem}
@@ -14,4 +16,5 @@ main.tool{padding:0 2rem 2rem;max-width:60rem}main.tool li{margin-bottom:.35rem}
 table.req{border-collapse:collapse}table.req td{border-bottom:1px solid var(--border);padding:.3rem 1rem .3rem 0}
 code{background:var(--panel-2);padding:.05rem .3rem;border-radius:var(--radius);overflow-wrap:anywhere}
 main:focus{outline:none}
-@media (max-width:600px){header,footer{padding:1rem}#grid,main.tool{padding:0 1rem 1rem}}
+.prefs{float:right;display:flex;align-items:center;gap:.4rem;margin:0 0 .5rem 1rem;color:var(--text-2)}
+@media (max-width:600px){.prefs{float:none;margin:0 0 .75rem}header,footer{padding:1rem}#grid,main.tool{padding:0 1rem 1rem}}
