@@ -6,7 +6,7 @@ The repo itself is tidy: `catalog.json` is valid and matches `assets/catalog-dat
 
 ## 1. Visibility
 
-- [x] **`fleethacker-data-crucible/edge-ops-draft` is public.** Intended. The catalog wording was scrubbed of internal-host and smart-card references, and the preview was rebuilt and its history rewritten on 2026-10-25.
+- [x] **Preview site.** The `edge-ops-draft` preview repo is retired; the live site is https://fleethacker-data-crucible.github.io/edge-ops/ (Pages from `main`).
 - [ ] **Packaging:** make sure `release-zip.yml` can't ship dev or personal files (see section 3).
 
 ## 2. Port registry (`PORTS.md`, `catalog.json`)
