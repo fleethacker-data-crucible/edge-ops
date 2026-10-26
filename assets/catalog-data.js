@@ -2,7 +2,7 @@
 window.EDGE_OPS_CATALOG = {
   "suite": "FleetHacker Edge-Ops",
   "org": "fleethacker-data-crucible",
-  "updated": "2026-10-25",
+  "updated": "2026-10-26",
   "tools": [
     {
       "id": "halyard",
@@ -370,7 +370,7 @@ window.EDGE_OPS_CATALOG = {
       "name": "Data Noodler",
       "category": "data-ai",
       "summary": "Self-contained flat-file analytics (CSV/Parquet/Arrow/SQLite) with dashboards.",
-      "launcher": "Data Noodler.lnk",
+      "launcher": "Data_Noodler.bat",
       "defaultPort": 8079,
       "requirements": {
         "ps51": true,
@@ -394,7 +394,7 @@ window.EDGE_OPS_CATALOG = {
       "name": "Phoenix LAI",
       "category": "data-ai",
       "summary": "Local Gemma models on your GPU behind an OpenAI-compatible API, plus a Chrome app-window client.",
-      "launcher": "Phoenix_LAI_Server.lnk",
+      "launcher": "Phoenix_LAI.bat",
       "defaultPort": 1234,
       "requirements": {
         "ps51": true,
