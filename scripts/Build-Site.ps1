@@ -44,6 +44,7 @@ Copy-Item (Join-Path $Root 'index.html') $out
 Copy-Item (Join-Path $Root 'catalog.json') $out
 Copy-Item (Join-Path $Root 'assets') (Join-Path $out 'assets') -Recurse
 Remove-Item (Join-Path $out 'assets/themes/README.md') -ErrorAction SilentlyContinue  # docs, not site content
+Remove-Item (Join-Path $out 'assets/emblems/README.md') -ErrorAction SilentlyContinue  # docs, not site content
 # UI kit runtime only (no demo/dev files); pages reference it relatively as ui-kit/ or ../ui-kit/.
 $kitSrc = Join-Path $Root 'ui-kit'
 $kitOut = Join-Path $out 'ui-kit'
@@ -99,12 +100,17 @@ foreach ($t in $catalog.tools) {
   if ($external) { $ext = ' &middot; External source: <code>' + (Enc (Get-Opt $t 'externalSource')) + '</code>' }
   $catLabel = $cats[[string]$t.category]; if (-not $catLabel) { $catLabel = Enc $t.category }
 
+  # Decorative emblem (the h1 names the tool): assets/emblems/<id>.svg when the file exists, else nothing.
+  $emblem = ''
+  if (Test-Path -LiteralPath (Join-Path $Root ('assets/emblems/' + [string]$t.id + '.svg')) -PathType Leaf) {
+    $emblem = '<img class="emblem" src="../assets/emblems/' + (Enc $t.id) + '.svg" alt="" aria-hidden="true" width="48" height="48">'
+  }
   $html = $template
   $map = [ordered]@{
     '{{NAME}}'=(Enc $t.name); '{{SUMMARY}}'=(Enc $t.summary); '{{CATEGORY}}'=$catLabel
     '{{BADGES}}'=$badges.ToString(); '{{REQ_ROWS}}'=$rows.ToString(); '{{LAUNCHER}}'=(Enc $launcher)
     '{{PORT_TEXT}}'=$portText; '{{RELEASE_LINK}}'=$rel; '{{REPO}}'=(Enc $t.repo)
-    '{{EXTERNAL_NOTE}}'=$ext; '{{STATUS}}'=(Enc $t.status)
+    '{{EXTERNAL_NOTE}}'=$ext; '{{STATUS}}'=(Enc $t.status); '{{EMBLEM}}'=$emblem
   }
   foreach ($k in $map.Keys) { $html = $html.Replace($k, [string]$map[$k]) }
   if ([bool](Get-Opt $req 'installs')) {
