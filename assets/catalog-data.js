@@ -322,6 +322,7 @@ window.EDGE_OPS_CATALOG = {
       "category": "data-ai",
       "summary": "Run very large local GGUF models (70B and up) on an ordinary PC by streaming them one layer at a time, behind an OpenAI-compatible API.",
       "launcher": "Windlass.bat serve --model <file.gguf>",
+      "runNote": "API only, no browser UI: the OpenAI-compatible API answers on http://127.0.0.1:8777/v1 (or the next free port in 8777-8779). Stop it with Ctrl+C in the console or src\\Stop-Windlass.ps1.",
       "defaultPort": 8777,
       "requirements": {
         "ps51": true,

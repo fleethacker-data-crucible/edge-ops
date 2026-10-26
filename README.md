@@ -43,7 +43,7 @@ This is the **hub** for the `fleethacker-data-crucible` utility suite. Every too
 - **Browser-only:** HTML/JS that runs from `file://` or a tiny static server.
 - **PowerShell host + browser UI:** a PS 5.1 `HttpListener`/`TcpListener` on loopback serving a local web UI.
 - **Support repo:** no code or UI to run (for example a sandbox another tool writes to).
-- **GPU or build machine:** needs installs (for example Python), so it runs off the workstation, not on app-whitelisted Windows.
+- **GPU or build machine:** needs installs (for example Python), so it runs off the workstation, not on app-whitelisted Windows. No tool is in this category at the moment.
 - **Data & AI:** heavier tools. Some compile bundled C# through the built-in .NET Framework at run time; some app-control policies block this.
 
 ## Running on a whitelisted Windows machine
@@ -52,7 +52,7 @@ This is the **hub** for the `fleethacker-data-crucible` utility suite. Every too
    `Get-FileHash .\ToolName-vX.Y.Z.zip -Algorithm SHA256`
 2. Right-click the zip → Properties → **Unblock**, then extract the **whole** folder.
 3. Double-click the single `.bat` launcher. It runs `powershell.exe -NoProfile -ExecutionPolicy Bypass -STA -File …` for that process only. It never changes machine policy, and it does not override Group Policy or application control.
-4. Your browser opens to `http://127.0.0.1:<port>/`. Close the console window (or press Ctrl+C) to stop.
+4. Your browser opens to `http://127.0.0.1:<port>/`. Close the console window (or press Ctrl+C) to stop. API-only tools such as Windlass open no browser; their tool page gives the address.
 
 All tools are prototypes or previews unless stated otherwise. Get local authorization and a security review before using them with sensitive data.
 
@@ -75,6 +75,7 @@ jobs:
 - To add a tool, edit `catalog.json`, then regenerate the offline fallback:
   `python3 -c "import json;d=json.load(open('catalog.json'));open('assets/catalog-data.js','w').write('window.EDGE_OPS_CATALOG = '+json.dumps(d,indent=2)+';\n')"`
   (or run the PowerShell equivalent in CONVENTIONS.md).
+- Optional catalog fields: `installNote` (shown instead of the run steps when `requirements.installs` is true), `externalSource`, and `runNote`, which replaces the last run step on the tool page. Use `runNote` when "your browser opens" is wrong, for example an API-only server. A tool with a numeric `defaultPort` and `requirements.chromeEngine` false already gets neutral "no browser UI" wording.
 
 ## GitHub Pages site
 
