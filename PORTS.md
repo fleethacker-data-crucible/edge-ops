@@ -16,7 +16,8 @@ Each tool owns **one small contiguous block** that starts at its default. It mov
 | SnapShackle dev instance | 8768 (1 port) | restart | `dev\Launch-LocalDev.bat` | was 8790 |
 | Gangplank (formerly Keystone) | 8769-8770 | reuse | `Launch-Gangplank.bat -NoBrowser 8770` | 8770 was the manual alternative |
 | PacketRat (formerly MailHawk) | **8771-8773** | exclusive | `Launch-PacketRat.bat -Port <n>` | moved from 8766 (now inside SnapShackle's block); holds the Outlook COM lease |
-| New tool A / New tool B | 8774-8776 / 8777-8779 | reuse | - | add a row here and in `FleetPorts.psd1` when you take one |
+| New tool A | 8774-8776 | reuse | - | add a row here and in `FleetPorts.psd1` when you take one |
+| Windlass (OpenAI-compatible `/v1`) | **8777-8779** | exclusive | `Windlass.bat serve --port <n>` | holds a long model load and generation; was the "New tool B" block |
 | Phoenix LAI server UI | **8780-8789** | exclusive | - | holds the GPU lease; was 8765-8789 |
 | Phoenix LAI client | 8790-8798 | multi | - | several clients may run at once |
 | Phoenix LAI dev e2e | 8799 (1 port) | restart | - | test fixture |
