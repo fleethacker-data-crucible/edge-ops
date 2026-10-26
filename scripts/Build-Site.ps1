@@ -92,6 +92,12 @@ foreach ($t in $catalog.tools) {
   } else {
     $portText = 'No local server needed.'
   }
+  # A server with no browser UI (requirements.chromeEngine false) gets neutral wording; an optional runNote replaces it outright.
+  if ($port -and -not ($port -is [string]) -and -not [bool](Get-Opt $req 'chromeEngine')) {
+    $portText = 'Starts a local server on <code>http://127.0.0.1:' + $port + '/</code> (or the next free loopback port), with no browser UI. Press Ctrl+C in the console to stop.'
+  }
+  $runNote = Get-Opt $t 'runNote'
+  if ($runNote) { $portText = Enc $runNote }
   [void]$badges.Append('<span class="badge grey">' + (Enc $t.status) + '</span>')
 
   if ($releases) { $rel = '<a href="' + (Enc $releases) + '">Releases &rarr; latest</a>' }
