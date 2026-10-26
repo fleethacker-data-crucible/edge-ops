@@ -10,7 +10,7 @@ window.EDGE_OPS_CATALOG = {
       "category": "ps-host-browser-ui",
       "summary": "A product owner's assistant that works a backlog upward to leadership and downward to stories and tasks. It runs locally: a PowerShell launcher, one .NET library, and a browser UI on 127.0.0.1.",
       "launcher": "Launch-Halyard.bat",
-      "defaultPort": null,
+      "defaultPort": "auto",
       "requirements": {
         "ps51": true,
         "chromeEngine": true,
@@ -202,7 +202,7 @@ window.EDGE_OPS_CATALOG = {
       "category": "ps-host-browser-ui",
       "summary": "Local-first watchstanding log intelligence: quality review, evidence-linked turnover and lessons learned (v2).",
       "launcher": "Launch-EightBells.bat",
-      "defaultPort": null,
+      "defaultPort": "auto",
       "requirements": {
         "ps51": true,
         "chromeEngine": true,
@@ -250,7 +250,7 @@ window.EDGE_OPS_CATALOG = {
       "category": "browser-only",
       "summary": "An open-source e-learning authoring tool in the spirit of Articulate Storyline.",
       "launcher": "Launch.bat",
-      "defaultPort": null,
+      "defaultPort": "local",
       "requirements": {
         "ps51": true,
         "chromeEngine": true,
@@ -319,7 +319,7 @@ window.EDGE_OPS_CATALOG = {
     {
       "id": "windlass",
       "name": "Windlass",
-      "category": "data-ai",
+      "category": "gpu-host",
       "summary": "Run very large local models (70B and up) on a small GPU by loading one layer at a time, behind an OpenAI-compatible API.",
       "launcher": "python -m windlass serve",
       "defaultPort": 8777,
@@ -335,6 +335,7 @@ window.EDGE_OPS_CATALOG = {
         "gpu": true,
         "outlook": false
       },
+      "installNote": "Needs Python and pip install; see the repo README.",
       "status": "v0.1",
       "external": false,
       "repo": "https://github.com/fleethacker-data-crucible/Windlass",

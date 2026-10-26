@@ -20,7 +20,7 @@ This is the **hub** for the `fleethacker-data-crucible` utility suite. Every too
 
 | Tool | Category | What it does | Launch | Default port | Notes |
 |---|---|---|---|---|---|
-| [Halyard](https://github.com/fleethacker-data-crucible/Halyard) | PS host + browser UI | A product owner's assistant that works a backlog upward to leadership and downward to stories and tasks | `Launch-Halyard.bat` | - | unreleased |
+| [Halyard](https://github.com/fleethacker-data-crucible/Halyard) | PS host + browser UI | A product owner's assistant that works a backlog upward to leadership and downward to stories and tasks | `Launch-Halyard.bat` | free port | unreleased |
 | [Halyard Ballast](https://github.com/fleethacker-data-crucible/Halyard-Ballast) | Support repo | The sandbox repository Halyard writes to: synthetic and copied work items, created, reviewed and deleted on purpose | - | - | sandbox |
 | [Lazarette](https://github.com/fleethacker-data-crucible/Lazarette) | Security | Your credentials, stowed and locked aboard your own workstation | `Launch-Lazarette.bat` | 8765 | unreleased |
 | [Gangplank](https://github.com/fleethacker-data-crucible/Gangplank) | PS host + browser UI | A browser-first workspace that gets people without Git training safely onto GitHub and GitLab projects, from Windows PowerShell 5.1 and a browser; no git.exe, Node or Python on the workstation | `Launch-Gangplank.bat` | 8769 | preview |
@@ -28,12 +28,12 @@ This is the **hub** for the `fleethacker-data-crucible` utility suite. Every too
 | [Shellback](https://github.com/fleethacker-data-crucible/Shellback) | Browser-only | Workforce capability intelligence: employee-attested skills, kept separate from claims, in a local-first browser app | `Launch-Shellback.bat` | 8765 | prototype |
 | [SnapShackle](https://github.com/fleethacker-data-crucible/SnapShackle) | PS host + browser UI | A local-first Windows screenshot and annotation studio using native Windows capture, a built-in PowerShell HTTP host, and an offline browser UI | `Launch-SnapShackle.bat` | 8765 | prototype |
 | [Bowerbird](https://github.com/fleethacker-data-crucible/Bowerbird) | PS host + browser UI | Local-first file intelligence and screenshot renaming for Windows PowerShell 5.1 and your existing web browser | `Start-Bowerbird.bat` | 8767 | unreleased |
-| [Eight Bells](https://github.com/fleethacker-data-crucible/Eight-Bells) | PS host + browser UI | Local-first watchstanding log intelligence: quality review, evidence-linked turnover and lessons learned (v2) | `Launch-EightBells.bat` | - | prototype |
+| [Eight Bells](https://github.com/fleethacker-data-crucible/Eight-Bells) | PS host + browser UI | Local-first watchstanding log intelligence: quality review, evidence-linked turnover and lessons learned (v2) | `Launch-EightBells.bat` | free port | prototype |
 | [Capstan](https://github.com/fleethacker-data-crucible/Capstan) | PS host + browser UI | An open-source, local-first screen recorder and video editor for Windows | `Launch-Capstan.bat` | 8790 | v0.1 |
-| [Scrimshaw](https://github.com/fleethacker-data-crucible/Scrimshaw) | Browser-only | An open-source e-learning authoring tool in the spirit of Articulate Storyline | `Launch.bat` | - | unreleased |
+| [Scrimshaw](https://github.com/fleethacker-data-crucible/Scrimshaw) | Browser-only | An open-source e-learning authoring tool in the spirit of Articulate Storyline | `Launch.bat` | local (not stated) | unreleased |
 | [Semaphore](https://github.com/fleethacker-data-crucible/Semaphore) | Data & AI | Semaphore is a local-first dashboard builder for a single analyst, meant to replace Qlik on thin clients | - | - | v0.1 |
 | [Fairlead](https://github.com/fleethacker-data-crucible/Fairlead) | Data & AI | One local address for every model | `Launch-Fairlead.bat` | 8776 | unreleased |
-| [Windlass](https://github.com/fleethacker-data-crucible/Windlass) | Data & AI | Run very large local models (70B and up) on a small GPU by loading one layer at a time, behind an OpenAI-compatible API | `python -m windlass serve` | 8777 | v0.1 |
+| [Windlass](https://github.com/fleethacker-data-crucible/Windlass) | GPU or build machine | Run very large local models (70B and up) on a small GPU by loading one layer at a time, behind an OpenAI-compatible API | Needs Python and pip install; see the repo README | 8777 | v0.1 |
 | [TalkForge](https://github.com/fleethacker-data-crucible/talkforge) | Browser-only | In-browser neural text-to-speech (Piper/WASM), offline | `serve.bat` | 25000 | Models ship in releases |
 | [Data Noodler](https://github.com/fleethacker-data-crucible/data-noodler) | Data & AI | Flat-file analytics (CSV/Parquet/Arrow/SQLite) | `Data Noodler.lnk` | 8079 | Compiles C# at run time |
 | [Phoenix LAI](https://github.com/fleethacker-data-crucible/phoenix-lai) | Data & AI | Local GPU LLM server (OpenAI API) + chat client | `Phoenix_LAI_Server.lnk` | 1234 | GPU; compiles C# at run time |
@@ -43,6 +43,7 @@ This is the **hub** for the `fleethacker-data-crucible` utility suite. Every too
 - **Browser-only:** HTML/JS that runs from `file://` or a tiny static server.
 - **PowerShell host + browser UI:** a PS 5.1 `HttpListener`/`TcpListener` on loopback serving a local web UI.
 - **Support repo:** no code or UI to run (for example a sandbox another tool writes to).
+- **GPU or build machine:** needs installs (for example Python), so it runs off the workstation, not on app-whitelisted Windows.
 - **Data & AI:** heavier tools. Some compile bundled C# through the built-in .NET Framework at run time; some app-control policies block this.
 
 ## Running on a whitelisted Windows machine
