@@ -145,10 +145,11 @@ try { ... } finally { Exit-FleetLock $l | Out-Null }
 - Template: `templates/workflows/prune-merged-branches.yml`. It's the **one canonical copy**, the same bytes as the shared file in every repo.
 - **Adopt it:** copy the file unchanged to `.github/workflows/prune-merged-branches.yml` in the tool repo.
   - Pushing that path needs a token with `workflow` scope (Zombie Admin pushes).
-  - After the merge, run it once by hand with `dry_run` checked.
+  - After the merge, run it once by hand (`dry_run` is on by default) and read the PLAN lines.
 - **Keep every copy identical:** never edit it per repo. Change the template here, then roll the same bytes out to every repo.
 - **Runs on** `[self-hosted, Windows, X64]` in Windows PowerShell 5.1 (`shell: powershell`). Windows runners require `shell: powershell` for every run step ([CI shells](https://github.com/fleethacker-data-crucible/fleethacker-comms-data-crucible/blob/main/STANDARDS.md#ci-shells)), so the file is PS 5.1 rather than Python or JavaScript.
-- **Triggers:** every push to `main` (deletes for real) and `workflow_dispatch` with a `dry_run` input (default off; check it to log only). Each delete logs a `PLAN delete` line first; dry runs log `DRY RUN would delete`.
+- **Triggers:** every push to `main` (deletes for real) and `workflow_dispatch` with a `dry_run` input (**default on**: a manual run only logs `PLAN delete` and `DRY RUN would delete` lines; uncheck it to delete).
+- **Re-check before delete:** right before each delete the run re-reads the branch tip. If it no longer equals the merged head SHA, the branch is kept (`SKIP tip moved since the merge`). A branch that's already gone is skipped. A PR whose fork was deleted (null head repo) never matches.
 - **Token:** `GITHUB_TOKEN` only, with `contents: write` and `pull-requests: read`.
 - **Errors:** an API error stops the run; the remaining branches wait for the next run.
 
