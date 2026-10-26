@@ -1,0 +1,17 @@
+/* Edge-Ops theme: Phoenix light (default light theme).
+   Same token set as phoenix-dark.css; see that file for how themes work.
+   Palette: phoenix-lai :root.light (--bg #f4f3ef, --text #1e1d24, gold darkened for text), adjusted for AA. */
+@layer kit, theme;
+@layer theme{
+:root[data-theme=phoenix-light]{color-scheme:light;
+ --sans:"Exo 2","Segoe UI",system-ui,sans-serif;--mono:"Syne Mono",ui-monospace,Consolas,monospace;
+ --radius:5px;--radius-lg:8px;
+ --shadow:0 12px 40px #0003;--shadow-card:0 1px 3px #0000001f;--backdrop:#0006;
+ --bg:#f4f3ef;--side-bg:#ecebe6;--panel:#ffffff;--panel-2:#ebe9e3;--sel:#dcdad2;
+ --border:#d9d7cf;--border-strong:#77757e;
+ --text:#1e1d24;--text-2:#4b4a55;--muted:#5f5e68;
+ --accent:#2a6fc4;--on-accent:#ffffff;--link:#1f62b6;--focus:#1f62b6;
+ --brand:#735a06;--brand-2:#e8c15a;--on-brand:#ffffff;
+ --ok:#08743a;--ok-bg:#086832;--warn:#735a06;--warn-bg:#7d6308;--err:#c02a2a;--err-bg:#c42b2b;--on-status:#ffffff;
+ --toast-info-bg:#1e1d24;--toast-info-fg:#ffffff;--badge-fg:#1e1d24;}
+}

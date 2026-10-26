@@ -20,11 +20,21 @@ This is the **hub** for the `fleethacker-data-crucible` utility suite. Every too
 
 | Tool | Category | What it does | Launch | Default port | Notes |
 |---|---|---|---|---|---|
-| [Synapse](https://github.com/fleethacker-data-crucible/synapse) | Browser-only | Workforce capability discovery prototype | `Synapse-Standalone.html` | — | Single file, no server |
+| [Halyard](https://github.com/fleethacker-data-crucible/Halyard) | PS host + browser UI | A product owner's assistant that works a backlog upward to leadership and downward to stories and tasks | `Launch-Halyard.bat` | - | unreleased |
+| [Halyard Ballast](https://github.com/fleethacker-data-crucible/Halyard-Ballast) | Support repo | The sandbox repository Halyard writes to: synthetic and copied work items, created, reviewed and deleted on purpose | - | - | sandbox |
+| [Lazarette](https://github.com/fleethacker-data-crucible/Lazarette) | Security | Your credentials, stowed and locked aboard your own workstation | `Launch-Lazarette.bat` | 8765 | unreleased |
+| [Gangplank](https://github.com/fleethacker-data-crucible/Gangplank) | PS host + browser UI | A browser-first workspace that gets people without Git training safely onto GitHub and GitLab projects, from Windows PowerShell 5.1 and a browser; no git.exe, Node or Python on the workstation | `Launch-Gangplank.bat` | 8769 | preview |
+| [PacketRat](https://github.com/fleethacker-data-crucible/PacketRat) | PS host + browser UI | Outlook triage into a human-reviewed action queue, run from a local Windows PowerShell 5.1 service with a browser UI | `Launch-PacketRat.bat` | 8766 | prototype |
+| [Shellback](https://github.com/fleethacker-data-crucible/Shellback) | Browser-only | Workforce capability intelligence: employee-attested skills, kept separate from claims, in a local-first browser app | `Launch-Shellback.bat` | 8765 | prototype |
+| [SnapShackle](https://github.com/fleethacker-data-crucible/SnapShackle) | PS host + browser UI | A local-first Windows screenshot and annotation studio using native Windows capture, a built-in PowerShell HTTP host, and an offline browser UI | `Launch-SnapShackle.bat` | 8765 | prototype |
+| [Bowerbird](https://github.com/fleethacker-data-crucible/Bowerbird) | PS host + browser UI | Local-first file intelligence and screenshot renaming for Windows PowerShell 5.1 and your existing web browser | `Start-Bowerbird.bat` | 8767 | unreleased |
+| [Eight Bells](https://github.com/fleethacker-data-crucible/Eight-Bells) | PS host + browser UI | Local-first watchstanding log intelligence: quality review, evidence-linked turnover and lessons learned (v2) | `Launch-EightBells.bat` | - | prototype |
+| [Capstan](https://github.com/fleethacker-data-crucible/Capstan) | PS host + browser UI | An open-source, local-first screen recorder and video editor for Windows | `Launch-Capstan.bat` | 8790 | v0.1 |
+| [Scrimshaw](https://github.com/fleethacker-data-crucible/Scrimshaw) | Browser-only | An open-source e-learning authoring tool in the spirit of Articulate Storyline | `Launch.bat` | - | unreleased |
+| [Semaphore](https://github.com/fleethacker-data-crucible/Semaphore) | Data & AI | Semaphore is a local-first dashboard builder for a single analyst, meant to replace Qlik on thin clients | - | - | v0.1 |
+| [Fairlead](https://github.com/fleethacker-data-crucible/Fairlead) | Data & AI | One local address for every model | `Launch-Fairlead.bat` | 8776 | unreleased |
+| [Windlass](https://github.com/fleethacker-data-crucible/Windlass) | Data & AI | Run very large local models (70B and up) on a small GPU by loading one layer at a time, behind an OpenAI-compatible API | `python -m windlass serve` | 8777 | v0.1 |
 | [TalkForge](https://github.com/fleethacker-data-crucible/talkforge) | Browser-only | In-browser neural text-to-speech (Piper/WASM), offline | `serve.bat` | 25000 | Models ship in releases |
-| [SnipHero Studio](https://github.com/fleethacker-data-crucible/sniphero) | PS host + browser UI | Screenshot capture and annotation | `SnipHero.bat` | 8765 | Picks a free port if busy |
-| [MailHawk](https://github.com/fleethacker-data-crucible/mailhawk) | PS host + browser UI | Outlook triage into a reviewed action queue | `MailHawk.bat` | 8766 | Needs Outlook |
-| [Keystone](https://github.com/fleethacker-data-crucible/keystone) | PS host + browser UI | Git sync workspace without git.exe | `Launch-Keystone.bat` | 8769 | May need a URL reservation |
 | [Data Noodler](https://github.com/fleethacker-data-crucible/data-noodler) | Data & AI | Flat-file analytics (CSV/Parquet/Arrow/SQLite) | `Data Noodler.lnk` | 8079 | Compiles C# at run time |
 | [Phoenix LAI](https://github.com/fleethacker-data-crucible/phoenix-lai) | Data & AI | Local GPU LLM server (OpenAI API) + chat client | `Phoenix_LAI_Server.lnk` | 1234 | GPU; compiles C# at run time |
 
@@ -32,8 +42,8 @@ This is the **hub** for the `fleethacker-data-crucible` utility suite. Every too
 
 - **Browser-only:** HTML/JS that runs from `file://` or a tiny static server.
 - **PowerShell host + browser UI:** a PS 5.1 `HttpListener`/`TcpListener` on loopback serving a local web UI.
+- **Support repo:** no code or UI to run (for example a sandbox another tool writes to).
 - **Data & AI:** heavier tools. Some compile bundled C# through the built-in .NET Framework at run time; some app-control policies block this.
-- **Security:** credential and secret tooling.
 
 ## Running on a whitelisted Windows machine
 
@@ -58,7 +68,7 @@ jobs:
   release:
     uses: fleethacker-data-crucible/edge-ops/.github/workflows/release-zip.yml@main
     with:
-      tool-name: SnipHero
+      tool-name: SnapShackle
 ```
 
 - To add a tool, edit `catalog.json`, then regenerate the offline fallback:
