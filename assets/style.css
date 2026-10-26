@@ -21,3 +21,4 @@ main:focus{outline:none}
 /* Utility emblems (assets/emblems/<id>.svg): decorative, the card title names the tool. Fixed fleet palette; the navy disc
    gives the edge on light themes (>=14.6:1) and the brass ring on dark themes (>=6.2:1), so both clear 3:1 non-text. */
 .card h2 .emblem{flex:none;width:32px;height:32px}
+.tool-title{display:flex;align-items:center;gap:.75rem}.tool-title .emblem{flex:none;width:48px;height:48px}
