@@ -9,6 +9,7 @@
     'lasso-dev'          = @{ Start = 8768;  Size = 1;  Policy = 'restart' }
     'keystone'           = @{ Start = 8769;  Size = 2;  Policy = 'reuse' }
     'mailhawk'           = @{ Start = 8771;  Size = 3;  Policy = 'exclusive' }
+    'windlass'           = @{ Start = 8777;  Size = 3;  Policy = 'exclusive' }
     'phoenix-lai-server' = @{ Start = 8780;  Size = 10; Policy = 'exclusive' }
     'phoenix-lai-client' = @{ Start = 8790;  Size = 9;  Policy = 'multi' }
     'phoenix-lai-dev'    = @{ Start = 8799;  Size = 1;  Policy = 'restart' }
