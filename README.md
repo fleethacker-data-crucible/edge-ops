@@ -35,8 +35,8 @@ This is the **hub** for the `fleethacker-data-crucible` utility suite. Every too
 | [Fairlead](https://github.com/fleethacker-data-crucible/Fairlead) | Data & AI | One local address for every model | `Launch-Fairlead.bat` | 8776 | unreleased |
 | [Windlass](https://github.com/fleethacker-data-crucible/Windlass) | GPU or build machine | Run very large local models (70B and up) on a small GPU by loading one layer at a time, behind an OpenAI-compatible API | Needs Python and pip install; see the repo README | 8777 | v0.1 |
 | [TalkForge](https://github.com/fleethacker-data-crucible/talkforge) | Browser-only | In-browser neural text-to-speech (Piper/WASM), offline | `serve.bat` | 25000 | Models ship in releases |
-| [Data Noodler](https://github.com/fleethacker-data-crucible/data-noodler) | Data & AI | Flat-file analytics (CSV/Parquet/Arrow/SQLite) | `Data Noodler.lnk` | 8079 | Compiles C# at run time |
-| [Phoenix LAI](https://github.com/fleethacker-data-crucible/phoenix-lai) | Data & AI | Local GPU LLM server (OpenAI API) + chat client | `Phoenix_LAI_Server.lnk` | 1234 | GPU; compiles C# at run time |
+| [Data Noodler](https://github.com/fleethacker-data-crucible/data-noodler) | Data & AI | Flat-file analytics (CSV/Parquet/Arrow/SQLite) | `Data_Noodler.bat` | 8079 | Compiles C# at run time |
+| [Phoenix LAI](https://github.com/fleethacker-data-crucible/phoenix-lai) | Data & AI | Local GPU LLM server (OpenAI API) + chat client | `Phoenix_LAI.bat` | 1234 | GPU; compiles C# at run time |
 
 ## Categories
 

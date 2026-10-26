@@ -11,18 +11,18 @@ Each tool owns **one small contiguous block** that starts at its default. It mov
 | Phoenix LAI API (OpenAI-compatible `/v1`) | 1234 (1 port) | exclusive | - | LM Studio-compatible on purpose |
 | Data Noodler control panel | 8079-8081 | reuse | settings | was fixed 8079 |
 | Data Noodler site | 47823 (manual mode) or random **30000-46999** | exempt | settings `portMode` | the only random range; random range narrowed from 10000-65535 |
-| Lasso (formerly SnipHero Studio) | 8765-8766 | reuse | `-Port <n>` | was a 100-port scan (8765-8864) then port 0 |
-| Synapse (served edition) | **8767** (1 port, fixed) | reuse | `Serve-Synapse.ps1 -Port <n>` | browser data is keyed to the origin, so the port never moves; the standalone HTML still runs from `file://` |
-| Lasso dev instance | 8768 (1 port) | restart | `dev\Launch-LocalDev.bat` | was 8790 |
-| Keystone | 8769-8770 | reuse | `Launch-Keystone.bat -NoBrowser 8770` | 8770 was the manual alternative |
-| MailHawk | **8771-8773** | exclusive | `MailHawk.bat -Port <n>` | moved from 8766 (now inside Lasso's block); holds the Outlook COM lease |
+| SnapShackle (formerly Lasso, SnipHero Studio) | 8765-8766 | reuse | `Launch-SnapShackle.bat -Port <n>` | was a 100-port scan (8765-8864) then port 0 |
+| Shellback (formerly Synapse) | **8767** (1 port, fixed) | reuse | `Launch-Shellback.bat -Port <n>` | browser data is keyed to the origin, so the port never moves |
+| SnapShackle dev instance | 8768 (1 port) | restart | `dev\Launch-LocalDev.bat` | was 8790 |
+| Gangplank (formerly Keystone) | 8769-8770 | reuse | `Launch-Gangplank.bat -NoBrowser 8770` | 8770 was the manual alternative |
+| PacketRat (formerly MailHawk) | **8771-8773** | exclusive | `Launch-PacketRat.bat -Port <n>` | moved from 8766 (now inside SnapShackle's block); holds the Outlook COM lease |
 | New tool A / New tool B | 8774-8776 / 8777-8779 | reuse | - | add a row here and in `FleetPorts.psd1` when you take one |
 | Phoenix LAI server UI | **8780-8789** | exclusive | - | holds the GPU lease; was 8765-8789 |
 | Phoenix LAI client | 8790-8798 | multi | - | several clients may run at once |
 | Phoenix LAI dev e2e | 8799 (1 port) | restart | - | test fixture |
 | TalkForge static server | 25000-25009 | reuse | `serve-windows.ps1 -Port <n>` | was 25000 up to 65535 |
 | Test Chrome debug ports | 9300-9399 (reserved) | - | - | `Start-IsolatedChrome` ([tools/test-harness](tools/test-harness/)); tools must not default here |
-| CI-only test ports | 18000-18999 | - | - | e.g. Synapse CI uses 18765 |
+| CI-only test ports | 18000-18999 | - | - | e.g. Shellback CI uses 18765 |
 
 ## Self-detection and policies
 
@@ -54,7 +54,7 @@ Helper: [tools/fleet-port/FleetPort.psm1](tools/fleet-port/FleetPort.psm1) (`Get
 Reference: phoenix-lai `src\WebServer.cs` (`StartOnFreePort`) and data-noodler `server\server.ps1`. Snippet: [templates/ports/LoopbackPort.ps1](templates/ports/LoopbackPort.ps1).
 
 1. **Listener:** HttpListener on `http://localhost:<port>/` (or TcpListener on `IPAddress.Loopback`), never `+` / `*` / `0.0.0.0`. No URL ACL, no admin. Enforced by `Assert-LoopbackPrefix` in [templates/ports/LoopbackPort.ps1](templates/ports/LoopbackPort.ps1) before `Prefixes.Add` (only `localhost`, `127.0.0.1`, `[::1]`; elevated `+`/`*` prefixes would otherwise really listen on all interfaces).
-2. **Preferred port:** `-Port <n>`, else the port remembered in `settings.json`, else the start of the tool's block above. An explicit `-Port` is used **exactly** (no walking; a busy port that is not the same tool is a clear error), unless the tool also takes its own scan-size parameter (for example Lasso's `-PortScanCount`). A remembered port moves the start, and the block size stays the same.
+2. **Preferred port:** `-Port <n>`, else the port remembered in `settings.json`, else the start of the tool's block above. An explicit `-Port` is used **exactly** (no walking; a busy port that is not the same tool is a clear error), unless the tool also takes its own scan-size parameter (for example SnapShackle's `-PortScanCount`). A remembered port moves the start, and the block size stays the same.
 3. **Walk the block:** a port is free only if it is free on **both** IPv4 and IPv6 loopback and the HttpListener starts. If it is busy, probe `/__fleethacker/id` and apply the policy (above), otherwise try the next port in the tool's **own block**. Never scan into another tool's block, never bind port 0, never pick a random port (except Data Noodler's opt-in site mode, 30000-46999). If the block is full, stop with a clear error naming the tool and the block, in the log and in a message box.
 4. **No race:** keep the listener that started. Don't probe a port, close it and rebind.
 5. **Report:** log the port you actually got and open or print `http://localhost:<port>/`.
