@@ -1,6 +1,6 @@
 (function(){
   'use strict';
-  var CATS={'browser-only':'Browser-only','ps-host-browser-ui':'PowerShell host + browser UI','data-ai':'Data & AI','security':'Security'};
+  var CATS={'browser-only':'Browser-only','ps-host-browser-ui':'PowerShell host + browser UI','data-ai':'Data & AI','security':'Security','support':'Support repos'};
   var FLAGS=[['ps51','PS 5.1','green'],['chromeEngine','Chrome/Edge','green'],['batch','.bat launcher','green'],['vbs','.vbs','yellow'],['admin','Admin','red'],['installs','Installs','red'],['network','Network','yellow'],['csharpRuntimeCompile','C# runtime compile','yellow'],['gpu','GPU','yellow'],['outlook','Outlook','yellow']];
   function el(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e;}
   function render(data){
@@ -16,7 +16,7 @@
         if(!t.requirements.admin)b.appendChild(el('span','badge green','No admin'));
         if(t.defaultPort)b.appendChild(el('span','badge grey','port '+t.defaultPort));
         b.appendChild(el('span','badge grey',t.status));d.appendChild(b);
-        d.appendChild(el('p',null,'Launch: '+t.launcher+(t.external?' — source: '+t.externalSource:'')));
+        d.appendChild(el('p',null,t.launcher?'Launch: '+t.launcher+(t.external?' — source: '+t.externalSource:''):'Nothing to launch yet.'));
         var l=el('div','links'),a=el('a',null,'Repository');a.href=t.repo;l.appendChild(a);
         if(t.releases){var r=el('a',null,'Latest release (zip)');r.href=t.releases;l.appendChild(r);}
         d.appendChild(l);grid.appendChild(d);
