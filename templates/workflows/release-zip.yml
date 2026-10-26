@@ -12,7 +12,7 @@ on:
   workflow_call:
     inputs:
       tool-name:
-        description: "Name used in the zip filename (e.g. SnipHero)"
+        description: "Name used in the zip filename (e.g. SnapShackle)"
         required: true
         type: string
       version:
