@@ -20,13 +20,13 @@ This is the **hub** for the `fleethacker-data-crucible` utility suite. Every too
 
 | Tool | Category | What it does | Launch | Default port | Notes |
 |---|---|---|---|---|---|
-| [Synapse](https://github.com/fleethacker-data-crucible/synapse) | Browser-only | Workforce capability discovery prototype | `Synapse-Standalone.html` | — | Single file, no server |
+| [Shellback](https://github.com/sun-of-anton/Shellback) | PS host + browser UI | Workforce capability intelligence (formerly Synapse) | `Launch-Shellback.bat` | 8765 | Picks a free port if busy |
 | [TalkForge](https://github.com/fleethacker-data-crucible/talkforge) | Browser-only | In-browser neural text-to-speech (Piper/WASM), offline | `serve.bat` | 25000 | Models ship in releases |
-| [SnipHero Studio](https://github.com/fleethacker-data-crucible/sniphero) | PS host + browser UI | Screenshot capture and annotation | `SnipHero.bat` | 8765 | Picks a free port if busy |
-| [MailHawk](https://github.com/fleethacker-data-crucible/mailhawk) | PS host + browser UI | Outlook triage into a reviewed action queue | `MailHawk.bat` | 8766 | Needs Outlook |
-| [Keystone](https://github.com/fleethacker-data-crucible/keystone) | PS host + browser UI | Git sync workspace without git.exe | `Launch-Keystone.bat` | 8769 | May need a URL reservation |
-| [Data Noodler](https://github.com/fleethacker-data-crucible/data-noodler) | Data & AI | Flat-file analytics (CSV/Parquet/Arrow/SQLite) | `Data Noodler.lnk` | 8079 | Compiles C# at run time |
-| [Phoenix LAI](https://github.com/fleethacker-data-crucible/phoenix-lai) | Data & AI | Local GPU LLM server (OpenAI API) + chat client | `Phoenix_LAI_Server.lnk` | 1234 | GPU; compiles C# at run time |
+| [SnapShackle](https://github.com/sun-of-anton/SnapShackle) | PS host + browser UI | Screenshot capture and annotation (formerly SnipHero) | `Launch-SnapShackle.bat` | 8765 | Picks a free port if busy |
+| [PacketRat](https://github.com/sun-of-anton/PacketRat) | PS host + browser UI | Outlook triage into a reviewed action queue (formerly MailHawk) | `Launch-PacketRat.bat` | 8766 | Needs Outlook |
+| [Gangplank](https://github.com/sun-of-anton/Gangplank) | PS host + browser UI | Git sync workspace without git.exe (formerly Keystone) | `Launch-Gangplank.bat` | 8769 | May need a URL reservation |
+| [Data Noodler](https://github.com/fleethacker-data-crucible/data-noodler) | Data & AI | Flat-file analytics (CSV/Parquet/Arrow/SQLite) | `Data_Noodler.bat` | 8079 | Compiles C# at run time |
+| [Phoenix LAI](https://github.com/fleethacker-data-crucible/phoenix-lai) | Data & AI | Local GPU LLM server (OpenAI API) + chat client | `Phoenix_LAI.bat` | 1234 | GPU; compiles C# at run time |
 
 ## Categories
 
@@ -58,7 +58,7 @@ jobs:
   release:
     uses: fleethacker-data-crucible/edge-ops/.github/workflows/release-zip.yml@main
     with:
-      tool-name: SnipHero
+      tool-name: SnapShackle
 ```
 
 - To add a tool, edit `catalog.json`, then regenerate the offline fallback:
