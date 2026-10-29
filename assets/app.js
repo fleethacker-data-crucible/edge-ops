@@ -14,6 +14,7 @@
         var d=el('article','card box');d.appendChild(el('span','cat',CATS[t.category]||t.category));var h=el('h2'),ha=el('a',null,t.name);ha.href='tools/'+t.id+'.html';var em=el('img','emblem');em.src='assets/emblems/'+t.id+'.svg';em.alt='';em.setAttribute('aria-hidden','true');em.width=32;em.height=32;em.onerror=function(){this.remove();};h.appendChild(em);h.appendChild(ha);d.appendChild(h);d.appendChild(el('p',null,t.summary));
         var b=el('div','badges');FLAGS.forEach(function(f){if(t.requirements[f[0]])b.appendChild(el('span','badge '+f[2],f[1]));});
         if(!t.requirements.admin)b.appendChild(el('span','badge green','No admin'));
+        var au=t.automation;if(au){if(au.cli)b.appendChild(el('span','badge green','CLI'));if(au.json)b.appendChild(el('span','badge green','JSON output'));if(au.api)b.appendChild(el('span','badge green',au.api==='openai-v1'?'OpenAI API':'API'));if(au.mcp)b.appendChild(el('span','badge green','MCP'));}   // CONVENTIONS.md: CLI and API for agents
         if(t.defaultPort==='auto')b.appendChild(el('span','badge grey','free port'));else if(typeof t.defaultPort==='number')b.appendChild(el('span','badge grey','port '+t.defaultPort));
         b.appendChild(el('span','badge grey',t.status));d.appendChild(b);
         d.appendChild(el('p',null,t.requirements.installs?(t.installNote||'Needs third-party installs; see the repo README.'):t.launcher?'Launch: '+t.launcher+(t.external?' — source: '+t.externalSource:''):'Nothing to launch yet.'));

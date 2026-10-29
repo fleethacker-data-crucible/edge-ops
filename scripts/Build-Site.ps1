@@ -111,12 +111,28 @@ foreach ($t in $catalog.tools) {
   if (Test-Path -LiteralPath (Join-Path $Root ('assets/emblems/' + [string]$t.id + '.svg')) -PathType Leaf) {
     $emblem = '<img class="emblem" src="../assets/emblems/' + (Enc $t.id) + '.svg" alt="" aria-hidden="true" width="48" height="48">'
   }
+  # For agents (CONVENTIONS.md, CLI and API for agents): only when the catalog records it; nothing is assumed.
+  $automation = ''
+  $au = Get-Opt $t 'automation'
+  if ($au) {
+    $api = [string](Get-Opt $au 'api')
+    $apiText = if ($api -eq 'openai-v1') { 'Yes: OpenAI-compatible <code>/v1</code> on 127.0.0.1' } elseif ($api) { 'Yes: local HTTP API on 127.0.0.1 (' + (Enc $api) + ')' } else { 'No' }
+    $describe = [string](Get-Opt $au 'describe')
+    $yes = { param($v) if ([bool]$v) { 'Yes' } else { 'No' } }
+    $automation = '<section><h2>For agents</h2><table class="req"><tbody>' +
+      '<tr><td>Command line (every action a person can take)</td><td>' + (& $yes (Get-Opt $au 'cli')) + '</td></tr>' +
+      '<tr><td>Machine-readable output (<code>--json</code>)</td><td>' + (& $yes (Get-Opt $au 'json')) + '</td></tr>' +
+      '<tr><td>API</td><td>' + $apiText + '</td></tr>' +
+      '<tr><td>MCP server</td><td>' + (& $yes (Get-Opt $au 'mcp')) + '</td></tr>' +
+      '<tr><td>Lists its commands</td><td>' + $(if ($describe) { '<code>' + (Enc $describe) + '</code>' } else { 'No' }) + '</td></tr>' +
+      '</tbody></table></section>'
+  }
   $html = $template
   $map = [ordered]@{
     '{{NAME}}'=(Enc $t.name); '{{SUMMARY}}'=(Enc $t.summary); '{{CATEGORY}}'=$catLabel
     '{{BADGES}}'=$badges.ToString(); '{{REQ_ROWS}}'=$rows.ToString(); '{{LAUNCHER}}'=(Enc $launcher)
     '{{PORT_TEXT}}'=$portText; '{{RELEASE_LINK}}'=$rel; '{{REPO}}'=(Enc $t.repo)
-    '{{EXTERNAL_NOTE}}'=$ext; '{{STATUS}}'=(Enc $t.status); '{{EMBLEM}}'=$emblem
+    '{{EXTERNAL_NOTE}}'=$ext; '{{STATUS}}'=(Enc $t.status); '{{EMBLEM}}'=$emblem; '{{AUTOMATION}}'=$automation
   }
   foreach ($k in $map.Keys) { $html = $html.Replace($k, [string]$map[$k]) }
   if ([bool](Get-Opt $req 'installs')) {

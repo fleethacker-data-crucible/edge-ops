@@ -1,0 +1,19 @@
+/* Edge-Ops theme: Fleet Chart room (light). Optional; the Phoenix themes stay the defaults.
+   Same token set as phoenix-dark.css; see that file and README.md for how themes work.
+   Palette: Fleet Unified UI 3.2 Chart room (parchment, white cards, navy text, darkened brass). Contrast checked:
+   text >= 4.5:1 on every surface, focus and control borders >= 3:1, every "on-" colour >= 4.5:1 on its fill. */
+@layer kit, theme;
+@layer theme{
+:root[data-theme=fleet-chart-room]{color-scheme:light;
+ --sans:"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+ --mono:"Cascadia Mono","Cascadia Code",Consolas,ui-monospace,monospace;
+ --radius:6px;--radius-lg:10px;
+ --shadow:0 12px 36px #13263324;--shadow-card:0 1px 3px #1326331f;--backdrop:#13263366;
+ --bg:#fbfaf2;--side-bg:#f3efe2;--panel:#ffffff;--panel-2:#efe9d9;--sel:#e6dcc6;
+ --border:#dcd3bd;--border-strong:#8c8370;
+ --text:#132633;--text-2:#4f5d66;--muted:#5b6a73;
+ --accent:#7d6140;--on-accent:#ffffff;--link:#6f5530;--focus:#8a6b45;
+ --brand:#8a6b45;--brand-2:#c9a66b;--on-brand:#ffffff;
+ --ok:#2f7d57;--ok-bg:#2f7d57;--warn:#9a6412;--warn-bg:#9a6412;--err:#b8382b;--err-bg:#b8382b;--on-status:#ffffff;
+ --toast-info-bg:#132633;--toast-info-fg:#ffffff;--badge-fg:#132633;}
+}

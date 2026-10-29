@@ -85,3 +85,37 @@ Describe 'Build-Site.ps1 installNote present' {
         $Html | Should -Match 'Needs Python 3\.12 and pip install\.'
     }
 }
+
+Describe 'Build-Site.ps1 automation (CLI and API for agents)' {
+    BeforeAll {
+        Set-StrictMode -Version 2
+        $agent = [pscustomobject]@{
+            id = 'agent'; name = 'Agent'; category = 'data-ai'; summary = 'Test entry.'; launcher = 'Launch-Agent.bat'
+            status = 'prototype'; repo = 'https://example.invalid/a'; requirements = [pscustomobject]@{ ps51 = $true }
+            automation = [pscustomobject]@{ cli = $true; json = $true; api = 'openai-v1'; mcp = $false; describe = 'Launch-Agent.bat commands --json' }
+        }
+        # No automation property at all (most tools today).
+        $silent = [pscustomobject]@{
+            id = 'silent'; name = 'Silent'; category = 'support'; summary = 'Test entry.'; launcher = 'Launch-Silent.bat'
+            status = 'prototype'; repo = 'https://example.invalid/s'; requirements = [pscustomobject]@{ ps51 = $true }
+        }
+        $script:Root3 = New-TestRoot @($agent, $silent)
+        & $BuildScript -Root $Root3 -OutDir '_site' | Out-Null
+        $script:AgentHtml = [System.IO.File]::ReadAllText((Join-Path $Root3 '_site\tools\agent.html'))
+        $script:SilentHtml = [System.IO.File]::ReadAllText((Join-Path $Root3 '_site\tools\silent.html'))
+    }
+    AfterAll {
+        Set-StrictMode -Off
+        if ($Root3 -and (Test-Path $Root3)) { Remove-Item $Root3 -Recurse -Force }
+    }
+    It 'shows a For agents table from the catalog' {
+        $AgentHtml | Should -Match '<h2>For agents</h2>'
+        $AgentHtml | Should -Match 'OpenAI-compatible <code>/v1</code>'
+        $AgentHtml | Should -Match '<code>Launch-Agent\.bat commands --json</code>'
+        $AgentHtml | Should -Match 'MCP server</td><td>No'
+    }
+    It 'adds nothing when the catalog records no automation' {
+        $SilentHtml | Should -Not -Match 'For agents'
+        $SilentHtml | Should -Not -Match '\{\{AUTOMATION\}\}'
+    }
+}
