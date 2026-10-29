@@ -1,0 +1,31 @@
+name: Site build tests
+on:
+  pull_request:
+  push:
+    branches: [main, 'feature/**']
+permissions:
+  contents: read
+jobs:
+  windows:
+    name: site-windows-powershell-51
+    runs-on: [self-hosted, windows, powershell51, headless]
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Build-Site regression tests
+        shell: powershell
+        env:
+          GITHUB_TOKEN: ''
+          GH_TOKEN: ''
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($PSVersionTable.PSVersion.Major -ne 5) { throw 'Windows PowerShell 5.1 is required.' }
+          Import-Module Pester -RequiredVersion 5.7.1 -Force
+          $config = New-PesterConfiguration
+          $config.Run.Path = 'scripts/tests/Build-Site.Tests.ps1'
+          $config.Run.PassThru = $true
+          $config.Output.Verbosity = 'Normal'
+          $result = Invoke-Pester -Configuration $config
+          if ($result.Result -ne 'Passed') { throw 'Site build regression tests failed.' }

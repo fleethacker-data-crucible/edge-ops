@@ -314,14 +314,21 @@ window.EDGE_OPS_CATALOG = {
       "status": "unreleased",
       "external": false,
       "repo": "https://github.com/fleethacker-data-crucible/Fairlead",
-      "releases": null
+      "releases": null,
+      "automation": {
+        "cli": false,
+        "json": false,
+        "api": "openai-v1",
+        "mcp": false,
+        "describe": null
+      }
     },
     {
       "id": "windlass",
       "name": "Windlass",
       "category": "data-ai",
       "summary": "Run very large local GGUF models (70B and up) on an ordinary PC by streaming them one layer at a time, behind an OpenAI-compatible API.",
-      "launcher": "Windlass.bat serve --model <file.gguf>",
+      "launcher": "Launch-Windlass.bat serve --model <file.gguf>",
       "runNote": "API only, no browser UI: the OpenAI-compatible API answers on http://127.0.0.1:8777/v1 (or the next free port in 8777-8779). Stop it with Ctrl+C in the console or src\\Stop-Windlass.ps1.",
       "defaultPort": 8777,
       "requirements": {
@@ -339,7 +346,14 @@ window.EDGE_OPS_CATALOG = {
       "status": "v0.2",
       "external": false,
       "repo": "https://github.com/fleethacker-data-crucible/Windlass",
-      "releases": null
+      "releases": null,
+      "automation": {
+        "cli": true,
+        "json": false,
+        "api": "openai-v1",
+        "mcp": false,
+        "describe": "Launch-Windlass.bat help"
+      }
     },
     {
       "id": "talkforge",
@@ -411,7 +425,14 @@ window.EDGE_OPS_CATALOG = {
       "status": "beta",
       "external": false,
       "repo": "https://github.com/fleethacker-data-crucible/phoenix-lai",
-      "releases": "https://github.com/fleethacker-data-crucible/phoenix-lai/releases/latest"
+      "releases": "https://github.com/fleethacker-data-crucible/phoenix-lai/releases/latest",
+      "automation": {
+        "cli": false,
+        "json": false,
+        "api": "openai-v1",
+        "mcp": false,
+        "describe": null
+      }
     }
   ]
 };

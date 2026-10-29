@@ -64,6 +64,25 @@ Every `.ps1`/`.psm1` must run on stock **Windows PowerShell 5.1** (`powershell.e
 - Closing the window or exiting stops the server and removes the `.pid` file.
 - Host skeleton: [templates/host/Start-ToolName.ps1](templates/host/Start-ToolName.ps1).
 
+## CLI and API for agents
+**Status: proposed, waiting on Jeremy's decision** ([Fleet CLI parity](https://github.com/fleethacker-data-crucible/fleethacker-comms-data-crucible/blob/main/proposals/cli-parity/README.md), discussion #69). Until it is adopted these are **SHOULD** for new work; once adopted they become **MUST**. The idea: if a person can click it, an agent can call it.
+- **No GUI-only code paths.** A button handler only collects input and calls a command in the tool's core.
+- **Every action is a named command,** `<tool> <noun> <verb>` (for example `capstan marker add`, `windlass playbook show`). The same name is used for the API route and the MCP tool.
+- **Machine-readable output.** Every command supports `--json` with a stable, versioned schema (a `"schema": "<tool>.<thing>/<n>"` field). Exit code 0 is success; any other code is a named error. A command that writes a file takes `--out <file>` and writes UTF-8 **without a BOM**, because `>` in Windows PowerShell 5.1 writes UTF-16 LE.
+- **Headless.** Nothing waits on a dialog: confirmations take `--yes`, risky actions support `--dry-run`.
+- **Self-describing.** `<tool> commands --json` lists every command with its inputs and outputs; the API and MCP tool list come from the same registry.
+- **Open project files.** Plain JSON with a published schema and a version number.
+- **Stable IDs across the suite.** A clip, frame or asset keeps one ID from creation, shared between tools.
+- **Locked to this user.** An HTTP API or MCP server binds loopback only (see Local servers), requires a per-session token written to `%LOCALAPPDATA%\<Tool>` (readable only by the signed-in user; 401 without it), checks `Host` and `Origin` on every request, sends no CORS headers, and refuses delete, overwrite or publish unless the call sets `confirm: true` (logged). The Researcher checks an API before it ships.
+- **Parity test in CI.** Every GUI action is registered against its command; CI fails when one has no command or a command has no test.
+- **Record it in the catalog.** Each tool's entry in [catalog.json](catalog.json) carries an optional `automation` block, shown as badges on the hub and a *For agents* table on the tool's page. Record only what is verified; leave it out rather than guess:
+
+  ```json
+  "automation": {"cli": true, "json": true, "api": "openai-v1", "mcp": false, "describe": "Launch-Tool.bat commands --json"}
+  ```
+
+  `cli`: every user action runs from the command line. `json`: commands take `--json`. `api`: `"openai-v1"` for an OpenAI-compatible `/v1`, another short name for a tool's own loopback API, or `null`. `mcp`: an MCP server. `describe`: the command that lists the tool's commands, or `null`.
+
 ## Logging
 - Logs go in `logs\` inside the tool (`<root>\logs\` or `server\logs\`), one timestamped file per run: `ToolName_yyyy_MM_dd_HHmmss.log` (data-noodler). A machine-readable `.jsonl` next to it is optional (phoenix-lai `ChatLog.cs`).
 - Line format: `yyyy-MM-dd HH:mm:ss  [LEVEL] text`.

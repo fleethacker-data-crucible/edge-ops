@@ -7,7 +7,9 @@
   'use strict';
   var THEMES = [
     { id: 'phoenix-dark', label: 'Phoenix dark', scheme: 'dark' },
-    { id: 'phoenix-light', label: 'Phoenix light', scheme: 'light' }
+    { id: 'phoenix-light', label: 'Phoenix light', scheme: 'light' },
+    { id: 'fleet-night-watch', label: 'Fleet Night watch', scheme: 'dark' },
+    { id: 'fleet-chart-room', label: 'Fleet Chart room', scheme: 'light' }
   ];
   var DEFAULTS = { dark: 'phoenix-dark', light: 'phoenix-light' };
   var KEY = 'edge-ops-theme', root = document.documentElement;

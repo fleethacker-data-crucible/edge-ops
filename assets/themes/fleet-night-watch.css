@@ -1,0 +1,26 @@
+/* Edge-Ops theme: Fleet Night watch (dark). Optional; the Phoenix themes stay the defaults.
+   Same token set as phoenix-dark.css; see that file and README.md for how themes work.
+   Palette: Fleet Unified UI 3.2 Night watch (navy field, brass, ivory text, Segoe UI and Cascadia Mono). Actions and the
+   brand are brass, as at Fleet level no single app's accent applies. Contrast checked: text >= 4.5:1 on every surface,
+   focus and control borders >= 3:1, every "on-" colour >= 4.5:1 on its fill. */
+@layer kit, theme;
+@layer theme{
+:root[data-theme=fleet-night-watch]{color-scheme:dark;
+ /* type: built into Windows, nothing downloaded */
+ --sans:"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+ --mono:"Cascadia Mono","Cascadia Code",Consolas,ui-monospace,monospace;
+ /* shape */
+ --radius:6px;--radius-lg:10px;
+ --shadow:0 16px 48px #00000080;--shadow-card:0 1px 2px #00000066;--backdrop:#00000099;
+ /* surfaces: background, sidebar, card, muted (Fleet --fl-background/sidebar/card/muted) */
+ --bg:#071a26;--side-bg:#0a2130;--panel:#112d40;--panel-2:#183a52;--sel:#24465e;
+ --border:#24465e;--border-strong:#5f8199;
+ /* text: foreground, muted-foreground */
+ --text:#f4ead6;--text-2:#a9b4ba;--muted:#93a3ad;
+ /* actions and brand are brass; ink is the navy field */
+ --accent:#c9a66b;--on-accent:#071a26;--link:#d9b77a;--focus:#c9a66b;
+ --brand:#c9a66b;--brand-2:#e2c48d;--on-brand:#071a26;
+ /* status (Fleet --fl-success/warning/danger) */
+ --ok:#4fb386;--ok-bg:#2f7d57;--warn:#e0a443;--warn-bg:#8a5a10;--err:#ef6a5a;--err-bg:#b8382b;--on-status:#ffffff;
+ --toast-info-bg:#f4ead6;--toast-info-fg:#071a26;--badge-fg:#f4ead6;}
+}
