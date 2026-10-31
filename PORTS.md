@@ -16,11 +16,14 @@ Each tool owns **one small contiguous block** that starts at its default. It mov
 | SnapShackle dev instance | 8768 (1 port) | restart | `dev\Launch-LocalDev.bat` | was 8790 |
 | Gangplank (formerly Keystone) | 8769-8770 | reuse | `Launch-Gangplank.bat -NoBrowser 8770` | 8770 was the manual alternative |
 | PacketRat (formerly MailHawk) | **8771-8773** | exclusive | `Launch-PacketRat.bat -Port <n>` | moved from 8766 (now inside SnapShackle's block); holds the Outlook COM lease |
-| New tool A | 8774-8776 | reuse | - | add a row here and in `FleetPorts.psd1` when you take one |
+| Eight-Bells | 8774 (1 port) | reuse | - | was the first port of the unassigned "New tool A" block |
+| Scrimshaw | 8775 (1 port) | reuse | - | second port of the old "New tool A" block |
+| Fairlead (OpenAI-compatible `/v1`) | **8776** (1 port, fixed) | reuse | - | every Fleet app defaults to `127.0.0.1:8776`, so it never moves |
 | Windlass (OpenAI-compatible `/v1`) | **8777-8779** | exclusive | `Windlass.bat serve --port <n>` | holds a long model load and generation; was the "New tool B" block |
 | Phoenix LAI server UI | **8780-8789** | exclusive | - | holds the GPU lease; was 8765-8789 |
 | Phoenix LAI client | 8790-8798 | multi | - | several clients may run at once |
 | Phoenix LAI dev e2e | 8799 (1 port) | restart | - | test fixture |
+| Semaphore | 8800-8802 | reuse | - | moved out of 8774-8776, which overlapped Eight-Bells, Scrimshaw and Fairlead; 8800 and up was unused |
 | TalkForge static server | 25000-25009 | reuse | `serve-windows.ps1 -Port <n>` | was 25000 up to 65535 |
 | Test Chrome debug ports | 9300-9399 (reserved) | - | - | `Start-IsolatedChrome` ([tools/test-harness](tools/test-harness/)); tools must not default here |
 | CI-only test ports | 18000-18999 | - | - | e.g. Shellback CI uses 18765 |
@@ -65,6 +68,7 @@ Reference: phoenix-lai `src\WebServer.cs` (`StartOnFreePort`) and data-noodler `
 8. **Test:** [templates/tests/LoopbackPort.Tests.ps1](templates/tests/LoopbackPort.Tests.ps1).
 
 ### Notes
+- **8774-8776 split (2026-10-31):** the unassigned "New tool A" block was claimed by four tools at once. Eight-Bells, Scrimshaw and Fairlead each take one port of it, and Semaphore moves to 8800-8802. Other known clashes in the registry (for example 8765 claimed by four apps, 8767 by two, and Capstan on 8790 inside Phoenix LAI's client range) are tracked in edge-ops issue #37 and are not changed here.
 - The overlaps this resolves: Phoenix LAI's old 8765-8789 scan, Lasso's 100-port scan, Synapse's served edition on 8765 (the same port as Lasso), MailHawk's 8766 (inside Lasso's new block), TalkForge's scan up to 65535, and the OS-ephemeral fallbacks.
 - **Never downgrade:** under reuse, restart and exclusive, a running copy that reports a **newer** version is reused (open the browser to it and exit), and the launcher logs that a stale launcher was used. An older copy is still replaced (or refused, for exclusive) as the table says.
 - **Exception, multi:** tools built for parallelism always start another copy on the next free port in their block, whatever version is running. They never reuse and never stop anything.
