@@ -3,11 +3,44 @@ window.EDGE_OPS_CATALOG = {
   "suite": "FleetHacker Edge-Ops",
   "org": "fleethacker-data-crucible",
   "updated": "2026-10-26",
+  "groups": [
+    {
+      "id": "capture-media-files",
+      "name": "Capture, media and files"
+    },
+    {
+      "id": "work-collaboration",
+      "name": "Work tracking and collaboration"
+    },
+    {
+      "id": "data-analytics",
+      "name": "Data, dashboards and analytics"
+    },
+    {
+      "id": "local-ai",
+      "name": "Local AI platform"
+    },
+    {
+      "id": "voice-learning",
+      "name": "Voice and learning"
+    },
+    {
+      "id": "secrets-security",
+      "name": "Secrets and security"
+    },
+    {
+      "id": "support",
+      "name": "Support, not a user tool",
+      "support": true,
+      "note": "Repositories that support the tools above. There is nothing here to launch."
+    }
+  ],
   "tools": [
     {
       "id": "halyard",
       "name": "Halyard",
       "category": "ps-host-browser-ui",
+      "group": "work-collaboration",
       "summary": "A product owner's assistant that works a backlog upward to leadership and downward to stories and tasks. It runs locally: a PowerShell launcher, one .NET library, and a browser UI on 127.0.0.1.",
       "launcher": "Launch-Halyard.bat",
       "defaultPort": 8773,
@@ -32,6 +65,7 @@ window.EDGE_OPS_CATALOG = {
       "id": "halyard-ballast",
       "name": "Halyard Ballast",
       "category": "support",
+      "group": "support",
       "summary": "The sandbox repository Halyard writes to: synthetic and copied work items, created, reviewed and deleted on purpose. There is no code and no UI here.",
       "launcher": "",
       "defaultPort": null,
@@ -56,6 +90,7 @@ window.EDGE_OPS_CATALOG = {
       "id": "lazarette",
       "name": "Lazarette",
       "category": "security",
+      "group": "secrets-security",
       "summary": "Your credentials, stowed and locked aboard your own workstation. A Windows PowerShell 5.1 engine serves a local browser app on 127.0.0.1; the browser is the product.",
       "launcher": "Launch-Lazarette.bat",
       "defaultPort": 8765,
@@ -80,6 +115,7 @@ window.EDGE_OPS_CATALOG = {
       "id": "gangplank",
       "name": "Gangplank",
       "category": "ps-host-browser-ui",
+      "group": "work-collaboration",
       "summary": "A browser-first workspace that gets people without Git training safely onto GitHub and GitLab projects, from Windows PowerShell 5.1 and a browser; no git.exe, Node or Python on the workstation.",
       "launcher": "Launch-Gangplank.bat",
       "defaultPort": 8769,
@@ -104,6 +140,7 @@ window.EDGE_OPS_CATALOG = {
       "id": "packetrat",
       "name": "PacketRat",
       "category": "ps-host-browser-ui",
+      "group": "work-collaboration",
       "summary": "Outlook triage into a human-reviewed action queue, run from a local Windows PowerShell 5.1 service with a browser UI.",
       "launcher": "Launch-PacketRat.bat",
       "defaultPort": 8766,
@@ -128,6 +165,7 @@ window.EDGE_OPS_CATALOG = {
       "id": "shellback",
       "name": "Shellback",
       "category": "browser-only",
+      "group": "work-collaboration",
       "summary": "Workforce capability intelligence: employee-attested skills, kept separate from claims, in a local-first browser app.",
       "launcher": "Launch-Shellback.bat",
       "defaultPort": 8765,
@@ -152,6 +190,7 @@ window.EDGE_OPS_CATALOG = {
       "id": "snapshackle",
       "name": "SnapShackle",
       "category": "ps-host-browser-ui",
+      "group": "capture-media-files",
       "summary": "A local-first Windows screenshot and annotation studio using native Windows capture, a built-in PowerShell HTTP host, and an offline browser UI.",
       "launcher": "Launch-SnapShackle.bat",
       "defaultPort": 8765,
@@ -176,6 +215,7 @@ window.EDGE_OPS_CATALOG = {
       "id": "bowerbird",
       "name": "Bowerbird",
       "category": "ps-host-browser-ui",
+      "group": "capture-media-files",
       "summary": "Local-first file intelligence and screenshot renaming for Windows PowerShell 5.1 and your existing web browser.",
       "launcher": "Start-Bowerbird.bat",
       "defaultPort": 8767,
@@ -200,6 +240,7 @@ window.EDGE_OPS_CATALOG = {
       "id": "eight-bells",
       "name": "Eight Bells",
       "category": "ps-host-browser-ui",
+      "group": "work-collaboration",
       "summary": "Local-first watchstanding log intelligence: quality review, evidence-linked turnover and lessons learned (v2).",
       "launcher": "Launch-EightBells.bat",
       "defaultPort": "auto",
@@ -224,6 +265,7 @@ window.EDGE_OPS_CATALOG = {
       "id": "capstan",
       "name": "Capstan",
       "category": "ps-host-browser-ui",
+      "group": "capture-media-files",
       "summary": "An open-source, local-first screen recorder and video editor for Windows.",
       "launcher": "Launch-Capstan.bat",
       "defaultPort": 8790,
@@ -248,6 +290,7 @@ window.EDGE_OPS_CATALOG = {
       "id": "scrimshaw",
       "name": "Scrimshaw",
       "category": "browser-only",
+      "group": "voice-learning",
       "summary": "An open-source e-learning authoring tool.",
       "launcher": "Launch.bat",
       "defaultPort": "local",
@@ -272,6 +315,7 @@ window.EDGE_OPS_CATALOG = {
       "id": "semaphore",
       "name": "Semaphore",
       "category": "data-ai",
+      "group": "data-analytics",
       "summary": "Semaphore is a local-first dashboard builder for a single analyst, meant to replace Qlik on thin clients. The repository currently holds the framework-free core, with no UI yet.",
       "launcher": "",
       "defaultPort": null,
@@ -296,6 +340,7 @@ window.EDGE_OPS_CATALOG = {
       "id": "fairlead",
       "name": "Fairlead",
       "category": "data-ai",
+      "group": "local-ai",
       "summary": "One local address for every model. Fairlead is the model router behind the Fleet tools: it speaks the OpenAI and Anthropic APIs on http://127.0.0.1:8776, sends each request to the right cloud or local model, and keeps answering from local models when the internet or a provider goes down.",
       "launcher": "Launch-Fairlead.bat",
       "defaultPort": 8776,
@@ -327,6 +372,7 @@ window.EDGE_OPS_CATALOG = {
       "id": "windlass",
       "name": "Windlass",
       "category": "data-ai",
+      "group": "local-ai",
       "summary": "Run very large local GGUF models (70B and up) on an ordinary PC by streaming them one layer at a time, behind an OpenAI-compatible API.",
       "launcher": "Launch-Windlass.bat serve --model <file.gguf>",
       "runNote": "API only, no browser UI: the OpenAI-compatible API answers on http://127.0.0.1:8777/v1 (or the next free port in 8777-8779). Stop it with Ctrl+C in the console or src\\Stop-Windlass.ps1.",
@@ -359,6 +405,7 @@ window.EDGE_OPS_CATALOG = {
       "id": "talkforge",
       "name": "TalkForge",
       "category": "browser-only",
+      "group": "voice-learning",
       "summary": "Client-side neural text-to-speech (Piper, ONNX Runtime Web/WASM) with offline local assets.",
       "launcher": "serve.bat",
       "defaultPort": 25000,
@@ -383,6 +430,7 @@ window.EDGE_OPS_CATALOG = {
       "id": "data-noodler",
       "name": "Data Noodler",
       "category": "data-ai",
+      "group": "data-analytics",
       "summary": "Self-contained flat-file analytics (CSV/Parquet/Arrow/SQLite) with dashboards.",
       "launcher": "Data_Noodler.bat",
       "defaultPort": 8079,
@@ -407,6 +455,7 @@ window.EDGE_OPS_CATALOG = {
       "id": "phoenix-lai",
       "name": "Phoenix LAI",
       "category": "data-ai",
+      "group": "local-ai",
       "summary": "Local Gemma models on your GPU behind an OpenAI-compatible API, plus a Chrome app-window client.",
       "launcher": "Phoenix_LAI.bat",
       "defaultPort": 1234,
