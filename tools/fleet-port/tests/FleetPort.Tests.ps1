@@ -140,6 +140,25 @@ Describe 'Get-FleetPortBlock (registry)' {
             }
         }
     }
+    It 'keeps registry blocks out of the reserved test ranges (9300-9399 Chrome, 18000-18999 CI)' {
+        $reg = Import-PowerShellDataFile (Join-Path $PSScriptRoot '..\FleetPorts.psd1')
+        foreach ($k in $reg.Keys) {
+            $b = Get-FleetPortBlock -Tool $k
+            ($b.Start -le 9399 -and $b.End -ge 9300) | Should -BeFalse -Because "$k overlaps the test Chrome debug ports"
+            ($b.Start -le 18999 -and $b.End -ge 18000) | Should -BeFalse -Because "$k overlaps the CI-only test ports"
+        }
+    }
+    It 'gives Eight-Bells, Scrimshaw, Fairlead and Semaphore their own blocks, in step with PORTS.md' {
+        $want = @{ 'eight-bells' = @(8774, 1, '8774 (1 port)'); 'scrimshaw' = @(8775, 1, '8775 (1 port)'); 'fairlead' = @(8776, 1, '8776** (1 port, fixed)'); 'semaphore' = @(8800, 3, '8800-8802') }
+        $ports = Get-Content -Raw (Join-Path $PSScriptRoot '..\..\..\PORTS.md')
+        $ports | Should -Not -Match '\| New tool A \|'
+        foreach ($k in $want.Keys) {
+            $b = Get-FleetPortBlock -Tool $k
+            $b.Start | Should -Be $want[$k][0]
+            ($b.End - $b.Start + 1) | Should -Be $want[$k][1]
+            $ports.Contains($want[$k][2]) | Should -BeTrue -Because "PORTS.md should list $k as $($want[$k][2])"
+        }
+    }
     It 'rejects an unknown tool' {
         { Get-FleetPortBlock -Tool 'no-such-tool' } | Should -Throw -ExpectedMessage '*has no port block*'
     }
