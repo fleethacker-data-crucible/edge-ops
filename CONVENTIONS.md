@@ -3,12 +3,28 @@
 These apply to every tool repository in `fleethacker-data-crucible` that is listed in `catalog.json`.
 
 ## Repository
-- **License:** MIT (`LICENSE` at the root).
+- **License:** MIT (`LICENSE` at the root). Open-source code we use keeps its own notice: see [Attribution for open-source code](#attribution-for-open-source-code).
 - **Description:** one sentence, filled in.
 - **Topics:** `fleethacker-suite`, `powershell-5-1`, `no-admin`, `offline`, `app-whitelist-friendly`, plus one of `browser-only`, `browser-ui`, `data-ai`, `security`.
 - **Main copy:** the org copy is canonical. Links point to `github.com/fleethacker-data-crucible/<repo>`.
 - **README:** follows [templates/TOOL-README-TEMPLATE.md](templates/TOOL-README-TEMPLATE.md).
 - **Version marker** at the root (`VERSION` semver, or `__version.info`), plus a `CHANGELOG.md`. See *Settings and versioning*.
+
+## Attribution for open-source code
+MIT covers our own code. Open-source code we copy, vendor, adapt or ship alongside a tool usually carries its own licence, and most licences (MIT, BSD, Apache-2.0, OFL and others) require that the copyright notice and licence text travel with it. Each repo records this in one place, so a reviewer can answer "what did we use, and what do we owe?" from the repo alone.
+- **What counts:** anything not written for this repo that ends up in it or in its release zip: vendored JS or CSS (`ui\js\vendor\`), fonts, icons and images, copied or adapted code snippets, templates, and any bundled binary. It also covers code we used as the basis for a design or port, when its licence asks for credit. A dependency we only install or call at development time, and that is not shipped, needs no entry unless its licence says otherwise.
+- **Where:** a `THIRD-PARTY-NOTICES.md` at the repo root. A repo with nothing to attribute may omit the file, and says so in its README *License* section ("No third-party code").
+- **Per entry, record:** name and version, upstream URL, licence (SPDX id, for example `MIT`, `Apache-2.0`, `OFL-1.1`), copyright holder and year as the upstream states them, where it lives in this repo (path), what we changed (nothing, or a short note), and the full licence text or a link to the file that holds it.
+- **Keep the licence file with the code:** vendored folders keep their upstream `LICENSE` or `OFL` file beside the code, as `ui-kit` does for its fonts (`OFL-Exo2.txt`, `OFL-SyneMono.txt`). Never strip a licence header from a copied file.
+- **Compatibility:** only bring in code whose licence allows redistribution inside an MIT repo (MIT, BSD, Apache-2.0, ISC, OFL for fonts). Ask before adding GPL, AGPL, "non-commercial" or unlicensed code; no licence means all rights reserved.
+- **Packaged zips:** the release zip includes `THIRD-PARTY-NOTICES.md` and the vendored licence files (see *Releases*).
+- **Add the entry in the same PR** that adds the code, and update the README *License* section to link to the file.
+- **Checklist for a tool repo:**
+  - [ ] `LICENSE` is MIT with the right holder and year.
+  - [ ] Every vendored, copied or adapted item is listed in `THIRD-PARTY-NOTICES.md` with the fields above.
+  - [ ] Each vendored folder still contains its upstream licence file, and copied files keep their headers.
+  - [ ] The README *License* section says "MIT" and links to `THIRD-PARTY-NOTICES.md` (or says "No third-party code").
+  - [ ] The release zip contains the notices file and the licence files.
 
 ## Reference repos
 The standard is modeled on the two most settled tools, **phoenix-lai** and **data-noodler**. When this file and those repos disagree, the repos win, unless the repo pattern breaks a hard constraint (PS 5.1, no admin, offline, loopback-only bind). Those exceptions are listed in [STANDARDS-EXCEPTIONS.md](STANDARDS-EXCEPTIONS.md).

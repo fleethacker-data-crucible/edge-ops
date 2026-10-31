@@ -40,4 +40,4 @@ How to run tests with `powershell.exe` 5.1.
 Threat model and known limits.
 
 ## License
-MIT
+MIT. Third-party code and its notices: see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) (or write "No third-party code").
