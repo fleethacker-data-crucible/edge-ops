@@ -119,3 +119,32 @@ Describe 'Build-Site.ps1 automation (CLI and API for agents)' {
         $SilentHtml | Should -Not -Match '\{\{AUTOMATION\}\}'
     }
 }
+
+Describe 'catalog.json functional groups (hub grouping, one source of truth)' {
+    BeforeAll {
+        $script:Cat = Get-Content -Raw (Join-Path $RepoRoot 'catalog.json') | ConvertFrom-Json
+        $js = Get-Content -Raw (Join-Path $RepoRoot 'assets\catalog-data.js')
+        $script:Fallback = ($js -replace '(?s)^.*?window\.EDGE_OPS_CATALOG\s*=\s*', '' -replace ';\s*$', '') | ConvertFrom-Json
+        $script:GroupIds = @($Cat.groups | ForEach-Object { $_.id })
+    }
+    It 'defines each group once, with a name' {
+        $GroupIds.Count | Should -BeGreaterThan 0
+        @($GroupIds | Select-Object -Unique).Count | Should -Be $GroupIds.Count
+        @($Cat.groups | Where-Object { -not $_.name }).Count | Should -Be 0
+    }
+    It 'puts every tool in exactly one defined group' {
+        foreach ($t in $Cat.tools) { $GroupIds | Should -Contain $t.group }
+    }
+    It 'leaves no group empty' {
+        foreach ($g in $GroupIds) { @($Cat.tools | Where-Object { $_.group -eq $g }).Count | Should -BeGreaterThan 0 }
+    }
+    It 'marks Halyard Ballast as a support repo, not a user tool' {
+        $ballast = $Cat.tools | Where-Object { $_.id -eq 'halyard-ballast' }
+        $ballast.group | Should -Be 'support'
+        ($Cat.groups | Where-Object { $_.id -eq 'support' }).support | Should -Be $true
+        $ballast.repo | Should -Match 'Halyard-Ballast$'
+    }
+    It 'keeps assets/catalog-data.js in step with catalog.json' {
+        ($Fallback | ConvertTo-Json -Depth 10 -Compress) | Should -Be ($Cat | ConvertTo-Json -Depth 10 -Compress)
+    }
+}

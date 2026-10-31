@@ -1,0 +1,24 @@
+{
+  "schema": "edge-ops.fleet-snapshot/1",
+  "snapshot": "example",
+  "channel": "stable",
+  "created": "2026-10-31T00:00:00Z",
+  "notes": "Illustrative only: the tags and hashes are placeholders, so verifying this file against real assets fails closed. A real snapshot is cut from a tested set of Releases.",
+  "tools": [
+    {
+      "id": "snapshackle",
+      "repo": "fleethacker-data-crucible/SnapShackle",
+      "tag": "v0.0.0",
+      "asset": "SnapShackle-v0.0.0.zip",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "id": "capstan",
+      "repo": "fleethacker-data-crucible/Capstan",
+      "tag": "v0.0.0",
+      "asset": "Capstan-v0.0.0.zip",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "bytes": 1
+    }
+  ]
+}

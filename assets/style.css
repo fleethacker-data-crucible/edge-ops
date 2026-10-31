@@ -6,9 +6,10 @@
 :root{--fg:var(--text);--card:var(--panel)}
 header,footer{padding:1.5rem 2rem}header h1{font-size:1.6rem;font-weight:700;color:var(--brand)}header p{color:var(--text-2);max-width:60rem}
 .controls{display:flex;gap:.5rem;flex-wrap:wrap}#q{flex:1 1 14rem;max-width:24rem}
-#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:1rem;padding:0 2rem 2rem}
+#grid{padding:0 2rem 2rem}.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:1rem}
+.group{margin:0 0 1.75rem}.group-title{margin:0 0 .5rem;font-size:1.2rem;color:var(--brand);text-transform:none;letter-spacing:normal}.group-note{margin:0 0 .75rem;color:var(--text-2)}
 .card{display:flex;flex-direction:column;gap:.5rem;min-width:0}
-.card h2{display:flex;align-items:center;gap:.6rem;margin:0;font-size:1.15rem;text-transform:none;letter-spacing:normal}.card h2 a{color:var(--text);text-decoration:none}.card h2 a:hover{color:var(--link);text-decoration:underline}
+.card h3{display:flex;align-items:center;gap:.6rem;margin:0;font-size:1.15rem;text-transform:none;letter-spacing:normal}.card h3 a{color:var(--text);text-decoration:none}.card h3 a:hover{color:var(--link);text-decoration:underline}
 .cat{font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;color:var(--brand)}.card p{margin:0;color:var(--text-2);overflow-wrap:anywhere}
 .badges{display:flex;flex-wrap:wrap;gap:.3rem}
 .links{display:flex;flex-wrap:wrap;gap:.4rem .8rem}footer{color:var(--muted);border-top:1px solid var(--border)}.back{text-decoration:none}.back:hover{text-decoration:underline}
@@ -20,5 +21,5 @@ main:focus{outline:none}
 @media (max-width:600px){.prefs{float:none;margin:0 0 .75rem}header,footer{padding:1rem}#grid,main.tool{padding:0 1rem 1rem}}
 /* Utility emblems (assets/emblems/<id>.svg): decorative, the card title names the tool. Fixed fleet palette; the navy disc
    gives the edge on light themes (>=14.6:1) and the brass ring on dark themes (>=6.2:1), so both clear 3:1 non-text. */
-.card h2 .emblem{flex:none;width:32px;height:32px}
+.card h3 .emblem{flex:none;width:32px;height:32px}
 .tool-title{display:flex;align-items:center;gap:.75rem}.tool-title .emblem{flex:none;width:48px;height:48px}
