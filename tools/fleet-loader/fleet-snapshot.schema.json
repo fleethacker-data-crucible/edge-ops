@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/fleethacker-data-crucible/edge-ops/tools/fleet-loader/fleet-snapshot.schema.json",
+  "title": "Fleet snapshot manifest",
+  "description": "One stable fleet snapshot: exactly one packaged Release asset per utility, pinned by repo, tag, asset name and SHA256. Verify-FleetSnapshot.ps1 reads this file for its patterns and limits, so the schema and the script cannot drift. Unknown fields are refused: a field added later raises the version in `schema`.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "snapshot", "channel", "created", "tools"],
+  "properties": {
+    "schema": { "const": "edge-ops.fleet-snapshot/1" },
+    "snapshot": {
+      "description": "Name of this snapshot, for example 2026.11.0.",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+    },
+    "channel": {
+      "description": "Only the stable (pinned) channel has a manifest. The per-utility latest (beta) channel is verified against the Release's own published checksum and is not described here.",
+      "const": "stable"
+    },
+    "created": {
+      "description": "When the snapshot was cut, UTC, to the second.",
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "notes": { "type": "string", "maxLength": 500 },
+    "tools": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100,
+      "items": { "$ref": "#/$defs/tool" }
+    }
+  },
+  "$defs": {
+    "tool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "repo", "tag", "asset", "sha256"],
+      "properties": {
+        "id": {
+          "description": "The tool's id in catalog.json. Unique in the manifest.",
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]{0,39}$"
+        },
+        "repo": {
+          "description": "owner/name on GitHub. Unique in the manifest.",
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._-]*$"
+        },
+        "tag": {
+          "description": "The Release tag, for example v0.4.0.",
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+        },
+        "asset": {
+          "description": "File name of the zip, no folder part, for example SnapShackle-v0.4.0.zip (CONVENTIONS.md, Releases). Unique in the manifest.",
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}\\.zip$"
+        },
+        "sha256": {
+          "description": "SHA256 of the zip, 64 hex digits. Compared without regard to case.",
+          "type": "string",
+          "pattern": "^[0-9A-Fa-f]{64}$"
+        },
+        "bytes": {
+          "description": "Optional exact size of the zip in bytes. When present it must match.",
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    }
+  }
+}

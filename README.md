@@ -59,6 +59,7 @@ All tools are prototypes or previews unless stated otherwise. Get local authoriz
 ## For maintainers
 
 - [CONVENTIONS.md](CONVENTIONS.md): repo, README, launcher, and release rules.
+- [tools/fleet-loader/](tools/fleet-loader/README.md): the fleet snapshot manifest and its offline verifier (proposal, issue 34).
 - [templates/TOOL-README-TEMPLATE.md](templates/TOOL-README-TEMPLATE.md): the README layout every tool uses.
 - [.github/workflows/release-zip.yml](templates/workflows/release-zip.yml) (staged in `templates/workflows/` until moved by a token with `workflow` scope): reusable release packaging. In a tool repo:
 
