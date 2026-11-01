@@ -99,6 +99,16 @@ Every `.ps1`/`.psm1` must run on stock **Windows PowerShell 5.1** (`powershell.e
 
   `cli`: every user action runs from the command line. `json`: commands take `--json`. `api`: `"openai-v1"` for an OpenAI-compatible `/v1`, another short name for a tool's own loopback API, or `null`. `mcp`: an MCP server. `describe`: the command that lists the tool's commands, or `null`.
 
+## Voice (speech out and in)
+**Status: accepted 2026-10-30 ([edge-ops issue 37](https://github.com/fleethacker-data-crucible/edge-ops/issues/37)). Speech out is documented in TalkForge; speech in is planned.** The exact request, reply and error format is TalkForge's [voice contract](https://github.com/fleethacker-data-crucible/TalkForge/blob/main/docs/VOICE-CONTRACT.md) (open as TalkForge PR 25, so the link works once it merges). This section is the rule for the apps that call it; it does not repeat the contract.
+- **Speech out:** TalkForge is the suite voice. An app that speaks uses `POST /v1/audio/speech` (OpenAI-shaped), or `talkforge speak` from a script. Voices are local files, and nothing leaves the machine.
+- **One address:** apps reach speech through Fairlead, `/v1/audio/speech` for speech out and `/v1/audio/transcriptions` for speech in, on `127.0.0.1:8776`. Configure it the way an app configures its model route: a base-URL setting that defaults to Fairlead, and the app's own Fairlead client key. Fairlead forwards speech out to TalkForge (`http://127.0.0.1:25009`, with TalkForge's token as that backend's key).
+- **Calling TalkForge directly** (tests, or where Fairlead is not running): loopback only; `Authorization: Bearer <token>` on every request; call from a program, never from a web page (TalkForge refuses any request with an `Origin` header and any non-loopback `Host`).
+- **Token:** read it from Lazarette by name at start ([credentials rule](https://github.com/fleethacker-data-crucible/edge-ops/issues/37)). Do not keep it in config files, the registry or the browser, and never log it.
+- **Be patient and degrade quietly:** the first request for a voice loads it, and synthesis runs about 1 to 1.5 seconds per second of audio on a laptop CPU, so use client timeouts of a minute or more. On `503` (voice files missing), `401` or no connection, the app carries on without sound and shows text; it does not send the text to a network voice service.
+- **Speech in:** starts from the Whisper assets PacketRat carries; Windows speech recognition is the fallback. The shared speech-in module is **planned**: it will be hosted next to the UI kit and vendored like FleetPort. Until it exists, an app that needs speech in documents what it uses.
+- **Changing the contract:** change TalkForge's voice contract first, in the same pull request as the code, and update this section only if the rule for callers changes.
+
 ## Logging
 - Logs go in `logs\` inside the tool (`<root>\logs\` or `server\logs\`), one timestamped file per run: `ToolName_yyyy_MM_dd_HHmmss.log` (data-noodler). A machine-readable `.jsonl` next to it is optional (phoenix-lai `ChatLog.cs`).
 - Line format: `yyyy-MM-dd HH:mm:ss  [LEVEL] text`.
