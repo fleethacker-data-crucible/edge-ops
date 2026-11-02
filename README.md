@@ -4,7 +4,7 @@
 
 ![FleetHacker utilities grouped by function](docs/edge-ops-grouping-infographic.svg)
 
-FleetHacker utilities grouped by function (edge-ops issue #39). Site-only grouping, not a merge decision.
+FleetHacker utilities grouped by function.
 
 
 Self-contained zip packages for edge automation and analysis. They load and run in user context on nearly any Windows machine, with **no admin rights and no runtime installs**.
