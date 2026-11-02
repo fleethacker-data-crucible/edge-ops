@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1020" viewBox="0 0 1200 1020" role="img" aria-label="FleetHacker utilities grouped by functionality, from edge-ops issue 39">
+  <rect width="1200" height="1020" fill="#0f1115"/>
+  <rect x="24" y="24" width="1152" height="972" fill="none" stroke="#ff7a1a" stroke-width="3"/>
+  <text x="600" y="72" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="bold" fill="#ffffff">FleetHacker Utilities, Grouped by What They Do</text>
+  <text x="600" y="102" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#c9d1d9">17 catalog tools in 7 functional groups — by function, not by how they are built.</text>
+  <text x="600" y="128" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#ff7a1a">Site-only grouping from edge-ops issue #39. Not a merge decision.</text>
+
+  <!-- Row 1 -->
+  <g font-family="Arial, Helvetica, sans-serif">
+    <rect x="60" y="150" width="340" height="290" fill="#1a1f2b" stroke="#ff7a1a" stroke-width="2"/>
+    <text x="230" y="185" text-anchor="middle" font-size="20" font-weight="bold" fill="#ffffff">CAPTURE, MEDIA</text>
+    <text x="230" y="208" text-anchor="middle" font-size="20" font-weight="bold" fill="#ffffff">AND FILES · 3</text>
+    <text x="80" y="245" font-size="16" font-weight="bold" fill="#ffffff">SnapShackle</text>
+    <text x="80" y="265" font-size="14" fill="#c9d1d9">Screenshot and annotation</text>
+    <text x="80" y="295" font-size="16" font-weight="bold" fill="#ffffff">Capstan</text>
+    <text x="80" y="315" font-size="14" fill="#c9d1d9">Screen recorder and editor</text>
+    <text x="80" y="345" font-size="16" font-weight="bold" fill="#ffffff">Bowerbird</text>
+    <text x="80" y="365" font-size="14" fill="#c9d1d9">File intelligence and</text>
+    <text x="80" y="383" font-size="14" fill="#c9d1d9">screenshot renaming</text>
+
+    <rect x="430" y="150" width="340" height="290" fill="#1a1f2b" stroke="#ff7a1a" stroke-width="2"/>
+    <text x="600" y="185" text-anchor="middle" font-size="20" font-weight="bold" fill="#ffffff">WORK TRACKING AND</text>
+    <text x="600" y="208" text-anchor="middle" font-size="20" font-weight="bold" fill="#ffffff">COLLABORATION · 5</text>
+    <text x="450" y="238" font-size="16" font-weight="bold" fill="#ffffff">Halyard</text>
+    <text x="450" y="256" font-size="14" fill="#c9d1d9">Backlog</text>
+    <text x="450" y="282" font-size="16" font-weight="bold" fill="#ffffff">Gangplank</text>
+    <text x="450" y="300" font-size="14" fill="#c9d1d9">Git workspace</text>
+    <text x="450" y="326" font-size="16" font-weight="bold" fill="#ffffff">PacketRat</text>
+    <text x="450" y="344" font-size="14" fill="#c9d1d9">Outlook triage queue</text>
+    <text x="450" y="370" font-size="16" font-weight="bold" fill="#ffffff">Eight-Bells</text>
+    <text x="450" y="388" font-size="14" fill="#c9d1d9">Watchstanding log and turnover</text>
+    <text x="450" y="414" font-size="16" font-weight="bold" fill="#ffffff">Shellback</text>
+    <text x="450" y="432" font-size="14" fill="#c9d1d9">Workforce skills</text>
+
+    <rect x="800" y="150" width="340" height="290" fill="#1a1f2b" stroke="#ff7a1a" stroke-width="2"/>
+    <text x="970" y="185" text-anchor="middle" font-size="20" font-weight="bold" fill="#ffffff">DATA, DASHBOARDS</text>
+    <text x="970" y="208" text-anchor="middle" font-size="20" font-weight="bold" fill="#ffffff">AND ANALYTICS · 2</text>
+    <text x="820" y="245" font-size="16" font-weight="bold" fill="#ffffff">Semaphore</text>
+    <text x="820" y="265" font-size="14" fill="#c9d1d9">Dashboard builder</text>
+    <text x="820" y="295" font-size="16" font-weight="bold" fill="#ffffff">Data Noodler</text>
+    <text x="820" y="315" font-size="14" fill="#c9d1d9">Flat-file analytics</text>
+  </g>
+
+  <!-- Row 2 -->
+  <g font-family="Arial, Helvetica, sans-serif">
+    <rect x="60" y="460" width="340" height="290" fill="#1a1f2b" stroke="#ffffff" stroke-width="2"/>
+    <text x="230" y="495" text-anchor="middle" font-size="20" font-weight="bold" fill="#ffffff">LOCAL AI PLATFORM · 3</text>
+    <text x="80" y="535" font-size="16" font-weight="bold" fill="#ffffff">Fairlead</text>
+    <text x="80" y="555" font-size="14" fill="#c9d1d9">Model router</text>
+    <text x="80" y="585" font-size="16" font-weight="bold" fill="#ffffff">Windlass</text>
+    <text x="80" y="605" font-size="14" fill="#c9d1d9">Large-model loader</text>
+    <text x="80" y="635" font-size="16" font-weight="bold" fill="#ffffff">Phoenix LAI</text>
+    <text x="80" y="655" font-size="14" fill="#c9d1d9">Local models</text>
+
+    <rect x="430" y="460" width="340" height="290" fill="#1a1f2b" stroke="#ffffff" stroke-width="2"/>
+    <text x="600" y="495" text-anchor="middle" font-size="20" font-weight="bold" fill="#ffffff">VOICE AND LEARNING · 2</text>
+    <text x="450" y="535" font-size="16" font-weight="bold" fill="#ffffff">TalkForge</text>
+    <text x="450" y="555" font-size="14" fill="#c9d1d9">Text-to-speech</text>
+    <text x="450" y="585" font-size="16" font-weight="bold" fill="#ffffff">Scrimshaw</text>
+    <text x="450" y="605" font-size="14" fill="#c9d1d9">E-learning authoring</text>
+
+    <rect x="800" y="460" width="340" height="290" fill="#1a1f2b" stroke="#ffffff" stroke-width="2"/>
+    <text x="970" y="495" text-anchor="middle" font-size="20" font-weight="bold" fill="#ffffff">SECRETS AND</text>
+    <text x="970" y="518" text-anchor="middle" font-size="20" font-weight="bold" fill="#ffffff">SECURITY · 1</text>
+    <text x="820" y="555" font-size="16" font-weight="bold" fill="#ffffff">Lazarette</text>
+    <text x="820" y="575" font-size="14" fill="#c9d1d9">Credentials</text>
+    <text x="820" y="615" font-size="14" fill="#c9d1d9">Alone on purpose — do not</text>
+    <text x="820" y="633" font-size="14" fill="#c9d1d9">force a merge to fill</text>
+    <text x="820" y="651" font-size="14" fill="#c9d1d9">the group.</text>
+  </g>
+
+  <!-- Row 3 -->
+  <g font-family="Arial, Helvetica, sans-serif">
+    <rect x="60" y="770" width="540" height="150" fill="#1a1f2b" stroke="#ff7a1a" stroke-width="2"/>
+    <text x="330" y="800" text-anchor="middle" font-size="20" font-weight="bold" fill="#ffffff">SUPPORT, NOT A USER TOOL · 1</text>
+    <text x="80" y="840" font-size="16" font-weight="bold" fill="#ffffff">Halyard-Ballast</text>
+    <text x="80" y="860" font-size="14" fill="#c9d1d9">Sandbox Halyard writes to. No UI, no launcher.</text>
+    <text x="80" y="890" font-size="14" fill="#c9d1d9">Clearly marked support, or hidden from the main view.</text>
+
+    <rect x="630" y="770" width="510" height="150" fill="#1a1f2b" stroke="#ff7a1a" stroke-width="2"/>
+    <text x="885" y="800" text-anchor="middle" font-size="20" font-weight="bold" fill="#ffffff">WHAT THIS IS NOT</text>
+    <text x="650" y="830" font-size="14" fill="#c9d1d9">No repo merged, renamed, or deleted.</text>
+    <text x="650" y="850" font-size="14" fill="#c9d1d9">No launcher or port changes.</text>
+    <text x="650" y="870" font-size="14" fill="#c9d1d9">Actual merges deferred until after go-live, as with Keel.</text>
+    <text x="650" y="890" font-size="14" fill="#c9d1d9">Groups proposed, not settled — team review before merge.</text>
+  </g>
+
+  <text x="600" y="960" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#c9d1d9">17 tools = 3 + 5 + 2 + 3 + 2 + 1 + 1 · Source: edge-ops issue #39 (2026-10-31) · fleethacker-data-crucible.github.io/edge-ops</text>
+</svg>
