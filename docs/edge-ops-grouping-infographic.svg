@@ -1,9 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1020" viewBox="0 0 1200 1020" role="img" aria-label="FleetHacker utilities grouped by functionality, from edge-ops issue 39">
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1020" viewBox="0 0 1200 1020" role="img" aria-label="FleetHacker utilities grouped by the job they do">
   <rect width="1200" height="1020" fill="#0f1115"/>
   <rect x="24" y="24" width="1152" height="972" fill="none" stroke="#ff7a1a" stroke-width="3"/>
   <text x="600" y="72" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="bold" fill="#ffffff">FleetHacker Utilities, Grouped by What They Do</text>
-  <text x="600" y="102" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#c9d1d9">17 catalog tools in 7 functional groups — by function, not by how they are built.</text>
-  <text x="600" y="128" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#ff7a1a">Site-only grouping from edge-ops issue #39. Not a merge decision.</text>
+  <text x="600" y="102" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#c9d1d9">17 tools in 7 groups — find the tool for the job you need done.</text>
+  <text x="600" y="128" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#ff7a1a">All tools run locally, on your machine.</text>
 
   <!-- Row 1 -->
   <g font-family="Arial, Helvetica, sans-serif">
@@ -63,27 +63,24 @@
     <text x="970" y="495" text-anchor="middle" font-size="20" font-weight="bold" fill="#ffffff">SECRETS AND</text>
     <text x="970" y="518" text-anchor="middle" font-size="20" font-weight="bold" fill="#ffffff">SECURITY · 1</text>
     <text x="820" y="555" font-size="16" font-weight="bold" fill="#ffffff">Lazarette</text>
-    <text x="820" y="575" font-size="14" fill="#c9d1d9">Credentials</text>
-    <text x="820" y="615" font-size="14" fill="#c9d1d9">Alone on purpose — do not</text>
-    <text x="820" y="633" font-size="14" fill="#c9d1d9">force a merge to fill</text>
-    <text x="820" y="651" font-size="14" fill="#c9d1d9">the group.</text>
+    <text x="820" y="575" font-size="14" fill="#c9d1d9">Credentials, kept</text>
+    <text x="820" y="593" font-size="14" fill="#c9d1d9">on your machine</text>
   </g>
 
   <!-- Row 3 -->
   <g font-family="Arial, Helvetica, sans-serif">
     <rect x="60" y="770" width="540" height="150" fill="#1a1f2b" stroke="#ff7a1a" stroke-width="2"/>
-    <text x="330" y="800" text-anchor="middle" font-size="20" font-weight="bold" fill="#ffffff">SUPPORT, NOT A USER TOOL · 1</text>
+    <text x="330" y="800" text-anchor="middle" font-size="20" font-weight="bold" fill="#ffffff">SUPPORT · 1</text>
     <text x="80" y="840" font-size="16" font-weight="bold" fill="#ffffff">Halyard-Ballast</text>
-    <text x="80" y="860" font-size="14" fill="#c9d1d9">Sandbox Halyard writes to. No UI, no launcher.</text>
-    <text x="80" y="890" font-size="14" fill="#c9d1d9">Clearly marked support, or hidden from the main view.</text>
+    <text x="80" y="860" font-size="14" fill="#c9d1d9">Works behind the scenes for Halyard.</text>
 
     <rect x="630" y="770" width="510" height="150" fill="#1a1f2b" stroke="#ff7a1a" stroke-width="2"/>
-    <text x="885" y="800" text-anchor="middle" font-size="20" font-weight="bold" fill="#ffffff">WHAT THIS IS NOT</text>
-    <text x="650" y="830" font-size="14" fill="#c9d1d9">No repo merged, renamed, or deleted.</text>
-    <text x="650" y="850" font-size="14" fill="#c9d1d9">No launcher or port changes.</text>
-    <text x="650" y="870" font-size="14" fill="#c9d1d9">Actual merges deferred until after go-live, as with Keel.</text>
-    <text x="650" y="890" font-size="14" fill="#c9d1d9">Groups proposed, not settled — team review before merge.</text>
+    <text x="885" y="800" text-anchor="middle" font-size="20" font-weight="bold" fill="#ffffff">HOW TO USE THIS</text>
+    <text x="650" y="830" font-size="14" fill="#c9d1d9">Start with the job you need done.</text>
+    <text x="650" y="850" font-size="14" fill="#c9d1d9">Pick a group above, then a tool in it.</text>
+    <text x="650" y="870" font-size="14" fill="#c9d1d9">No cloud account needed — everything</text>
+    <text x="650" y="890" font-size="14" fill="#c9d1d9">runs on your own machine.</text>
   </g>
 
-  <text x="600" y="960" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#c9d1d9">17 tools = 3 + 5 + 2 + 3 + 2 + 1 + 1 · Source: edge-ops issue #39 (2026-10-31) · fleethacker-data-crucible.github.io/edge-ops</text>
+  <text x="600" y="960" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#c9d1d9">17 tools = 3 + 5 + 2 + 3 + 2 + 1 + 1 · FleetHacker tools, grouped by task</text>
 </svg>
