@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "fleethacker:fleet-action/job.schema.json#v1",
+  "title": "Fleet Action job file, version 1 (JSON only)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "steps"],
+  "properties": {
+    "version": { "const": 1 },
+    "name": { "type": "string", "maxLength": 200 },
+    "steps": {
+      "type": "array", "minItems": 1, "maxItems": 200,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["app", "noun", "verb"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,64}$" },
+          "app": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+          "noun": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+          "verb": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+          "args": { "type": "object" },
+          "confirm": { "type": "boolean", "description": "Required (true) on each destructive step." }
+        }
+      }
+    }
+  }
+}
