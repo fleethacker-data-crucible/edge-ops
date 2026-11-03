@@ -30,8 +30,8 @@ Invoke-FleetJob -Job .\example-job.json     # destructive steps need "confirm": 
 ## Contract
 
 - Envelope: `{ ok, action, v: 1, result | error{code,message}, warnings }`.
-- Exit / HTTP: 0/200 OK, 2/400 E_ARGS, 3/404 E_NOTFOUND, 4/409 E_CONFIRM, 5/401 E_AUTH, 1/500 E_INTERNAL.
-- HTTP: `POST /api/v1/<noun>/<verb>` (JSON args, `"confirm": true` for destructive), `GET /api/v1/actions`, `POST /api/v1/job`. Requires `Authorization: Bearer <session token>`, Host `127.0.0.1:<port>` or `localhost:<port>`, and same-origin `Origin` if sent. No CORS headers.
+- Exit / HTTP: 0/200 OK, 2/400 E_ARGS, 3/404 E_NOTFOUND, 4/409 E_CONFIRM, 5/401 E_AUTH, 1/500 E_INTERNAL, 2/411 E_LENGTH, 2/413 E_TOOLARGE.
+- HTTP: `POST /api/v1/<noun>/<verb>` (JSON args, `"confirm": true` for destructive; in jobs, per step), `GET /api/v1/actions`, `POST /api/v1/job`. Requires `Authorization: Bearer <session token>`, Host `127.0.0.1:<port>` or `localhost:<port>`, and same-origin `Origin` if sent. No CORS headers.
 - `--out <file>` writes UTF-8 without BOM. Args: JSON Schema subset (type, required, properties, enum, default); unknown args rejected.
 - Jobs: JSON, `version: 1`, steps `{id, app, noun, verb, args}`, only `${steps.<id>.result.<field>}` substitution, stop on first failure.
 
