@@ -1,0 +1,51 @@
+# fleet-action tests on Windows PowerShell 5.1 (RGLM directive 12 gate).
+# Pester is pinned by version and its nupkg SHA256 is checked before import.
+name: fleet-action tests
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  windows:
+    name: fleet-action-windows-powershell-51
+    runs-on: [self-hosted, windows, powershell51, headless]
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: fleet-action Pester tests
+        shell: powershell
+        env:
+          GITHUB_TOKEN: ''
+          GH_TOKEN: ''
+          PESTER_VERSION: '5.7.1'
+          PESTER_SHA256: '4a27904c6814a5fbe4758f8e49861f6a1994aee77b71165a5c43c0371ba6c580'
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($PSVersionTable.PSVersion.Major -ne 5) { throw 'Windows PowerShell 5.1 is required.' }
+          $testPath = 'tools/fleet-action/tests'
+          if (-not (Test-Path -LiteralPath $testPath)) {
+            Write-Host "::notice title=fleet-action tests skipped::$testPath is not in this checkout."
+            exit 0
+          }
+          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+          $work = Join-Path $env:RUNNER_TEMP 'pester'
+          if (Test-Path -LiteralPath $work) { Remove-Item -LiteralPath $work -Recurse -Force }
+          New-Item -ItemType Directory -Path $work | Out-Null
+          $zip = Join-Path $work "Pester.$env:PESTER_VERSION.zip"
+          Invoke-WebRequest -UseBasicParsing -Uri "https://www.powershellgallery.com/api/v2/package/Pester/$env:PESTER_VERSION" -OutFile $zip
+          $hash = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash
+          if ($hash -ne $env:PESTER_SHA256) { throw "Pester nupkg SHA256 mismatch: got $hash" }
+          $mod = Join-Path $work 'Pester'
+          Expand-Archive -LiteralPath $zip -DestinationPath $mod -Force
+          Import-Module (Join-Path $mod 'Pester.psd1') -Force
+          if ((Get-Module Pester).Version -ne [version]$env:PESTER_VERSION) { throw 'Wrong Pester version loaded.' }
+          $config = New-PesterConfiguration
+          $config.Run.Path = $testPath
+          $config.Run.PassThru = $true
+          $config.Output.Verbosity = 'Normal'
+          $result = Invoke-Pester -Configuration $config
+          if ($result.Result -ne 'Passed' -or $result.FailedCount -gt 0) { throw "fleet-action tests failed ($($result.FailedCount) failed)." }
