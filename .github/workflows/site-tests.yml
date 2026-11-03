@@ -19,10 +19,23 @@ jobs:
         env:
           GITHUB_TOKEN: ''
           GH_TOKEN: ''
+          PESTER_VERSION: '5.7.1'
+          PESTER_SHA256: '4a27904c6814a5fbe4758f8e49861f6a1994aee77b71165a5c43c0371ba6c580'
         run: |
           $ErrorActionPreference = 'Stop'
           if ($PSVersionTable.PSVersion.Major -ne 5) { throw 'Windows PowerShell 5.1 is required.' }
-          Import-Module Pester -RequiredVersion 5.7.1 -Force
+          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+          $work = Join-Path $env:RUNNER_TEMP 'pester'
+          if (Test-Path -LiteralPath $work) { Remove-Item -LiteralPath $work -Recurse -Force }
+          New-Item -ItemType Directory -Path $work | Out-Null
+          $zip = Join-Path $work "Pester.$env:PESTER_VERSION.zip"
+          Invoke-WebRequest -UseBasicParsing -Uri "https://www.powershellgallery.com/api/v2/package/Pester/$env:PESTER_VERSION" -OutFile $zip
+          $hash = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash
+          if ($hash -ne $env:PESTER_SHA256) { throw "Pester nupkg SHA256 mismatch: got $hash" }
+          $mod = Join-Path $work 'Pester'
+          Expand-Archive -LiteralPath $zip -DestinationPath $mod -Force
+          Import-Module (Join-Path $mod 'Pester.psd1') -Force
+          if ((Get-Module Pester).Version -ne [version]$env:PESTER_VERSION) { throw 'Wrong Pester version loaded.' }
           $config = New-PesterConfiguration
           $config.Run.Path = 'scripts/tests/Build-Site.Tests.ps1'
           $config.Run.PassThru = $true
