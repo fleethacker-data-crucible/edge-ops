@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Fleet Action Framework v0.2.0 (Windows PowerShell 5.1). ASCII only. MIT.
+    Fleet Action Framework v0.3.0 (Windows PowerShell 5.1). ASCII only. MIT.
 .DESCRIPTION
     One registry of <app> <noun> <verb> actions shared by the GUI, the CLI, the loopback HTTP API
     and JSON job files. Spec: comms proposals/fleet-action-framework/README.md (refs comms #68).
@@ -10,12 +10,12 @@
       - Listeners must bind exactly http://127.0.0.1:<port>/ (use New-FleetHttpListener), never + or *.
 #>
 Set-StrictMode -Version 2
-$script:FleetActionVersion = '0.2.0'
+$script:FleetActionVersion = '0.3.0'
 $script:Actions = @{}
 $script:LogRoot = $env:LOCALAPPDATA
 $script:MaxBodyBytes = 1048576
-$script:ExitCodes = @{ OK = 0; E_INTERNAL = 1; E_ARGS = 2; E_NOTFOUND = 3; E_CONFIRM = 4; E_AUTH = 5; E_LENGTH = 2; E_TOOLARGE = 2 }
-$script:HttpCodes = @{ OK = 200; E_INTERNAL = 500; E_ARGS = 400; E_NOTFOUND = 404; E_CONFIRM = 409; E_AUTH = 401; E_LENGTH = 411; E_TOOLARGE = 413 }
+$script:ExitCodes = @{ OK = 0; E_INTERNAL = 1; E_ARGS = 2; E_NOTFOUND = 3; E_CONFIRM = 4; E_AUTH = 5; E_FORBIDDEN = 5; E_PARTIAL = 6; E_LENGTH = 2; E_TOOLARGE = 2 }
+$script:HttpCodes = @{ OK = 200; E_INTERNAL = 500; E_ARGS = 400; E_NOTFOUND = 404; E_CONFIRM = 409; E_AUTH = 401; E_FORBIDDEN = 403; E_PARTIAL = 207; E_LENGTH = 411; E_TOOLARGE = 413 }
 $script:InternalMessage = 'internal error (details in the local log)'
 
 function Set-FleetActionLogRoot([string]$Root) { $script:LogRoot = $Root }
@@ -101,7 +101,7 @@ function Find-FleetAction([string]$App, [string]$Noun, [string]$Verb) {
 
 function Invoke-FleetAction {
     param([Parameter(Mandatory, Position = 0)][string]$Noun, [Parameter(Mandatory, Position = 1)][string]$Verb,
-          [Parameter(Position = 2)]$Arguments = @{}, [string]$App, [switch]$Confirm, [switch]$DryRun)
+          [Parameter(Position = 2)]$Arguments = @{}, [string]$App, [switch]$Confirmed, [switch]$DryRun)
     $name = (@($App, $Noun, $Verb) | Where-Object { $_ }) -join ' '
     try {
         $a = Find-FleetAction $App $Noun $Verb
@@ -112,8 +112,8 @@ function Invoke-FleetAction {
         $bad = Test-FleetArgs $a.Schema $Arguments
         if ($bad) { return New-FleetEnvelope $name -Code E_ARGS -Message $bad }
         if ($DryRun) { return New-FleetEnvelope $name -Result ([ordered]@{ dryRun = $true; destructive = $a.Destructive; args = $Arguments }) }
-        if ($a.Destructive -and -not $Confirm) { return New-FleetEnvelope $name -Code E_CONFIRM -Message 'destructive action: pass --yes (CLI) or "confirm": true (API / job step)' }
-        if ($a.Destructive) { Write-FleetActionLog $a.App "destructive $name" }
+        if ($a.Destructive -and -not $Confirmed) { return New-FleetEnvelope $name -Code E_CONFIRM -Message 'destructive action: pass --yes (CLI) or "confirm": true (API / job step)' }
+        if ($a.Destructive) { Write-FleetActionLog $a.App ("destructive {0} argKeys=[{1}]" -f $name, ((@($Arguments.Keys) | Sort-Object) -join ",")) }
         try { return New-FleetEnvelope $name -Result (& $a.Handler $Arguments) }
         catch { Write-FleetActionLog $a.App "error $name : $($_.Exception.Message)"; return New-FleetEnvelope $name -Code E_INTERNAL -Message $script:InternalMessage }
     } catch {
@@ -155,9 +155,9 @@ function Invoke-FleetCli {
     $p = $null
     try { $p = ConvertFrom-FleetArgs $Argv } catch { $env0 = New-FleetEnvelope 'cli' -Code E_ARGS -Message $_.Exception.Message }
     if ($p) {
-        if (-not $p.Noun -or $p.Noun -eq 'help') { $env0 = New-FleetEnvelope 'help' -Result (Get-FleetAction $App); $p.Json = $true }
+        if (-not $p.Noun -or $p.Noun -eq 'commands' -or $p.Noun -eq 'help') { $env0 = New-FleetEnvelope 'commands' -Result (Get-FleetAction $App); $p.Json = $true }
         elseif (-not $p.Verb) { $env0 = New-FleetEnvelope $p.Noun -Code E_ARGS -Message 'usage: <noun> <verb> [--arg value]' }
-        else { $env0 = Invoke-FleetAction -App $App -Noun $p.Noun -Verb $p.Verb -Arguments $p.Args -Confirm:$p.Yes -DryRun:$p.DryRun }
+        else { $env0 = Invoke-FleetAction -App $App -Noun $p.Noun -Verb $p.Verb -Arguments $p.Args -Confirmed:$p.Yes -DryRun:$p.DryRun }
     }
     $json = $env0 | ConvertTo-Json -Depth 20
     if ($p -and $p.Out) { Write-FleetUtf8File $p.Out $json }
@@ -173,14 +173,38 @@ function Get-FleetProp($o, [string]$Name) {
     $null
 }
 
+function Test-FleetJobShape($Job) {
+    # Mirrors job.schema.json (v1): version 1, optional name, steps[] of {id?, app, noun, verb, args?, confirm?}. No other keys.
+    if ($Job -isnot [pscustomobject] -and $Job -isnot [hashtable]) { return 'job must be a JSON object' }
+    $jk = @(if ($Job -is [hashtable]) { $Job.Keys } else { $Job.PSObject.Properties | ForEach-Object { $_.Name } })
+    foreach ($k in $jk) { if ($k -notin 'version', 'name', 'steps') { return "unknown job key $k" } }
+    if ([string](Get-FleetProp $Job 'version') -ne '1') { return 'unsupported job version' }
+    $steps = @(Get-FleetProp $Job 'steps'); if ($steps.Count -lt 1 -or $steps.Count -gt 200) { return 'steps must have 1 to 200 entries' }
+    $ids = @{}
+    foreach ($st in $steps) {
+        if ($st -isnot [pscustomobject] -and $st -isnot [hashtable]) { return 'each step must be an object' }
+        $sk = @(if ($st -is [hashtable]) { $st.Keys } else { $st.PSObject.Properties | ForEach-Object { $_.Name } })
+        foreach ($k in $sk) { if ($k -notin 'id', 'app', 'noun', 'verb', 'args', 'confirm') { return "unknown step key $k" } }
+        foreach ($k in 'app', 'noun', 'verb') { $v = Get-FleetProp $st $k; if ($v -isnot [string] -or $v -notmatch '^[a-z][a-z0-9-]*$') { return "step $k must be a lowercase word" } }
+        $id = Get-FleetProp $st 'id'
+        if ($null -ne $id) { if ($id -isnot [string] -or $id -notmatch '^[A-Za-z0-9_-]{1,64}$') { return 'bad step id' }; if ($ids.ContainsKey($id)) { return "duplicate step id $id" }; $ids[$id] = 1 }
+        $c = Get-FleetProp $st 'confirm'; if ($null -ne $c -and $c -isnot [bool]) { return 'confirm must be true or false' }
+    }
+    $null
+}
+
 function Invoke-FleetJob {
     # Job = { version: 1, steps: [ { id, app, noun, verb, args, confirm } ] }.
     # A destructive step runs only if that step has "confirm": true. Substitution: ${steps.<id>.result.<field>} only.
     # Substituted values come from earlier results: handlers must treat them as untrusted input.
     param([Parameter(Mandatory)]$Job, [switch]$DryRun, [switch]$ContinueOnError)
     try {
-        if ($Job -is [string]) { $Job = Get-Content -LiteralPath $Job -Raw -Encoding UTF8 | ConvertFrom-Json }
-        if ([string](Get-FleetProp $Job 'version') -ne '1') { return New-FleetEnvelope 'job run' -Code E_ARGS -Message 'unsupported job version' }
+        if ($Job -is [string]) {
+            if ((Get-Item -LiteralPath $Job).Length -gt $script:MaxBodyBytes) { return New-FleetEnvelope 'job run' -Code E_TOOLARGE -Message 'job file over 1 MB' }
+            $Job = [IO.File]::ReadAllText((Resolve-Path -LiteralPath $Job).ProviderPath, [Text.Encoding]::UTF8) | ConvertFrom-Json
+        }
+        $bad = Test-FleetJobShape $Job
+        if ($bad) { return New-FleetEnvelope 'job run' -Code E_ARGS -Message $bad }
         $results = @{}; $out = @(); $failed = $null
         foreach ($s in @(Get-FleetProp $Job 'steps')) {
             $id = [string](Get-FleetProp $s 'id'); if (-not $id) { $id = "step$($out.Count + 1)" }
@@ -198,7 +222,7 @@ function Invoke-FleetJob {
                     $args0[$kv.Key] = $v
                 }
                 $e = Invoke-FleetAction -App ([string](Get-FleetProp $s 'app')) -Noun ([string](Get-FleetProp $s 'noun')) -Verb ([string](Get-FleetProp $s 'verb')) `
-                        -Arguments $args0 -Confirm:([bool](Get-FleetProp $s 'confirm' | Where-Object { $_ -eq $true })) -DryRun:$DryRun
+                        -Arguments $args0 -Confirmed:([bool](Get-FleetProp $s 'confirm' | Where-Object { $_ -eq $true })) -DryRun:$DryRun
             } catch {
                 $e = New-FleetEnvelope "step $id" -Code E_ARGS -Message 'bad step (check app/noun/verb/args and ${steps...} references)'
             }
@@ -206,13 +230,25 @@ function Invoke-FleetJob {
             $out += [pscustomobject]@{ id = $id; envelope = $e }
             if (-not $e.ok) { if (-not $failed) { $failed = $e.error }; if (-not $ContinueOnError) { break } }
         }
-        if ($failed) { $r = New-FleetEnvelope 'job run' -Code $failed.code -Message "step failed: $($failed.message)"; $r | Add-Member steps $out; return $r }
+        if ($failed) {
+            $okCount = @($out | Where-Object { $_.envelope.ok }).Count
+            if ($ContinueOnError -and $okCount -gt 0) { $r = New-FleetEnvelope 'job run' -Code E_PARTIAL -Message "$($out.Count - $okCount) of $($out.Count) steps failed" }
+            else { $r = New-FleetEnvelope 'job run' -Code $failed.code -Message "step failed: $($failed.message)" }
+            $r | Add-Member steps $out; return $r }
         New-FleetEnvelope 'job run' -Result ([ordered]@{ steps = $out })
     } catch {
         Write-FleetActionLog '' "job error: $($_.Exception.Message)"
         New-FleetEnvelope 'job run' -Code E_INTERNAL -Message $script:InternalMessage
     }
 }
+
+function New-FleetId {
+    # Stable Fleet ID: <kind>_<32 lowercase hex>, e.g. clip_3f2a... Created once by the app that creates the object; never changes.
+    param([Parameter(Mandatory)][ValidatePattern('^[a-z][a-z0-9]{1,15}$')][string]$Kind)
+    '{0}_{1}' -f $Kind, ([guid]::NewGuid().ToString('N'))
+}
+
+function Test-FleetId([string]$Id) { $Id -cmatch '^[a-z][a-z0-9]{1,15}_[0-9a-f]{32}$' }
 
 function Test-FleetIsWindows { $env:OS -eq 'Windows_NT' }
 
@@ -268,8 +304,8 @@ function Assert-FleetListenerPrefix([Parameter(Mandatory)][System.Net.HttpListen
 function Test-FleetHttpAuth([hashtable]$Headers, [int]$Port, [string]$Token) {
     # Returns $null when Host, Origin and Bearer token are all good, else an error code/message.
     $h = @{}; foreach ($k in $Headers.Keys) { $h[([string]$k).ToLower()] = [string]$Headers[$k] }
-    if ($h['host'] -ne "127.0.0.1:$Port" -and $h['host'] -ne "localhost:$Port") { return 'bad Host' }
-    if ($h.ContainsKey('origin') -and $h['origin'] -ne "http://127.0.0.1:$Port" -and $h['origin'] -ne "http://localhost:$Port") { return 'bad Origin' }
+    if ($h['host'] -ne "127.0.0.1:$Port" -and $h['host'] -ne "localhost:$Port") { return 'FORBIDDEN:bad Host' }
+    if ($h.ContainsKey('origin') -and $h['origin'] -ne "http://127.0.0.1:$Port" -and $h['origin'] -ne "http://localhost:$Port") { return 'FORBIDDEN:bad Origin' }
     $given = ''; if ($h['authorization'] -match '^Bearer\s+(\S+)$') { $given = $Matches[1] }
     if (-not $Token -or -not $given -or $given.Length -ne $Token.Length) { return 'missing or bad token' }
     $diff = 0; for ($i = 0; $i -lt $Token.Length; $i++) { $diff = $diff -bor ([int]$given[$i] -bxor [int]$Token[$i]) }
@@ -291,6 +327,7 @@ function Invoke-FleetHttpCore {
     $fail = { param($c, $m) @{ Status = $script:HttpCodes[$c]; Body = (New-FleetEnvelope 'http' -Code $c -Message $m) } }
     try {
         $bad = Test-FleetHttpAuth $Headers $Port $Token
+        if ($bad -like 'FORBIDDEN:*') { return & $fail E_FORBIDDEN $bad.Substring(10) }
         if ($bad) { return & $fail E_AUTH $bad }
         if ($Method -eq 'GET' -and $Path -eq '/api/v1/actions') { return @{ Status = 200; Body = (New-FleetEnvelope 'actions' -Result (Get-FleetAction $App)) } }
         if ($Method -ne 'POST') { return & $fail E_NOTFOUND 'use POST' }
@@ -306,7 +343,7 @@ function Invoke-FleetHttpCore {
         if ($null -eq $noun) { $e = Invoke-FleetJob -Job ([pscustomobject]$in) }
         else {
             $confirm = $false; if ($in.ContainsKey('confirm')) { $confirm = ($in['confirm'] -eq $true); $in.Remove('confirm') }
-            $e = Invoke-FleetAction -App $App -Noun $noun -Verb $verb -Arguments $in -Confirm:$confirm
+            $e = Invoke-FleetAction -App $App -Noun $noun -Verb $verb -Arguments $in -Confirmed:$confirm
         }
         $c = 'OK'; if (-not $e.ok) { $c = $e.error.code }
         $s = $script:HttpCodes[$c]; if (-not $s) { $s = 500 }
@@ -337,7 +374,7 @@ function Invoke-FleetHttpAction {
         $r = Invoke-FleetHttpCore -Method $rq.HttpMethod -Path $rq.Url.AbsolutePath -Headers $hd -ContentLength $len `
                 -Chunked:($te -ne '') -ReadBody { Read-FleetBoundedBody $rq.InputStream $len } -Port $Port -Token $Token -App $App
         $bytes = (New-Object Text.UTF8Encoding($false)).GetBytes(($r.Body | ConvertTo-Json -Depth 20))
-        $res.StatusCode = $r.Status; $res.ContentType = 'application/json; charset=utf-8'
+        $res.StatusCode = $r.Status; $res.ContentType = 'application/json; charset=utf-8'; $res.Headers['Cache-Control'] = 'no-store'
         $res.OutputStream.Write($bytes, 0, $bytes.Length)
     } catch {
         Write-FleetActionLog $App "http error: $($_.Exception.Message)"
@@ -350,4 +387,4 @@ function Invoke-FleetHttpAction {
 Export-ModuleMember -Function Register-FleetAction, Clear-FleetAction, Get-FleetAction, Invoke-FleetAction, Invoke-FleetCli,
     Invoke-FleetJob, ConvertFrom-FleetArgs, New-FleetEnvelope, Get-FleetExitCode, New-FleetSessionToken, Remove-FleetSessionToken,
     Get-FleetSessionTokenPath, New-FleetHttpListener, Assert-FleetListenerPrefix, Test-FleetHttpAuth, Read-FleetBoundedBody,
-    Invoke-FleetHttpCore, Resolve-FleetHttpRequest, Invoke-FleetHttpAction, Write-FleetUtf8File, Set-FleetActionLogRoot
+    Invoke-FleetHttpCore, Resolve-FleetHttpRequest, Invoke-FleetHttpAction, Write-FleetUtf8File, Set-FleetActionLogRoot, Test-FleetJobShape, New-FleetId, Test-FleetId

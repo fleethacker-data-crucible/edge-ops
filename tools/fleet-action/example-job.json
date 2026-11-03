@@ -3,6 +3,6 @@
   "name": "demo",
   "steps": [
     { "id": "a", "app": "demo", "noun": "marker", "verb": "add", "args": { "clip": "c1" } },
-    { "id": "b", "app": "demo", "noun": "marker", "verb": "remove", "args": { "id": "${steps.a.result.markerId}" } }
+    { "id": "b", "app": "demo", "noun": "marker", "verb": "remove", "confirm": true, "args": { "id": "${steps.a.result.markerId}" } }
   ]
 }

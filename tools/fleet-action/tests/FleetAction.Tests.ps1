@@ -25,7 +25,7 @@ Describe 'Invoke-FleetAction' {
     It 'rejects any arg when the schema declares none' { (Invoke-FleetAction boom go @{ x = 1 }).error.message | Should -Be 'unknown argument x' }
     It 'rejects non-scalar values for scalar args' { (Invoke-FleetAction marker add @{ clip = @('a', 'b') }).error.message | Should -Match 'single value' }
     It 'unknown action is E_NOTFOUND' { Get-FleetExitCode (Invoke-FleetAction foo bar) | Should -Be 3 }
-    It 'destructive needs confirm' { (Invoke-FleetAction marker remove @{ id = 'm1' }).error.code | Should -Be 'E_CONFIRM'; (Invoke-FleetAction marker remove @{ id = 'm1' } -Confirm).ok | Should -BeTrue }
+    It 'destructive needs confirm' { (Invoke-FleetAction marker remove @{ id = 'm1' }).error.code | Should -Be 'E_CONFIRM'; (Invoke-FleetAction marker remove @{ id = 'm1' } -Confirmed).ok | Should -BeTrue }
     It 'dry run does not call handler' { (Invoke-FleetAction marker remove @{ id = 'm1' } -DryRun).result.dryRun | Should -BeTrue }
     It 'handler exceptions become a generic E_INTERNAL' { $e = Invoke-FleetAction boom go; $e.error.code | Should -Be 'E_INTERNAL'; $e.error.message | Should -Not -Match 'kaboom' }
     It 'keys actions by app: same noun verb in two apps' {
@@ -39,7 +39,7 @@ Describe 'Invoke-FleetAction' {
 Describe 'CLI' {
     It 'parses noun verb and kebab args' { $p = ConvertFrom-FleetArgs @('marker', 'add', '--clip-id', 'c1', '--loud', '--json'); $p.Noun | Should -Be 'marker'; $p.Args.clipId | Should -Be 'c1'; $p.Args.loud | Should -BeTrue; $p.Json | Should -BeTrue }
     It 'sets exit code and prints JSON' { $o = Invoke-FleetCli -App demo -Argv @('marker', 'add', '--clip', 'c9', '--json'); $LASTEXITCODE | Should -Be 0; ($o | ConvertFrom-Json).result.markerId | Should -Be 'm_c9_0' }
-    It 'help lists actions' { $o = Invoke-FleetCli @('help'); ($o | ConvertFrom-Json).result.Count | Should -Be 3 }
+    It 'commands --json lists actions (help is an alias)' { (Invoke-FleetCli @('help') | ConvertFrom-Json).result.Count | Should -Be 3; $o = Invoke-FleetCli @('commands', '--json'); ($o | ConvertFrom-Json).result.Count | Should -Be 3 }
     It '--out writes UTF-8 without BOM' {
         $f = Join-Path ([IO.Path]::GetTempPath()) "fa-$([guid]::NewGuid()).json"
         Invoke-FleetCli @('marker', 'add', '--clip', 'c1', '--out', $f) | Out-Null
@@ -71,6 +71,23 @@ Describe 'Invoke-FleetJob' {
         $e2 = Invoke-FleetJob ('{"version":1,"steps":[{"app":"demo","noun":"marker","verb":"add","args":[1,2]}]}' | ConvertFrom-Json); $e2.ok | Should -BeFalse
         (Invoke-FleetJob ([pscustomobject]@{ nothing = 1 })).ok | Should -BeFalse
     }
+    It 'continue-on-error with some successes is E_PARTIAL (exit 6) with per-step results' {
+        $job = '{"version":1,"steps":[{"app":"demo","noun":"boom","verb":"go"},{"app":"demo","noun":"marker","verb":"add","args":{"clip":"x"}}]}' | ConvertFrom-Json
+        $e = Invoke-FleetJob $job -ContinueOnError; $e.error.code | Should -Be 'E_PARTIAL'; Get-FleetExitCode $e | Should -Be 6; @($e.steps).Count | Should -Be 2; $e.steps[1].envelope.ok | Should -BeTrue
+    }
+    It 'dry run validates every step without running handlers' {
+        $job = '{"version":1,"steps":[{"app":"demo","noun":"marker","verb":"remove","args":{"id":"m"}}]}' | ConvertFrom-Json
+        $e = Invoke-FleetJob $job -DryRun; $e.ok | Should -BeTrue; $e.result.steps[0].envelope.result.destructive | Should -BeTrue
+    }
+    It 'rejects shapes outside job.schema.json' {
+        (Invoke-FleetJob ('{"version":1,"steps":[{"app":"demo","noun":"marker","verb":"add","run":"x"}]}' | ConvertFrom-Json)).error.message | Should -Match 'unknown step key'
+        (Invoke-FleetJob ('{"version":1,"extra":1,"steps":[]}' | ConvertFrom-Json)).error.message | Should -Match 'unknown job key'
+        (Invoke-FleetJob ('{"version":1,"steps":[{"id":"a","app":"demo","noun":"marker","verb":"add"},{"id":"a","app":"demo","noun":"marker","verb":"add"}]}' | ConvertFrom-Json)).error.message | Should -Match 'duplicate'
+        (Invoke-FleetJob ('{"version":1,"steps":[{"app":"demo","noun":"marker","verb":"remove","confirm":"yes"}]}' | ConvertFrom-Json)).error.code | Should -Be 'E_ARGS'
+    }
+    It 'reads a job file from disk (example-job.json)' {
+        $e = Invoke-FleetJob (Join-Path $PSScriptRoot '..\example-job.json'); $e.ok | Should -BeTrue
+    }
     It 'rejects other versions' { (Invoke-FleetJob ([pscustomobject]@{ version = 2; steps = @() })).error.code | Should -Be 'E_ARGS' }
 }
 Describe 'HTTP' {
@@ -78,8 +95,8 @@ Describe 'HTTP' {
     It 'lists actions' { (Resolve-FleetHttpRequest GET '/api/v1/actions' $Hd '' 8900 $Tok).Status | Should -Be 200 }
     It 'rejects bad token, host, origin' {
         (Resolve-FleetHttpRequest POST '/api/v1/marker/add' @{ Host = '127.0.0.1:8900'; Authorization = 'Bearer x' } '{}' 8900 $Tok).Status | Should -Be 401
-        (Resolve-FleetHttpRequest POST '/api/v1/marker/add' @{ Host = 'evil.test:8900'; Authorization = "Bearer $Tok" } '{}' 8900 $Tok).Status | Should -Be 401
-        (Resolve-FleetHttpRequest POST '/api/v1/marker/add' ($Hd + @{ Origin = 'http://evil.test' }) '{}' 8900 $Tok).Status | Should -Be 401
+        (Resolve-FleetHttpRequest POST '/api/v1/marker/add' @{ Host = 'evil.test:8900'; Authorization = "Bearer $Tok" } '{}' 8900 $Tok).Status | Should -Be 403
+        (Resolve-FleetHttpRequest POST '/api/v1/marker/add' ($Hd + @{ Origin = 'http://evil.test' }) '{}' 8900 $Tok).Status | Should -Be 403
     }
     It 'missing token is rejected without reading the body' {
         $script:read = $false
@@ -135,6 +152,12 @@ Describe 'HTTP' {
             $wc.Headers['Authorization'] = "Bearer $Tok"
             ($wc.UploadString("http://127.0.0.1:$port/api/v1/ping/go", '{}') | ConvertFrom-Json).result.pong | Should -Be 1
         } finally { [void]$h.AsyncWaitHandle.WaitOne(3000); $ps.Dispose() }
+    }
+}
+Describe 'Stable IDs' {
+    It 'New-FleetId makes kind_32hex and Test-FleetId checks it' {
+        $id = New-FleetId -Kind clip; $id | Should -Match '^clip_[0-9a-f]{32}$'; Test-FleetId $id | Should -BeTrue
+        Test-FleetId 'Clip_x' | Should -BeFalse; { New-FleetId -Kind 'Bad Kind' } | Should -Throw
     }
 }
 Describe 'Session token' {
