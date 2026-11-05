@@ -6,14 +6,14 @@
    The literal colours below are SCOPE's own signature accent (Night watch / Chart room) and Fleet brass. Everything else
    is a theme token, so the Theme picker still switches Night watch and Chart room. */
 :root[data-brand=scope]{
- --scope-accent:#5fcfa6;--scope-accent-ink:#071a26; /* sea green: 6.2:1 on every Night watch surface, ink 9.3:1 on it */
+ --scope-accent:#7ab8ec;--scope-accent-ink:#071a26; /* harbour blue: 5.6:1 on every Night watch surface, ink 8.4:1 on it */
  --scope-brass:#c9a66b;
  --scope-font-display:Cambria,"Cambria Math",Georgia,"Times New Roman",serif; /* fleet.css interim display serif */
  --scope-side-w:240px;--scope-header-h:56px;--scope-status-h:28px;
  /* the kit's action, link, brand and focus tokens follow suit, so no control or heading stays brass */
  --accent:var(--scope-accent);--on-accent:var(--scope-accent-ink);--link:var(--scope-accent);--brand:var(--text);--focus:var(--scope-brass);
 }
-:root[data-brand=scope][data-theme=fleet-chart-room]{--scope-accent:#146650;--scope-accent-ink:#fbfaf2;--scope-brass:#8a6b45}
+:root[data-brand=scope][data-theme=fleet-chart-room]{--scope-accent:#1d5f99;--scope-accent-ink:#fbfaf2;--scope-brass:#8a6b45}
 
 /* ---- shell: sidebar | main, status bar across (UNIFIED-UI section 5) ---- */
 [data-brand=scope] body{margin:0;height:100vh;display:grid;grid-template-columns:var(--scope-side-w) minmax(0,1fr);grid-template-rows:minmax(0,1fr) var(--scope-status-h);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
@@ -69,15 +69,19 @@
 [data-brand=scope] .badge.red{color:var(--err);border-color:currentColor;background:color-mix(in srgb,var(--err) 14%,transparent)}
 [data-brand=scope] .badges{gap:6px}
 [data-brand=scope] .links a{color:var(--scope-accent)}
-[data-brand=scope] .btn.demo{height:32px;padding:0 12px;border-radius:6px;border:1px solid var(--scope-accent);background:transparent;color:var(--scope-accent);font-size:13px;font-weight:500;font-family:inherit}
-[data-brand=scope] .btn.demo::after{content:"\2197";font-size:12px}
-[data-brand=scope] .btn.demo:hover{background:var(--scope-accent);color:var(--scope-accent-ink);filter:none}
+/* Demo: the card's one primary action, in the Fleet primary button style (fleet.css .fl-btn--primary: accent fill, ink text,
+   32 px, 6 px radius) with a play glyph, as PacketRat's "Analyze inbox" pairs an icon with its label. */
+[data-brand=scope] .btn.demo{height:32px;padding:0 14px 0 12px;border-radius:6px;border:1px solid transparent;background:var(--scope-accent);color:var(--scope-accent-ink);font-size:13px;font-weight:600;font-family:inherit;letter-spacing:.01em;gap:7px}
+[data-brand=scope] .btn.demo::before{content:"";width:0;height:0;border-style:solid;border-width:5px 0 5px 8px;border-color:transparent transparent transparent currentColor}
+[data-brand=scope] .btn.demo:hover{filter:brightness(1.1)}
+[data-brand=scope] .btn.demo:focus-visible{outline:2px solid var(--scope-brass);outline-offset:2px}
 
+/* Narrow windows: the sidebar stays a sidebar (UNIFIED-UI section 5), just narrower; the header wraps. */
 @media (max-width:1023px){
- [data-brand=scope] body{height:auto;min-height:100vh;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) var(--scope-status-h)}
- [data-brand=scope] .scope-side{grid-row:1;border-right:0;border-bottom:1px solid var(--border)}
- [data-brand=scope] .scope-main{grid-row:2;grid-template-rows:auto minmax(0,1fr)}
+ :root[data-brand=scope]{--scope-side-w:200px}
+ [data-brand=scope] .scope-brand{padding:16px 12px 12px}
+ [data-brand=scope] .scope-brand .emblem{width:88px;height:88px}
+ [data-brand=scope] .scope-main{grid-template-rows:auto minmax(0,1fr)}
  [data-brand=scope] header{flex-wrap:wrap;padding:12px 16px}
  [data-brand=scope] .scope-content{padding:16px}
- [data-brand=scope] .scope-status{grid-row:3}
 }
