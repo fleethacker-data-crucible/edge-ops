@@ -48,8 +48,17 @@ Describe 'SCOPE skin' {
         $initials = -join ($m.Groups[1].Value.Split(' ') | ForEach-Object { $_.Substring(0, 1) })
         $initials | Should -Be 'SCOPE'
     }
-    It 'has its emblem' {
+    It 'has its emblem and its stylesheet' {
         Test-Path -LiteralPath (Join-Path $RepoRoot 'assets\emblems\scope.svg') | Should -BeTrue
+        Test-Path -LiteralPath (Join-Path $RepoRoot 'assets\brand-scope.css') | Should -BeTrue
+        $Skin | Should -Match "SCOPE_CSS = 'assets/brand-scope.css'"
+    }
+    It 'keeps brass to hairlines: only the wordmark rule and focus rings use it' {
+        $css = Get-Content -Raw (Join-Path $RepoRoot 'assets\brand-scope.css')
+        $css | Should -Match '--accent:var\(--scope-accent\)'
+        $uses = [regex]::Matches($css, '(?m)^[^\r\n]*var\(--scope-brass\)[^\r\n]*$') | ForEach-Object { $_.Value }
+        @($uses).Count | Should -BeGreaterThan 0
+        foreach ($line in $uses) { ($line -match 'scope-rule|focus') | Should -BeTrue -Because "brass is a hairline only, not: $line" }
     }
     It 'claims no status anywhere on the page' {
         foreach ($text in @($Index, $Skin, $App)) { $text | Should -Not -Match $Claim }

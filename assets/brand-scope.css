@@ -1,0 +1,75 @@
+/* SCOPE skin for the Edge-Ops hub, in the Fleet UI v0.2 look that Halyard, PacketRat and Semaphore share (each repo's
+   docs/UNIFIED-UI.md and vendor/fleet/fleet.css): navy surfaces and ivory text from the hub's Fleet theme tokens, brass
+   only as a hairline (focus ring, the rule under the wordmark), one signature accent for actions, the sidebar / header /
+   status-bar shell, Segoe UI body text and a display serif for the wordmark and page title.
+   Loaded by assets/brand-scope.js only while <html data-brand="scope">; the plain hub never loads it.
+   The literal colours below are SCOPE's own signature accent (Night watch / Chart room) and Fleet brass. Everything else
+   is a theme token, so the Theme picker still switches Night watch and Chart room. */
+:root[data-brand=scope]{
+ --scope-accent:#5fcfa6;--scope-accent-ink:#071a26; /* sea green: 6.2:1 on every Night watch surface, ink 9.3:1 on it */
+ --scope-brass:#c9a66b;
+ --scope-font-display:Cambria,"Cambria Math",Georgia,"Times New Roman",serif; /* fleet.css interim display serif */
+ --scope-side-w:240px;--scope-header-h:56px;--scope-status-h:28px;
+ /* the kit's action, link, brand and focus tokens follow suit, so no control or heading stays brass */
+ --accent:var(--scope-accent);--on-accent:var(--scope-accent-ink);--link:var(--scope-accent);--brand:var(--text);--focus:var(--scope-brass);
+}
+:root[data-brand=scope][data-theme=fleet-chart-room]{--scope-accent:#146650;--scope-accent-ink:#fbfaf2;--scope-brass:#8a6b45}
+
+/* ---- shell: sidebar | main, status bar across (UNIFIED-UI section 5) ---- */
+[data-brand=scope] body{margin:0;height:100vh;display:grid;grid-template-columns:var(--scope-side-w) minmax(0,1fr);grid-template-rows:minmax(0,1fr) var(--scope-status-h);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+[data-brand=scope] .scope-side{grid-row:1;display:flex;flex-direction:column;min-height:0;overflow:auto;background:var(--side-bg);border-right:1px solid var(--border)}
+[data-brand=scope] .scope-brand{display:grid;justify-items:center;gap:8px;padding:20px 16px 16px;border-bottom:1px solid var(--border);text-align:center}
+[data-brand=scope] .scope-brand .emblem{width:112px;height:112px}
+[data-brand=scope] .scope-wordmark{margin:0;font:28px/1 var(--scope-font-display);letter-spacing:.14em;padding-left:.14em;color:var(--text)}
+[data-brand=scope] .scope-rule{display:flex;align-items:center;gap:6px;color:var(--scope-brass)}
+[data-brand=scope] .scope-rule span{height:1px;width:32px;background:currentColor}
+[data-brand=scope] .scope-rule svg{display:block;fill:currentColor}
+[data-brand=scope] .scope-expansion{margin:0;font-size:12px;line-height:1.4;letter-spacing:.04em;color:var(--text-2)}
+[data-brand=scope] .scope-expansion b{color:var(--text)}
+[data-brand=scope] .scope-nav{display:grid;gap:2px;padding:12px 0}
+[data-brand=scope] .scope-nav-title{padding:0 16px 6px;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-2)}
+[data-brand=scope] .scope-nav button{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:8px;min-height:36px;padding:0 13px;border-left:3px solid transparent;color:var(--text-2);cursor:pointer;font:inherit;text-align:left}
+[data-brand=scope] .scope-nav button:hover{background:var(--panel-2);color:var(--text)}
+[data-brand=scope] .scope-nav button[aria-current=page]{color:var(--scope-accent);border-left-color:var(--scope-accent);background:var(--panel)}
+[data-brand=scope] .scope-nav button:focus-visible{outline:2px solid var(--scope-brass);outline-offset:-2px}
+[data-brand=scope] .scope-nav .n{margin-left:auto;font-size:12px;color:var(--text-2)}
+[data-brand=scope] .scope-side-foot{margin-top:auto;padding:12px 16px;border-top:1px solid var(--border);font-size:12px;color:var(--text-2)}
+[data-brand=scope] .scope-main{grid-row:1;display:grid;grid-template-rows:var(--scope-header-h) minmax(0,1fr);min-width:0;min-height:0}
+[data-brand=scope] header{display:flex;align-items:center;gap:16px;padding:0 24px;background:var(--side-bg);border-bottom:1px solid var(--border)}
+[data-brand=scope] header h1{margin:0;font:20px/1.25 var(--scope-font-display);letter-spacing:0;color:var(--text);white-space:nowrap}
+[data-brand=scope] header .controls{flex:1;min-width:0;gap:8px}
+[data-brand=scope] header #q{flex:1 1 16rem;max-width:28rem}
+[data-brand=scope] header .prefs{float:none;margin:0 0 0 auto;font-size:13px}
+[data-brand=scope] .scope-content{overflow:auto;min-height:0;padding:24px 32px 32px}
+[data-brand=scope] .scope-content>*{max-width:1600px;margin-left:auto;margin-right:auto}
+[data-brand=scope] #grid{padding:0}
+[data-brand=scope] .scope-content-footer{display:flex;gap:12px;flex-wrap:wrap;border-top:1px solid var(--border);padding:24px 0 0;margin-top:48px;font-size:12px;color:var(--text-2)}
+[data-brand=scope] .scope-content-footer a{color:var(--text-2)}
+[data-brand=scope] .scope-status{grid-column:1/-1;grid-row:2;display:flex;align-items:center;gap:16px;padding:0 12px;background:var(--side-bg);border-top:1px solid var(--border);color:var(--text-2);font-size:12px;white-space:nowrap;overflow:hidden}
+[data-brand=scope] .scope-status .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok);margin-right:6px;vertical-align:middle}
+[data-brand=scope] .scope-status .addr{font-family:var(--mono)}
+[data-brand=scope] .scope-status .spacer{flex:1}
+
+/* ---- catalog: groups and cards (sections 4 and 6: type scale, 10 px card radius, borders not shadows) ---- */
+[data-brand=scope] .group{margin:0 0 32px}
+[data-brand=scope] .group-title{margin:0 0 12px;font-size:16px;font-weight:600;color:var(--text)}
+[data-brand=scope] .group-note{margin:0 0 12px;font-size:13px}
+[data-brand=scope] .cards{gap:16px}
+[data-brand=scope] .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;box-shadow:none;padding:16px;gap:8px}
+[data-brand=scope] .cat{font-size:12px;font-weight:600;letter-spacing:.08em;color:var(--text-2)}
+[data-brand=scope] .card h3{font-size:16px;font-weight:600}
+[data-brand=scope] .card h3 a{color:var(--text)}
+[data-brand=scope] .card p{font-size:13px}
+[data-brand=scope] .links a{color:var(--scope-accent)}
+[data-brand=scope] .btn.demo{height:32px;padding:0 12px;border-radius:6px;border:1px solid var(--scope-accent);background:transparent;color:var(--scope-accent);font-size:13px;font-weight:500;font-family:inherit}
+[data-brand=scope] .btn.demo::after{content:"\2197";font-size:12px}
+[data-brand=scope] .btn.demo:hover{background:var(--scope-accent);color:var(--scope-accent-ink);filter:none}
+
+@media (max-width:1023px){
+ [data-brand=scope] body{height:auto;min-height:100vh;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) var(--scope-status-h)}
+ [data-brand=scope] .scope-side{grid-row:1;border-right:0;border-bottom:1px solid var(--border)}
+ [data-brand=scope] .scope-main{grid-row:2;grid-template-rows:auto minmax(0,1fr)}
+ [data-brand=scope] header{flex-wrap:wrap;padding:12px 16px}
+ [data-brand=scope] .scope-content{padding:16px}
+ [data-brand=scope] .scope-status{grid-row:3}
+}
