@@ -84,7 +84,7 @@ jobs:
   `python3 -c "import json;d=json.load(open('catalog.json'));open('assets/catalog-data.js','w').write('window.EDGE_OPS_CATALOG = '+json.dumps(d,indent=2)+';\n')"`
   (or run the PowerShell equivalent in CONVENTIONS.md).
 - Every tool has a `group` (an id from the top-level `groups` list in `catalog.json`, which also sets the heading order and names). That list and the tools' `group` fields are the only place groups are defined; the site reads them, and the hub offers a Group filter beside the Category filter and searches group names. A tool in no known group shows under "Other". Group names and membership are proposals until the team reviews them.
-- Optional catalog fields: `installNote` (shown instead of the run steps when `requirements.installs` is true), `externalSource`, and `runNote`, which replaces the last run step on the tool page. Use `runNote` when "your browser opens" is wrong, for example an API-only server. A tool with a numeric `defaultPort` and `requirements.chromeEngine` false already gets neutral "no browser UI" wording.
+- Optional catalog fields: `tagline` (one short line for a card; the SCOPE skin shows it instead of the summary), `installNote` (shown instead of the run steps when `requirements.installs` is true), `externalSource`, and `runNote`, which replaces the last run step on the tool page. Use `runNote` when "your browser opens" is wrong, for example an API-only server. A tool with a numeric `defaultPort` and `requirements.chromeEngine` false already gets neutral "no browser UI" wording.
 
 ## GitHub Pages site
 

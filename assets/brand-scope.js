@@ -11,6 +11,9 @@
   var SCOPE_NAME = 'SCOPE';
   var SCOPE_THEME = 'fleet-night-watch';
   var SCOPE_EMBLEM = 'assets/emblems/scope.svg';
+  // The painted SCOPE emblem goes here when it lands (dark and light variants); until then the line mark above is used.
+  var SCOPE_EMBLEM_PAINTED = 'assets/brand/scope/emblem-dark.png', SCOPE_EMBLEM_PAINTED_LIGHT = 'assets/brand/scope/emblem-light.png';
+  var PAINTED_DIR = 'assets/emblems/painted/';
   var SCOPE_CSS = 'assets/brand-scope.css';
   var SCOPE_PAGE_TITLE = 'Tool catalog';
   var SCOPE_SUBTITLE = 'Standalone utilities for app-whitelisted Windows: PowerShell 5.1, a Chrome-engine browser, no admin, no installs. Built on FleetHacker Edge-Ops.';
@@ -44,9 +47,39 @@
 
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 
+  function light() { var t = document.documentElement.getAttribute('data-theme') || ''; return document.documentElement.classList.contains('light') || /light|chart/.test(t); }
+  // Try each source in turn; the first that loads stays. Works from file://, where nothing can be probed ahead of time.
+  function paintedOrFallback(img, sources, onFound) {
+    var i = 0;
+    function next() { if (i >= sources.length) return; img.src = sources[i++]; }
+    img.onerror = next;
+    img.onload = function () { img.onerror = null; if (onFound) onFound(img); };
+    next();
+  }
+
+  // Cards: swap in the painted emblem and the tagline. app.js redraws the grid on every filter change, so this runs again
+  // whenever the grid's children change.
+  function decorate(data) {
+    var byId = {}; (data.tools || []).forEach(function (t) { byId[t.id] = t; });
+    var cards = document.querySelectorAll('#grid .card:not([data-scope])');
+    for (var k = 0; k < cards.length; k++) {
+      var c = cards[k]; c.setAttribute('data-scope', '');
+      var a = c.querySelector('h3 a'); if (!a) continue;
+      var mm = /tools\/([^/]+)\.html$/.exec(a.getAttribute('href') || ''); var t = mm ? byId[mm[1]] : null; if (!t) continue;
+      if (t.tagline) { var p = c.querySelector('h3 + p'); if (p) p.textContent = t.tagline; }
+      var im = el('img', 'painted'); im.alt = ''; im.setAttribute('aria-hidden', 'true'); im.width = 96; im.height = 96;
+      (function (card) {
+        paintedOrFallback(im, light() ? [PAINTED_DIR + t.id + '-light.png', PAINTED_DIR + t.id + '.png'] : [PAINTED_DIR + t.id + '.png'],
+          function () { card.classList.add('has-painted'); });
+      })(c);
+      c.insertBefore(im, c.firstChild);
+    }
+  }
+
   function brand() {
     var b = el('div', 'scope-brand');
-    var im = el('img', 'emblem'); im.src = SCOPE_EMBLEM; im.alt = ''; im.setAttribute('aria-hidden', 'true'); im.width = 112; im.height = 112;
+    var im = el('img', 'emblem'); im.alt = ''; im.setAttribute('aria-hidden', 'true'); im.width = 112; im.height = 112;
+    paintedOrFallback(im, light() ? [SCOPE_EMBLEM_PAINTED_LIGHT, SCOPE_EMBLEM_PAINTED, SCOPE_EMBLEM] : [SCOPE_EMBLEM_PAINTED, SCOPE_EMBLEM]);
     b.appendChild(im);
     b.appendChild(el('p', 'scope-wordmark', SCOPE_NAME));
     // Fleet wordmark rule: brass rules either side of a compass star.
@@ -126,6 +159,8 @@
     main.appendChild(content);
 
     body.appendChild(side); body.appendChild(main); body.appendChild(status(data));
+    decorate(data);
+    if (window.MutationObserver) new MutationObserver(function () { decorate(window.EDGE_OPS_CATALOG || data); }).observe(grid, { childList: true, subtree: true });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', shell); else shell();
 })();
