@@ -25,7 +25,7 @@ This is the **hub** for the `fleethacker-data-crucible` utility suite. Every too
 
 | Tool | Category | What it does | Launch | Default port | Notes |
 |---|---|---|---|---|---|
-| [Halyard](https://github.com/fleethacker-data-crucible/Halyard) | PS host + browser UI | A product owner's assistant that works a backlog upward to leadership and downward to stories and tasks | `Launch-Halyard.bat` | free port | unreleased |
+| [Halyard](https://github.com/fleethacker-data-crucible/Halyard) | PS host + browser UI | A product owner's assistant that works a backlog upward to leadership and downward to stories and tasks | `Launch-Halyard.bat` | 8773 | unreleased |
 | [Halyard Ballast](https://github.com/fleethacker-data-crucible/Halyard-Ballast) | Support repo | The sandbox repository Halyard writes to: synthetic and copied work items, created, reviewed and deleted on purpose | - | - | sandbox |
 | [Lazarette](https://github.com/fleethacker-data-crucible/Lazarette) | Security | Your credentials, stowed and locked aboard your own workstation | `Launch-Lazarette.bat` | 8765 | unreleased |
 | [Gangplank](https://github.com/fleethacker-data-crucible/Gangplank) | PS host + browser UI | A browser-first workspace that gets people without Git training safely onto GitHub and GitLab projects, from Windows PowerShell 5.1 and a browser; no git.exe, Node or Python on the workstation | `Launch-Gangplank.bat` | 8769 | preview |
@@ -36,9 +36,9 @@ This is the **hub** for the `fleethacker-data-crucible` utility suite. Every too
 | [Eight Bells](https://github.com/fleethacker-data-crucible/Eight-Bells) | PS host + browser UI | Local-first watchstanding log intelligence: quality review, evidence-linked turnover and lessons learned (v2) | `Launch-EightBells.bat` | free port | prototype |
 | [Capstan](https://github.com/fleethacker-data-crucible/Capstan) | PS host + browser UI | An open-source, local-first screen recorder and video editor for Windows | `Launch-Capstan.bat` | 8790 | v0.1 |
 | [Scrimshaw](https://github.com/fleethacker-data-crucible/Scrimshaw) | Browser-only | An open-source e-learning authoring tool | `Launch.bat` | local (not stated) | unreleased |
-| [Semaphore](https://github.com/fleethacker-data-crucible/Semaphore) | Data & AI | Semaphore is a local-first dashboard builder for a single analyst, meant to replace Qlik on thin clients | - | - | v0.1 |
+| [Semaphore](https://github.com/fleethacker-data-crucible/Semaphore) | Data & AI | Semaphore is a local-first dashboard builder for a single analyst, meant to replace Qlik on thin clients | `Launch-Semaphore.bat` | 8800 | v0.3 |
 | [Fairlead](https://github.com/fleethacker-data-crucible/Fairlead) | Data & AI | One local address for every model | `Launch-Fairlead.bat` | 8776 | unreleased |
-| [Windlass](https://github.com/fleethacker-data-crucible/Windlass) | Data & AI | Run very large local GGUF models (70B and up) on an ordinary PC by streaming them one layer at a time, behind an OpenAI-compatible API | `Windlass.bat serve --model <file.gguf>` | 8777 | v0.2; CPU; compiles C# at run time |
+| [Windlass](https://github.com/fleethacker-data-crucible/Windlass) | Data & AI | Run very large local GGUF models (70B and up) on an ordinary PC by streaming them one layer at a time, behind an OpenAI-compatible API | `Launch-Windlass.bat serve --model <file.gguf>` | 8777 | v0.2; CPU; compiles C# at run time |
 | [TalkForge](https://github.com/fleethacker-data-crucible/talkforge) | Browser-only | In-browser neural text-to-speech (Piper/WASM), offline | `serve.bat` | 25000 | Models ship in releases |
 | [Data Noodler](https://github.com/fleethacker-data-crucible/data-noodler) | Data & AI | Flat-file analytics (CSV/Parquet/Arrow/SQLite) | `Data_Noodler.bat` | 8079 | Compiles C# at run time |
 | [Phoenix LAI](https://github.com/fleethacker-data-crucible/phoenix-lai) | Data & AI | Local GPU LLM server (OpenAI API) + chat client | `Phoenix_LAI.bat` | 1234 | GPU; compiles C# at run time |
@@ -54,10 +54,10 @@ This is the **hub** for the `fleethacker-data-crucible` utility suite. Every too
 
 ## Running on a whitelisted Windows machine
 
-1. Download `ToolName-vX.Y.Z.zip` from the tool's **Releases â†’ latest** page and check it against the `.sha256` file:
+1. Download `ToolName-vX.Y.Z.zip` from the tool's **Releases -> latest** page and check it against the `.sha256` file:
    `Get-FileHash .\ToolName-vX.Y.Z.zip -Algorithm SHA256`
-2. Right-click the zip â†’ Properties â†’ **Unblock**, then extract the **whole** folder.
-3. Double-click the single `.bat` launcher. It runs `powershell.exe -NoProfile -ExecutionPolicy Bypass -STA -File â€¦` for that process only. It never changes machine policy, and it does not override Group Policy or application control.
+2. Right-click the zip -> Properties -> **Unblock**, then extract the **whole** folder.
+3. Double-click the single `.bat` launcher. It runs `powershell.exe -NoProfile -ExecutionPolicy Bypass -STA -File ...` for that process only. It never changes machine policy, and it does not override Group Policy or application control.
 4. Your browser opens to `http://127.0.0.1:<port>/`. Close the console window (or press Ctrl+C) to stop. API-only tools such as Windlass open no browser; their tool page gives the address.
 
 All tools are prototypes or previews unless stated otherwise. Get local authorization and a security review before using them with sensitive data.
@@ -68,7 +68,7 @@ All tools are prototypes or previews unless stated otherwise. Get local authoriz
 - [docs/FLOWS.md](docs/FLOWS.md): the files Fleet apps hand to one another, and where each format is defined.
 - [tools/fleet-loader/](tools/fleet-loader/README.md): the fleet snapshot manifest and its offline verifier (proposal, issue 34).
 - [templates/TOOL-README-TEMPLATE.md](templates/TOOL-README-TEMPLATE.md): the README layout every tool uses.
-- [.github/workflows/release-zip.yml](templates/workflows/release-zip.yml) (staged in `templates/workflows/` until moved by a token with `workflow` scope): reusable release packaging. In a tool repo:
+- [templates/workflows/release-zip.yml](templates/workflows/release-zip.yml) (still staged there, not yet in `.github/workflows/`; moving it needs a token with `workflow` scope): reusable release packaging. Once it is in place, a tool repo calls it with:
 
 ```yaml
 on: { push: { tags: ['v*'] } }
@@ -96,20 +96,9 @@ jobs:
 - **Launch** is not on the public page. It appears only when this site is served by `Launch-Periscope.bat` and `GET /api/periscope/status` succeeds. See [tools/periscope/README.md](tools/periscope/README.md).
 - **SCOPE skin** is the default layout for Pages and for `file://`: sidebar groups, the four primary rows first (capture, work tracking, data, local AI), then Voice and learning, Secrets and security, and Support, painted emblems, Demo and Repository. Fleet Night watch is the default dark theme; the theme switcher still lists System, Phoenix dark, Phoenix light, Fleet Night watch, and Fleet Chart room. `index.html?brand=edgeops` drops the shell and remembers that; `index.html?brand=scope` turns it back on. `assets/brand-scope.js` builds the shell; `assets/brand-scope.css` holds the look. Documentation screenshot: [docs/screenshots/hub-scope-skin.png](docs/screenshots/hub-scope-skin.png).
 - Build locally (Windows PowerShell 5.1 or pwsh 7):
-  `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Build-Site.ps1` â†’ `_site/` (git-ignored).
-- Deploy: `templates/workflows/pages-deploy.yml` (manual `workflow_dispatch` only; `dry_run: true` builds and uploads the artifact without deploying).
+  `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Build-Site.ps1` -> `_site/` (git-ignored).
+- Deploy: `.github/workflows/pages-deploy.yml` (runs on every push to `main` and on manual `workflow_dispatch`; builds `_site/` under Windows PowerShell 5.1 and deploys it through GitHub Actions). `templates/workflows/pages-deploy.yml` is the older manual-only staging copy with a `dry_run` input.
 - Live site: https://fleethacker-data-crucible.github.io/edge-ops/
-
-## Go-live checklist (Nov 5, 2026, 12:00 PM ET)
-
-GitHub Pages is already on: it serves `main` at `/` (legacy build) at https://fleethacker-data-crucible.github.io/edge-ops/. The landing page works; the generated `tools/<id>.html` and `404.html` pages are not published until the `pages-deploy` workflow is in place.
-
-1. Add the workflows to `.github/workflows/` (web UI, or a token with `workflow` scope):
-   `templates/workflows/pages-deploy.yml` â†’ `.github/workflows/pages-deploy.yml` (being added by Zombie Admin) and
-   `templates/workflows/release-zip.yml` â†’ `.github/workflows/release-zip.yml`.
-2. Once `pages-deploy` is in: Settings â†’ Pages â†’ **Source = GitHub Actions**, then Actions â†’ **pages-deploy** â†’ Run workflow (try `dry_run: true` first if you like, then run it for real).
-3. Settings â†’ General â†’ Danger Zone â†’ **Change visibility â†’ Public**.
-4. Check https://fleethacker-data-crucible.github.io/edge-ops/ and each `tools/<id>.html` page.
 
 ## License
 
