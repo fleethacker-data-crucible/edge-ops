@@ -35,7 +35,7 @@ If a tool repo changes its mark, copy the new `mark.svg` here.
 
 `painted/<id>.png` (and `<id>-light.png` where the tool ships a light variant) is the tool's full painted emblem from its
 repo's `assets/brand/` (`emblem-dark-transparent.png`, else `emblem-dark.png` with the flat navy field knocked out, else
-`emblem-transparent.png`; Phoenix LAI from `html/assets/*_phoenix_logo.png`), trimmed and fitted into 256x256 with an
+`emblem-transparent.png`; Phoenix LAI from `html/assets/brand/emblem-transparent.png` and `fleet-emblem-light.png`), trimmed and fitted into 256x256 with an
 8 px margin. Only the SCOPE skin shows them, beside the card title; the plain hub keeps the line marks above. When a tool's
 emblem changes, re-import it the same way. The SCOPE skin's own painted emblem is expected at `assets/brand/scope/emblem-dark.png`
 and `emblem-light.png`; until those exist the skin falls back to `scope.svg`.
