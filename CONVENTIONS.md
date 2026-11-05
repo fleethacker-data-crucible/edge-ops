@@ -182,6 +182,7 @@ try { ... } finally { Exit-FleetLock $l | Out-Null }
   - `ToolName-vX.Y.Z.zip.sha256`
 - Big binaries (models, packages) go in release assets, **never** in git history.
 - The hub links to `releases/latest`.
+- An edge-ops release also gets `SCOPE_suite.zip` and `SCOPE_suite.zip.sha256`: every repository in the org whose `VISIBILITY.md` first line is `public`, one folder per repository. Videos (`*.mp4`) are omitted. See [docs/scope-suite.md](docs/scope-suite.md).
 
 ## Branch pruning
 - **Rule (Jeremy, Oct 26 2026):** kill after merge, but only if the branch has no commits after its merge. Delete a branch **only** if it's the head of a merged same-repo PR into the default branch **and** its current tip is exactly that PR's merged head SHA. Keep any branch with commits after its merge.

@@ -80,6 +80,8 @@ jobs:
       tool-name: SnapShackle
 ```
 
+- A published edge-ops release, including a pre-release, also gets `SCOPE_suite.zip`: every org repository whose `VISIBILITY.md` first line is `public`. [docs/scope-suite.md](docs/scope-suite.md) covers the `SUITE_READ_TOKEN` secret and how to rebuild a tag such as `release_canidate_alpha`.
+
 - To add a tool, edit `catalog.json`, then regenerate the offline fallback and the Pages output:
   `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Build-Site.ps1`
   That rewrites `assets/catalog-data.js` (what `file://` reads) from `catalog.json` and copies the same file into `_site/`.
