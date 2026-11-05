@@ -79,7 +79,9 @@
   function brand() {
     var b = el('div', 'scope-brand');
     var im = el('img', 'emblem'); im.alt = ''; im.setAttribute('aria-hidden', 'true'); im.width = 112; im.height = 112;
-    paintedOrFallback(im, light() ? [SCOPE_EMBLEM_PAINTED_LIGHT, SCOPE_EMBLEM_PAINTED, SCOPE_EMBLEM] : [SCOPE_EMBLEM_PAINTED, SCOPE_EMBLEM]);
+    // With the painted emblem (which carries its own wordmark) the brand block shows it alone, as PacketRat's sidebar does.
+    paintedOrFallback(im, light() ? [SCOPE_EMBLEM_PAINTED_LIGHT, SCOPE_EMBLEM_PAINTED, SCOPE_EMBLEM] : [SCOPE_EMBLEM_PAINTED, SCOPE_EMBLEM],
+      function (img) { if (img.src.indexOf(SCOPE_EMBLEM) === -1) b.classList.add('has-painted'); });
     b.appendChild(im);
     b.appendChild(el('p', 'scope-wordmark', SCOPE_NAME));
     // Fleet wordmark rule: brass rules either side of a compass star.
