@@ -3,41 +3,42 @@
    only as a hairline (focus ring, the rule under the wordmark), one signature accent for actions, the sidebar / header /
    status-bar shell, Segoe UI body text and a display serif for the wordmark and page title.
    Loaded by assets/brand-scope.js only while <html data-brand="scope">; the plain hub never loads it.
-   The literal colours below are SCOPE's own signature accent (Night watch / Chart room) and Fleet brass. Everything else
-   is a theme token, so the Theme picker still switches Night watch and Chart room. */
+   The literal colours below are SCOPE's own: its signature accent, Fleet brass and the sidebar surface, each for Night
+   watch and for Chart room. Everything else is a kit token, so the Theme picker still switches the two. Decoration (the
+   wordmark rule) is painted with background and fill, never color, so contrast checks only see real text. */
 :root[data-brand=scope]{
  --scope-accent:#7ab8ec;--scope-accent-ink:#071a26; /* harbour blue: 5.6:1 on every Night watch surface, ink 8.4:1 on it */
  --scope-brass:#c9a66b;
  --scope-font-display:Cambria,"Cambria Math",Georgia,"Times New Roman",serif; /* fleet.css interim display serif */
+ --scope-side:#0a2130; /* sidebar, header and status-bar surface (Fleet --fl-sidebar) */
  --scope-side-w:240px;--scope-header-h:56px;--scope-status-h:28px;
- /* the kit's action, link, brand and focus tokens follow suit, so no control or heading stays brass */
- --accent:var(--scope-accent);--on-accent:var(--scope-accent-ink);--link:var(--scope-accent);--brand:var(--text);--focus:var(--scope-brass);
 }
-:root[data-brand=scope][data-theme=fleet-chart-room]{--scope-accent:#1d5f99;--scope-accent-ink:#fbfaf2;--scope-brass:#8a6b45}
+/* Chart room (theme.js puts .light on <html> for light-scheme themes): the Fleet chart values of the same three colours. */
+:root.light[data-brand=scope]{--scope-accent:#1d5f99;--scope-accent-ink:#fbfaf2;--scope-brass:#8a6b45;--scope-side:#f3efe2}
 
 /* ---- shell: sidebar | main, status bar across (UNIFIED-UI section 5) ---- */
 [data-brand=scope] body{margin:0;height:100vh;display:grid;grid-template-columns:var(--scope-side-w) minmax(0,1fr);grid-template-rows:minmax(0,1fr) var(--scope-status-h);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
-[data-brand=scope] .scope-side{grid-row:1;display:flex;flex-direction:column;min-height:0;overflow:auto;background:var(--side-bg);border-right:1px solid var(--border)}
+[data-brand=scope] .scope-side{grid-row:1;display:flex;flex-direction:column;min-height:0;overflow:auto;background:var(--scope-side);border-right:1px solid var(--border)}
 [data-brand=scope] .scope-brand{display:grid;justify-items:center;gap:8px;padding:20px 16px 16px;border-bottom:1px solid var(--border);text-align:center}
 [data-brand=scope] .scope-brand .emblem{width:112px;height:112px}
 [data-brand=scope] .scope-brand.has-painted .emblem{width:184px;height:184px}
 [data-brand=scope] .scope-brand.has-painted .scope-wordmark,[data-brand=scope] .scope-brand.has-painted .scope-rule{display:none}
 [data-brand=scope] .scope-wordmark{margin:0;font:28px/1 var(--scope-font-display);letter-spacing:.14em;padding-left:.14em;color:var(--text)}
-[data-brand=scope] .scope-rule{display:flex;align-items:center;gap:6px;color:var(--scope-brass)}
-[data-brand=scope] .scope-rule span{height:1px;width:32px;background:currentColor}
-[data-brand=scope] .scope-rule svg{display:block;fill:currentColor}
+[data-brand=scope] .scope-rule{display:flex;align-items:center;gap:6px}
+[data-brand=scope] .scope-rule span{height:1px;width:32px;background:var(--scope-brass)}
+[data-brand=scope] .scope-rule svg{display:block;fill:var(--scope-brass)}
 [data-brand=scope] .scope-expansion{margin:0;font-size:12px;line-height:1.4;letter-spacing:.04em;color:var(--text-2)}
 [data-brand=scope] .scope-expansion b{color:var(--text)}
 [data-brand=scope] .scope-nav{display:grid;gap:2px;padding:12px 0}
 [data-brand=scope] .scope-nav-title{padding:0 16px 6px;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-2)}
-[data-brand=scope] .scope-nav button{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:8px;min-height:36px;padding:0 13px;border-left:3px solid transparent;color:var(--text-2);cursor:pointer;font:inherit;text-align:left}
-[data-brand=scope] .scope-nav button:hover{background:var(--panel-2);color:var(--text)}
+[data-brand=scope] .scope-nav button{appearance:none;box-sizing:border-box;display:flex;align-items:center;gap:8px;width:100%;height:auto;min-height:36px;margin:0;padding:0 13px;border:0;border-left:3px solid transparent;border-radius:0;background:var(--scope-side);color:var(--text-2);cursor:pointer;font:inherit;font-weight:400;letter-spacing:0;text-transform:none;text-align:left;white-space:normal}
+[data-brand=scope] .scope-nav button:hover{background:var(--panel-2);color:var(--text);filter:none}
 [data-brand=scope] .scope-nav button[aria-current=page]{color:var(--scope-accent);border-left-color:var(--scope-accent);background:var(--panel)}
 [data-brand=scope] .scope-nav button:focus-visible{outline:2px solid var(--scope-brass);outline-offset:-2px}
 [data-brand=scope] .scope-nav .n{margin-left:auto;font-size:12px;color:var(--text-2)}
 [data-brand=scope] .scope-side-foot{margin-top:auto;padding:12px 16px;border-top:1px solid var(--border);font-size:12px;color:var(--text-2)}
 [data-brand=scope] .scope-main{grid-row:1;display:grid;grid-template-rows:var(--scope-header-h) minmax(0,1fr);min-width:0;min-height:0}
-[data-brand=scope] header{display:flex;align-items:center;gap:16px;padding:0 24px;background:var(--side-bg);border-bottom:1px solid var(--border)}
+[data-brand=scope] header{display:flex;align-items:center;gap:16px;padding:0 24px;background:var(--scope-side);border-bottom:1px solid var(--border)}
 [data-brand=scope] header h1{margin:0;font:20px/1.25 var(--scope-font-display);letter-spacing:0;color:var(--text);white-space:nowrap}
 [data-brand=scope] header .controls{flex:1;min-width:0;gap:8px}
 [data-brand=scope] header #q{flex:1 1 16rem;max-width:28rem}
@@ -47,7 +48,8 @@
 [data-brand=scope] #grid{padding:0}
 [data-brand=scope] .scope-content-footer{display:flex;gap:12px;flex-wrap:wrap;border-top:1px solid var(--border);padding:24px 0 0;margin-top:48px;font-size:12px;color:var(--text-2)}
 [data-brand=scope] .scope-content-footer a{color:var(--text-2)}
-[data-brand=scope] .scope-status{grid-column:1/-1;grid-row:2;display:flex;align-items:center;gap:16px;padding:0 12px;background:var(--side-bg);border-top:1px solid var(--border);color:var(--text-2);font-size:12px;white-space:nowrap;overflow:hidden}
+[data-brand=scope] .scope-content-footer a:hover,[data-brand=scope] .links a:hover{color:var(--text)}
+[data-brand=scope] .scope-status{grid-column:1/-1;grid-row:2;display:flex;align-items:center;gap:16px;padding:0 12px;background:var(--scope-side);border-top:1px solid var(--border);color:var(--text-2);font-size:12px;white-space:nowrap;overflow:hidden}
 [data-brand=scope] .scope-status .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok);margin-right:6px;vertical-align:middle}
 [data-brand=scope] .scope-status .addr{font-family:var(--mono)}
 [data-brand=scope] .scope-status .spacer{flex:1}
@@ -69,6 +71,7 @@
 [data-brand=scope] .cat{font-size:12px;font-weight:600;letter-spacing:.08em;color:var(--text-2)}
 [data-brand=scope] .card h3{font-size:16px;font-weight:600}
 [data-brand=scope] .card h3 a{color:var(--text)}
+[data-brand=scope] .card h3 a:hover{color:var(--scope-accent)}
 [data-brand=scope] .card p{font-size:13px}
 /* Badges: the kit's filled data-noodler badges (hard-coded green, mustard and grey) are not Fleet. The Fleet apps use quiet
    outlined pills (PacketRat .priority): 999 px radius, 1 px currentColor border, sentence case, a 14% tint at most. Facts

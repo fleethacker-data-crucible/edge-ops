@@ -55,10 +55,11 @@ Describe 'SCOPE skin' {
     }
     It 'keeps brass to hairlines: only the wordmark rule and focus rings use it' {
         $css = Get-Content -Raw (Join-Path $RepoRoot 'assets\brand-scope.css')
-        $css | Should -Match '--accent:var\(--scope-accent\)'
-        $uses = [regex]::Matches($css, '(?m)^[^\r\n]*var\(--scope-brass\)[^\r\n]*$') | ForEach-Object { $_.Value }
+        $css | Should -Match ':root\[data-brand=scope\]\{[^}]*--scope-accent:#[0-9a-f]{6}' -Because 'the Night watch accent is declared on :root[data-brand=scope]'
+        $css | Should -Match ':root\.light\[data-brand=scope\]\{[^}]*--scope-accent:#[0-9a-f]{6}' -Because 'the Chart room accent is declared under the .light class theme.js sets'
+        $uses = @(($css -split '\r?\n') | Where-Object { $_ -like '*var(--scope-brass)*' })
         @($uses).Count | Should -BeGreaterThan 0
-        foreach ($line in $uses) { ($line -match 'scope-rule|focus') | Should -BeTrue -Because "brass is a hairline only, not: $line" }
+        foreach ($line in $uses) { ($line -match 'scope-rule|focus|^:root') | Should -BeTrue -Because "brass is a hairline only, not: $line" }
     }
     It 'claims no status anywhere on the page' {
         foreach ($text in @($Index, $Skin, $App)) { $text | Should -Not -Match $Claim }

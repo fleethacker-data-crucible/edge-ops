@@ -50,3 +50,10 @@ The repo itself is tidy: `catalog.json` is valid and matches `assets/catalog-dat
 - [ ] **`.gitignore` is GitHub's C/C++ template.** Only `_site/` (line 56) is relevant; trim the rest.
 - [ ] **`README.md:79` says "Merge PR #1"**, which is already merged.
 - [ ] **Images won't load on an offline network.** README and `templates/TOOL-README-TEMPLATE.md` pull them from raw.githubusercontent.com and shields.io.
+
+## 6. SCOPE skin (PR 54), tracked placeholders
+
+- [ ] **`SCOPE_EXPANSION` wording.** `assets/brand-scope.js` carries "Ship Continuity Operations Platform Environment" until Anthony confirms the expansion.
+- [ ] **Bridge Warden port.** The card says 8774, which `PORTS.md` lists for Eight-Bells; Bridge Warden walks 8774-8776. Give it a block in `PORTS.md` and drop the card's `portNote`.
+- [ ] **Hub tests in CI.** `scripts/tests/Hub.Tests.ps1` and `Flows.Tests.ps1` run locally on Windows PowerShell 5.1 and pwsh 7, but `.github/workflows/site-tests.yml` only runs `Build-Site.Tests.ps1`. Add them to that job (needs a token with `workflow` scope).
+- [ ] **SCOPE emblem, light variant.** `assets/brand/scope/emblem-light.png` is the daytime rendering from `scope-emblem-transparent.png`; replace it if a Chart room rendering is made.
