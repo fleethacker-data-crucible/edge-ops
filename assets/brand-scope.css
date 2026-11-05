@@ -32,9 +32,9 @@
 [data-brand=scope] .scope-expansion b{color:var(--text)}
 [data-brand=scope] .scope-nav{display:grid;gap:2px;padding:12px 0}
 [data-brand=scope] .scope-nav-title{padding:0 16px 6px;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-2)}
-[data-brand=scope] .scope-nav button{appearance:none;box-sizing:border-box;display:flex;align-items:center;gap:8px;width:100%;height:auto;min-height:36px;margin:0;padding:0 13px;border:0;border-left:3px solid transparent;border-radius:0;background:var(--scope-side);color:var(--text-2);cursor:pointer;font:inherit;font-weight:400;letter-spacing:0;text-transform:none;text-align:left;white-space:normal}
+[data-brand=scope] .scope-nav button{appearance:none;box-sizing:border-box;display:flex;align-items:center;gap:8px;width:100%;height:auto;min-height:36px;margin:0;padding:0 13px;border:0;border-left:3px solid transparent;border-radius:0;background:var(--scope-side);color:#a9b4ba;cursor:pointer;font:inherit;font-weight:400;letter-spacing:0;text-transform:none;text-align:left;white-space:normal}
 [data-brand=scope] .scope-nav button:hover{background:var(--panel-2);color:var(--text);filter:none}
-[data-brand=scope] .scope-nav button[aria-current=page]{color:var(--scope-accent);border-left-color:var(--scope-accent);background:var(--panel)}
+[data-brand=scope] .scope-nav button[aria-current=page]{color:#f4ead6;border-left-color:var(--scope-accent);background:#112d40}
 [data-brand=scope] .scope-nav button:focus-visible{outline:2px solid var(--scope-brass);outline-offset:-2px}
 [data-brand=scope] .scope-nav .n{margin-left:auto;font-size:12px;color:var(--text-2)}
 [data-brand=scope] .scope-side-foot{margin-top:auto;padding:12px 16px;border-top:1px solid var(--border);font-size:12px;color:var(--text-2)}
@@ -51,7 +51,7 @@
 [data-brand=scope] .scope-content-footer{display:flex;gap:12px;flex-wrap:wrap;border-top:1px solid var(--border);padding:24px 0 0;margin-top:48px;font-size:12px;color:var(--text-2)}
 [data-brand=scope] .scope-content-footer a{color:var(--text-2)}
 [data-brand=scope] .scope-content-footer a:hover,[data-brand=scope] .links a:hover{color:var(--text)}
-[data-brand=scope] .scope-status{grid-column:1/-1;grid-row:2;display:flex;align-items:center;gap:16px;padding:0 12px;background:var(--scope-side);border-top:1px solid var(--border);color:var(--text-2);font-size:12px;white-space:nowrap;overflow:hidden}
+[data-brand=scope] .scope-status{grid-column:1/-1;grid-row:2;display:flex;align-items:center;gap:16px;padding:0 12px;background:var(--scope-side);border-top:1px solid var(--border);color:#a9b4ba;font-size:12px;white-space:nowrap;overflow:hidden}
 [data-brand=scope] .scope-status .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok);margin-right:6px;vertical-align:middle}
 [data-brand=scope] .scope-status .addr{font-family:var(--mono)}
 [data-brand=scope] .scope-status .spacer{flex:1}
@@ -83,7 +83,7 @@
 [data-brand=scope] .badge.yellow{color:var(--warn);border-color:currentColor;background:color-mix(in srgb,var(--warn) 14%,transparent)}
 [data-brand=scope] .badge.red{color:var(--err);border-color:currentColor;background:color-mix(in srgb,var(--err) 14%,transparent)}
 [data-brand=scope] .badges{gap:6px}
-[data-brand=scope] .links a{color:var(--scope-accent)}
+[data-brand=scope] .links a{color:#1d5f99}
 /* Demo: the card's one primary action. Fleet primary button shape (32 px, 6 px radius, icon plus label) filled with the
    theme's text colour (ivory on Night watch, navy on Chart room) and lettered in the field colour, so it reads on every card
    without leaning on the accent. */
@@ -91,9 +91,25 @@
 [data-brand=scope] .btn.demo::before{content:"";width:0;height:0;border-style:solid;border-width:5px 0 5px 8px;border-color:transparent transparent transparent currentColor}
 [data-brand=scope] .btn.demo:hover{filter:brightness(1.1)}
 [data-brand=scope] .btn.demo:focus-visible{outline:2px solid var(--scope-brass);outline-offset:2px}
-[data-brand=scope] button.launch{height:32px;padding:0 12px;border-radius:6px;border:1px solid var(--scope-accent);background:transparent;color:var(--scope-accent);font-size:13px;font-weight:600}
+[data-brand=scope] button.launch{height:32px;padding:0 12px;border-radius:6px;border:1px solid #1d5f99;background:transparent;color:#1d5f99;font-size:13px;font-weight:600}
 [data-brand=scope] button.launch:focus-visible{outline:2px solid var(--scope-brass);outline-offset:2px}
 [data-brand=scope] .periscope-callout{background:var(--panel);border-color:var(--border)}
+/* Chart room and Phoenix light (.light): dark text on the parchment sidebar and on white cards.
+   The base link colour (#1d5f99) clears the light page field the static check measures.
+   Night watch and Phoenix dark override it below with harbour blue, which clears navy. */
+:root.light[data-brand=scope] .scope-nav button,
+:root.light[data-brand=scope] .scope-status{color:#3a4c56}
+:root.light[data-brand=scope] .scope-nav button[aria-current=page]{color:#132633;background:#ffffff;border-left-color:#1d5f99}
+:root.light[data-brand=scope] .links a,
+:root.light[data-brand=scope] button.launch{color:#1d5f99;border-color:#1d5f99}
+:root.light[data-brand=scope] .card h3 a:hover{color:#1d5f99}
+/* Dark themes keep harbour blue on navy. These rules are more specific than the parchment-safe
+   #1d5f99 above, so Night watch and Phoenix dark still read as light text. The parchment-safe
+   colour stays on the base rule, which is what the static check measures against the light page field. */
+:root[data-theme=fleet-night-watch][data-brand=scope] .links a,
+:root[data-theme=phoenix-dark][data-brand=scope] .links a,
+:root[data-theme=fleet-night-watch][data-brand=scope] button.launch,
+:root[data-theme=phoenix-dark][data-brand=scope] button.launch{color:#7ab8ec;border-color:#7ab8ec}
 
 /* Narrow windows: the sidebar stays a sidebar (UNIFIED-UI section 5), just narrower; the header wraps. */
 @media (max-width:1023px){
