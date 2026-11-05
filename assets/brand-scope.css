@@ -60,6 +60,14 @@
 [data-brand=scope] .card h3{font-size:16px;font-weight:600}
 [data-brand=scope] .card h3 a{color:var(--text)}
 [data-brand=scope] .card p{font-size:13px}
+/* Badges: the kit's filled data-noodler badges (hard-coded green, mustard and grey) are not Fleet. The Fleet apps use quiet
+   outlined pills (PacketRat .priority): 999 px radius, 1 px currentColor border, sentence case, a 14% tint at most. Facts
+   (PS 5.1, Chrome/Edge, port, status) are neutral; only a caution flag is amber and only admin or installs is red. */
+[data-brand=scope] .badge{--bc:var(--text-2);height:20px;padding:0 8px;border:1px solid var(--border-strong);border-radius:999px;background:transparent;color:var(--text-2);font-size:12px;font-weight:500;letter-spacing:0;text-transform:none}
+[data-brand=scope] .badge.green,[data-brand=scope] .badge.grey{border-color:var(--border-strong);background:transparent;color:var(--text-2)}
+[data-brand=scope] .badge.yellow{color:var(--warn);border-color:currentColor;background:color-mix(in srgb,var(--warn) 14%,transparent)}
+[data-brand=scope] .badge.red{color:var(--err);border-color:currentColor;background:color-mix(in srgb,var(--err) 14%,transparent)}
+[data-brand=scope] .badges{gap:6px}
 [data-brand=scope] .links a{color:var(--scope-accent)}
 [data-brand=scope] .btn.demo{height:32px;padding:0 12px;border-radius:6px;border:1px solid var(--scope-accent);background:transparent;color:var(--scope-accent);font-size:13px;font-weight:500;font-family:inherit}
 [data-brand=scope] .btn.demo::after{content:"\2197";font-size:12px}
