@@ -300,7 +300,7 @@ window.EDGE_OPS_CATALOG = {
       "id": "scrimshaw",
       "name": "Scrimshaw",
       "category": "browser-only",
-      "group": "capture-media-files",
+      "group": "voice-learning",
       "summary": "An open-source e-learning authoring tool.",
       "tagline": "E-learning authoring, Storyline-style.",
       "launcher": "Launch.bat",
