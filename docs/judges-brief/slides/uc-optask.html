@@ -1,0 +1,27 @@
+<section id="uc-optask" data-transition="fade" style="background:#0E1A2B;color:#F3EEE3;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:24px">
+<p style="font-size:24px;letter-spacing:4px;text-transform:uppercase;color:#C9A24A;font-weight:600">Challenge 12 · Electronic OPTASK message parser and timeline visualizer</p>
+<h2 style="font-family:'Exo 2', Arial, sans-serif;font-size:56px;font-weight:700;line-height:1.1">From hundreds of lines of tasking to one timeline the watch can read</h2>
+<div style="display:flex;flex-direction:row;gap:32px">
+<div style="flex:1;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;flex-direction:row;gap:16px;align-items:center;background:#162640;padding:18px 24px;border-radius:14px"><p style="width:44px;height:44px;border-radius:50%;background:#C9A24A;color:#0E1A2B;font-size:24px;font-weight:700;text-align:center;line-height:1.8">1</p><p style="font-size:24px;line-height:1.35"><b>Parse.</b> The OPTASK text goes through PacketRat’s parser, with an OPTASK grammar built at the event: sets, fields, date-time groups and the ship’s own call signs. Unparsed lines are flagged, never guessed.</p></div>
+<div style="display:flex;flex-direction:row;gap:16px;align-items:center;background:#162640;padding:18px 24px;border-radius:14px"><p style="width:44px;height:44px;border-radius:50%;background:#C9A24A;color:#0E1A2B;font-size:24px;font-weight:700;text-align:center;line-height:1.8">2</p><p style="font-size:24px;line-height:1.35"><b>Verify.</b> The watchstander accepts each extracted event in the queue. The source line sits beside every one.</p></div>
+<div style="display:flex;flex-direction:row;gap:16px;align-items:center;background:#162640;padding:18px 24px;border-radius:14px"><p style="width:44px;height:44px;border-radius:50%;background:#C9A24A;color:#0E1A2B;font-size:24px;font-weight:700;text-align:center;line-height:1.8">3</p><p style="font-size:24px;line-height:1.35"><b>Hand off.</b> Events are written as a versioned fleet hand-off file, plain JSON or CSV on the local disk, the way every Fleet app exchanges work.</p></div>
+<div style="display:flex;flex-direction:row;gap:16px;align-items:center;background:#162640;padding:18px 24px;border-radius:14px"><p style="width:44px;height:44px;border-radius:50%;background:#C9A24A;color:#0E1A2B;font-size:24px;font-weight:700;text-align:center;line-height:1.8">4</p><p style="font-size:24px;line-height:1.35"><b>Visualize.</b> Semaphore builds the per-ship timeline from a plain-English brief; the analyst reviews the chart and its SQL before it is accepted into the playbook.</p></div>
+<div style="display:flex;flex-direction:row;gap:16px;align-items:center;background:#162640;padding:18px 24px;border-radius:14px"><p style="width:44px;height:44px;border-radius:50%;background:#C9A24A;color:#0E1A2B;font-size:24px;font-weight:700;text-align:center;line-height:1.8">5</p><p style="font-size:24px;line-height:1.35"><b>Alert.</b> TalkForge speaks the next event with an on-device voice; Eight Bells checks the timeline against the watch log and flags out-of-sequence times.</p></div>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:12px;background:#F3EEE3;color:#14213D;padding:28px 32px;border-radius:18px">
+<h3 style="font-family:'Exo 2', Arial, sans-serif;font-size:30px;font-weight:600;color:#75601F">Why this scales across ship classes</h3>
+<p style="font-size:24px;line-height:1.35;color:#4A5568">The grammar is a rule file, not code: a new message set or a new unit’s call signs is a configuration change. The timeline is a Semaphore dashboard definition, reusable on any thin client. Nothing is hard-coded to one ship, rating or warfare commander.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px;background:#162640;padding:28px 32px;border-radius:18px;border:1px solid #C9A24A">
+<h3 style="font-family:'Exo 2', Arial, sans-serif;font-size:30px;font-weight:600;color:#C9A24A">Status, stated plainly</h3>
+<p style="font-size:24px;line-height:1.35"><b>Live:</b> the parser framework, the queue, the hand-off format, Semaphore dashboards with reviewed SQL, Eight Bells chronology checks, TalkForge offline speech and its loopback speak command.</p>
+<p style="font-size:24px;line-height:1.35"><b>Event work:</b> the OPTASK grammar and the timeline dashboard definition, built on synthetic unclassified messages.</p>
+</div>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#8A97A8">Synthetic, unclassified messages only, per Rule 4. Source: Semaphore and Eight Bells READMEs, TalkForge speak endpoint, edge-ops FLOWS.md</p>
+<p style="position:absolute;right:128px;bottom:64px;font-size:24px;color:#8A97A8;width:120px;text-align:right">11</p>
+<aside>This use case and the previous one share a pipeline on purpose: one parser, one queue, one hand-off format, and the dashboards and alerts already exist. The event work is a grammar and a dashboard definition, which is why a seven-person team can show it between kickoff and downselect. If the judges ask what we did at the event, this is the clean answer.</aside>
+</section>

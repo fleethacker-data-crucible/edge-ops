@@ -1,0 +1,44 @@
+{
+  "v": 4,
+  "createdOnFiles": {"v": 1, "at": "2026-11-05T15:40:00Z"},
+  "lists": "css",
+  "title": "Data Crucible Judges Brief",
+  "order": [
+    "cover",
+    "pitch",
+    "bluf",
+    "constraint",
+    "suite",
+    "matrix",
+    "uc-paperless",
+    "uc-ai-systems",
+    "uc-mordecai",
+    "uc-message-traffic",
+    "uc-optask",
+    "uc-casrep",
+    "authority",
+    "dod",
+    "rubric",
+    "evidence",
+    "reel1",
+    "reel2",
+    "reel3",
+    "reel4",
+    "path",
+    "friction",
+    "ask"
+  ],
+  "sections": {
+    "why": {"description": "Who we are, the verdict we ask for, and the machine we build for.", "start": "cover"},
+    "suite": {"description": "How nineteen Sailor-built tools fit together into one offline suite.", "start": "suite"},
+    "usecases": {"description": "How the suite answers each of the six Fleethacker use cases.", "start": "uc-paperless"},
+    "proof": {"description": "Human authority, the Fleet-Ready Definition of Done, the rubric and the evidence.", "start": "authority"},
+    "demos": {"description": "Forty-second excerpts of all sixteen narrated tool demos, four to a slide.", "start": "reel1"},
+    "beyond": {"description": "The path to fleet after Friday, the friction we logged and the ask.", "start": "path"}
+  },
+  "faces": {
+    "exo-2": {"family": "Exo 2", "href": "https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600;700&display=swap"},
+    "ibm-plex-sans": {"family": "IBM Plex Sans", "href": "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap"}
+  },
+  "designSystems": []
+}
