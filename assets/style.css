@@ -12,7 +12,7 @@ header,footer{padding:1.5rem 2rem}header h1{font-size:1.6rem;font-weight:700;col
 .card h3{display:flex;align-items:center;gap:.6rem;margin:0;font-size:1.15rem;text-transform:none;letter-spacing:normal}.card h3 a{color:var(--text);text-decoration:none}.card h3 a:hover{color:var(--link);text-decoration:underline}
 .cat{font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;color:var(--brand)}.card p{margin:0;color:var(--text-2);overflow-wrap:anywhere}
 .badges{display:flex;flex-wrap:wrap;gap:.3rem}
-.links{display:flex;flex-wrap:wrap;gap:.4rem .8rem}footer{color:var(--muted);border-top:1px solid var(--border)}.back{text-decoration:none}.back:hover{text-decoration:underline}
+.links{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem .8rem}footer{color:var(--muted);border-top:1px solid var(--border)}.back{text-decoration:none}.back:hover{text-decoration:underline}
 main.tool{padding:0 2rem 2rem;max-width:60rem}main.tool li{margin-bottom:.35rem}
 table.req{border-collapse:collapse}table.req td{border-bottom:1px solid var(--border);padding:.3rem 1rem .3rem 0}
 code{background:var(--panel-2);padding:.05rem .3rem;border-radius:var(--radius);overflow-wrap:anywhere}

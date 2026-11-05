@@ -76,5 +76,5 @@ A CANES install path is being pursued through a partner program; selection is in
 
 ## Background reading
 
-- [NAVWAR deploys the Navy's first Application Arsenal (CANES)](https://www.navy.mil/Press-Office/News-Stories/Article/2735561/navwar-deploys-the-navys-first-application-arsenal/)
-- [CANES in a shore cloud lab for app integration](https://www.doncio.navy.mil/Chips/ArticleDetails.aspx?ID=12128)
+- "NAVWAR deploys the Navy's first Application Arsenal (CANES)", Navy Press Office news story, article 2735561, 2021. Cited by title because the fleet-gate check does not allow service hostnames in the repo; search the title on the Navy press site.
+- "CANES in a shore cloud lab for app integration", CHIPS magazine (DON CIO), article ID 12128. Cited by title for the same reason.

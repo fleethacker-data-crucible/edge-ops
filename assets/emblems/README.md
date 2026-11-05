@@ -26,5 +26,16 @@ cream `#f1e4c8` and brass details, one accent colour per tool. The navy disc giv
 | talkforge.svg | new, original SVG in the Fleet mark style |
 | data-noodler.svg | new, original SVG in the Fleet mark style |
 | phoenix-lai.svg | new, original SVG in the Fleet mark style (upstream has PNG logos only) |
+| bridge-warden.svg | new, original SVG in the Fleet mark style (a shield around a helm) |
+| scope.svg | the SCOPE skin's mark (`assets/brand-scope.js`), not a tool: a periscope at the waterline, same style |
 
 If a tool repo changes its mark, copy the new `mark.svg` here.
+
+## Painted emblems (`painted/`)
+
+`painted/<id>.png` (and `<id>-light.png` where the tool ships a light variant) is the tool's full painted emblem from its
+repo's `assets/brand/` (`emblem-dark-transparent.png`, else `emblem-dark.png` with the flat navy field knocked out, else
+`emblem-transparent.png`; Phoenix LAI from `html/assets/brand/emblem-transparent.png` and `fleet-emblem-light.png`), trimmed and fitted into 256x256 with an
+8 px margin. Only the SCOPE skin shows them, beside the card title; the plain hub keeps the line marks above. When a tool's
+emblem changes, re-import it the same way. The SCOPE skin's own painted emblem lives at `assets/brand/scope/emblem-dark.png` (512 px, the night-sky rendering, for Night watch) with `emblem-light.png` (the daytime rendering, derived from the full-size `assets/brand/scope-emblem-transparent.png`, for Chart room)
+; without them the skin falls back to `scope.svg`.

@@ -46,7 +46,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline-offset:-
 .topbar{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border)}
 .brand{display:flex;align-items:center;gap:12px;color:var(--text);text-decoration:none}
 .logo{width:40px;height:40px;border-radius:var(--radius);display:grid;place-items:center;background:var(--accent);color:var(--on-accent);font-weight:600;font-size:16px;flex:none}
-img.logo{background:none;object-fit:contain}
+img.logo{background:none;object-fit:contain;color:var(--text)}
 .sub{color:var(--muted);font-size:var(--fs-sm)}
 .spacer{flex:1}
 .main{flex:1;overflow:auto;padding:var(--s4)}

@@ -24,6 +24,14 @@
         gh.forEach(function(t){card(cards,t,g);});
       });
     }
+    // Demo button target. It opens something that exists now; it never starts the tool and never claims the tool is running.
+    // A numeric defaultPort: the tool's loopback address (where it serves once started). Otherwise the release zip, else the repo.
+    function demo(t){
+      if(typeof t.defaultPort==='number'){var u='http://127.0.0.1:'+t.defaultPort+'/';return{href:u,title:'Opens '+u+' in a new tab. '+t.name+' serves there once you start it'+(t.launcher?' with '+t.launcher:'')+'; this button does not start it.'+(t.portNote?' '+t.portNote:'')};}
+      if(t.releases)return{href:t.releases,title:'Opens the latest '+t.name+' release (zip) on GitHub in a new tab.'};
+      if(t.repo)return{href:t.repo,title:'Opens the '+t.name+' repository on GitHub in a new tab.'};
+      return null;
+    }
     function card(grid,t,g){
       {
         var d=el('article','card box');d.appendChild(el('span','cat',CATS[t.category]||t.category));var h=el('h3'),ha=el('a',null,t.name);ha.href='tools/'+t.id+'.html';var em=el('img','emblem');em.src='assets/emblems/'+t.id+'.svg';em.alt='';em.setAttribute('aria-hidden','true');em.width=32;em.height=32;em.onerror=function(){this.remove();};h.appendChild(em);h.appendChild(ha);d.appendChild(h);d.appendChild(el('p',null,t.summary));
@@ -32,8 +40,11 @@
         var au=t.automation;if(au){if(au.cli)b.appendChild(el('span','badge green','CLI'));if(au.json)b.appendChild(el('span','badge green','JSON output'));if(au.api)b.appendChild(el('span','badge green',au.api==='openai-v1'?'OpenAI API':'API'));if(au.mcp)b.appendChild(el('span','badge green','MCP'));}   // CONVENTIONS.md: CLI and API for agents
         if(t.defaultPort==='auto')b.appendChild(el('span','badge grey','free port'));else if(typeof t.defaultPort==='number')b.appendChild(el('span','badge grey','port '+t.defaultPort));
         b.appendChild(el('span','badge grey',t.status));if(g.support)b.appendChild(el('span','badge grey','Support repo, not a user tool'));d.appendChild(b);
-        d.appendChild(el('p',null,t.requirements.installs?(t.installNote||'Needs third-party installs; see the repo README.'):t.launcher?'Launch: '+t.launcher+(t.external?' — source: '+t.externalSource:''):'Nothing to launch yet.'));
-        var l=el('div','links'),a=el('a',null,'Repository');a.href=t.repo;l.appendChild(a);
+        var note=t.requirements.installs?(t.installNote||'Needs third-party installs; see the repo README.'):t.launcher?'':'Nothing to launch yet.';
+        if(note)d.appendChild(el('p',null,note));if(t.external&&t.externalSource)d.appendChild(el('p',null,'Source: '+t.externalSource));
+        var l=el('div','links'),dm=g.support?null:demo(t);
+        if(dm){var btn=el('a','btn demo','Demo');btn.href=dm.href;btn.title=dm.title;btn.target='_blank';btn.rel='noopener';l.appendChild(btn);}
+        if(t.repo){var a=el('a',null,'Repository');a.href=t.repo;l.appendChild(a);}
         if(t.releases){var r=el('a',null,'Latest release (zip)');r.href=t.releases;l.appendChild(r);}
         d.appendChild(l);grid.appendChild(d);
       }
