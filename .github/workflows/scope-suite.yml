@@ -1,0 +1,175 @@
+# Attach SCOPE_suite.zip to an edge-ops release.
+#
+# Trigger is `release: published`. That activity runs for a stable release and
+# for a pre-release, including a pre-release published from a draft.
+# release_canidate_alpha is a pre-release, so `released` would skip it.
+# `prereleased` skips stable releases and does not run for a pre-release
+# published from a draft. `created` also runs when a release is published
+# without first being saved as a draft, which would build the zip twice.
+#
+# Runner is ubuntu-latest, the same choice as templates/workflows/release-zip.yml
+# (zip a tree, then `gh release upload`). Self-hosted labels in this repo are
+# Windows PowerShell 5.1 runners; this job is bash, git, and zip.
+#
+# The default GITHUB_TOKEN lists the org's public repositories and uploads the
+# asset (contents: write on the upload job). No extra secret. See docs/scope-suite.md.
+
+name: SCOPE suite bundle
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to rebuild (for example release_canidate_alpha)
+        required: true
+        type: string
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scope-suite-${{ github.event_name }}-${{ github.event.release.tag_name }}-${{ github.event.inputs.tag }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  fixture:
+    name: suite script fixture
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Fixture tests
+        shell: bash
+        run: bash scripts/tests/test-build-scope-suite.sh
+
+  bundle:
+    name: build and attach SCOPE_suite.zip
+    needs: fixture
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Resolve release tag
+        id: release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_TAG: ${{ inputs.tag }}
+          EVENT_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            tag=$INPUT_TAG
+          else
+            tag=$EVENT_TAG
+          fi
+          tag=${tag#refs/tags/}
+          tag=$(printf '%s' "$tag" | tr -d '[:space:]')
+          if [ -z "$tag" ]; then
+            echo "::error::Release tag is empty. On a manual run, set the tag input (for example release_canidate_alpha)."
+            exit 1
+          fi
+          if ! printf '%s' "$tag" | grep -Eq '^[A-Za-z0-9._/-]+$'; then
+            echo "::error::Release tag contains characters this workflow does not accept: ${tag}"
+            exit 1
+          fi
+          case "$tag" in
+            *..*|-*|/*|*/)
+              echo "::error::Release tag is not a single tag name: ${tag}"
+              exit 1
+              ;;
+          esac
+          meta=$(mktemp)
+          if ! gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json isDraft,isPrerelease,name,tagName >"$meta"; then
+            echo "::error::No GitHub release for tag ${tag} in ${GITHUB_REPOSITORY}. This workflow attaches the suite to an existing release and does not create one."
+            exit 1
+          fi
+          if [ "$(jq -r .isDraft "$meta")" = "true" ]; then
+            echo "::error::Release ${tag} is a draft. Publish it first. This workflow does not publish drafts."
+            exit 1
+          fi
+          kind="release"
+          if [ "$(jq -r .isPrerelease "$meta")" = "true" ]; then
+            kind="pre-release"
+          fi
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          echo "Attaching the suite to ${kind} ${tag}."
+
+      - name: Build SCOPE_suite.zip
+        shell: bash
+        run: |
+          set -euo pipefail
+          # GITHUB_TOKEN is the default Actions token. It can read the org's public repositories.
+          bash scripts/build-scope-suite.sh --out dist
+
+      - name: Attach the bundle to the release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          set -euo pipefail
+          test -s dist/SCOPE_suite.zip
+          test -s dist/SCOPE_suite.zip.sha256
+          test -s dist/SCOPE-MANIFEST.txt
+          # --clobber deletes an existing asset of the same name before uploading
+          # the replacement. The files above are non-empty, so a failed build
+          # never reaches this step.
+          gh release upload "$RELEASE_TAG" \
+            dist/SCOPE_suite.zip \
+            dist/SCOPE_suite.zip.sha256 \
+            --clobber \
+            --repo "$GITHUB_REPOSITORY"
+
+          sha=$(awk 'NR==1 { print $1; exit }' dist/SCOPE_suite.zip.sha256)
+          before=$(mktemp)
+          notes=$(mktemp)
+          gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+            --json body,isDraft,isPrerelease,name,targetCommitish >"$before"
+          jq -r '.body // ""' "$before" | bash scripts/build-scope-suite.sh \
+            --render-notes \
+            --sha256 "$sha" \
+            --manifest dist/SCOPE-MANIFEST.txt \
+            >"$notes"
+          gh release edit "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --notes-file "$notes"
+
+          after=$(mktemp)
+          gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+            --json isDraft,isPrerelease,name,targetCommitish >"$after"
+          pre=$(jq -r .isPrerelease "$before")
+          draft=$(jq -r .isDraft "$before")
+          title=$(jq -r .name "$before")
+          target=$(jq -r .targetCommitish "$before")
+          pre2=$(jq -r .isPrerelease "$after")
+          draft2=$(jq -r .isDraft "$after")
+          title2=$(jq -r .name "$after")
+          target2=$(jq -r .targetCommitish "$after")
+          if [ "$pre" = "$pre2" ] && [ "$draft" = "$draft2" ] && [ "$title" = "$title2" ] && [ "$target" = "$target2" ]; then
+            echo "Release flags unchanged."
+            exit 0
+          fi
+          echo "Restoring release title, draft, pre-release, and target after the notes edit."
+          args=(gh release edit "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --title "$title" --target "$target")
+          if [ "$pre" = "true" ]; then
+            args+=(--prerelease)
+          else
+            args+=(--prerelease=false)
+          fi
+          if [ "$draft" = "true" ]; then
+            args+=(--draft)
+          else
+            args+=(--draft=false)
+          fi
+          "${args[@]}"
