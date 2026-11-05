@@ -3,9 +3,9 @@
 # first line is exactly "public". Each repository is a top-level folder from a
 # fresh shallow checkout of its default branch.
 #
-# CI passes SUITE_READ_TOKEN. Locally, SUITE_READ_TOKEN, GH_TOKEN, or an
-# existing `gh auth login` session is used. This script does not upload a
-# release; .github/workflows/scope-suite.yml does that.
+# Public repositories are listed with the Actions GITHUB_TOKEN when it is set,
+# and with an anonymous API read otherwise. No extra secret is required.
+# This script does not upload a release; .github/workflows/scope-suite.yml does that.
 #
 # Usage:
 #   scripts/build-scope-suite.sh [--org NAME] [--out DIR]
@@ -31,6 +31,8 @@ RENDER_NOTES=0
 SHA256_ARG=""
 MANIFEST_ARG=""
 CLEAN_WORK=""
+# gh uses GITHUB_TOKEN in Actions. curl is the anonymous fallback.
+API_MODE=""
 
 usage() {
   cat <<'EOF'
@@ -43,7 +45,7 @@ Options:
   --out DIR          Output directory (default: dist)
   --work DIR         Scratch directory, removed on exit (default: a new temp directory)
   --pack-dir DIR     Zip repositories already checked out as child folders.
-                     Does not contact GitHub and does not need a token.
+                     Does not contact GitHub.
   --list-only        Print the public repositories and exit without cloning
   --keep-work        Leave the scratch directory in place
   --max-bytes N      Fail when the zip is this size or larger (default: 2000000000)
@@ -130,33 +132,49 @@ require_cmd() {
   command -v "$cmd" >/dev/null 2>&1 || die "Required command not found: ${cmd}"
 }
 
-prepare_read_token() {
-  if [ -n "${GITHUB_ACTIONS:-}" ]; then
-    if [ -z "${SUITE_READ_TOKEN:-}" ]; then
-      die "SUITE_READ_TOKEN is not set. Add a fine-grained PAT or GitHub App token as an Actions secret named SUITE_READ_TOKEN (organization secret granted to edge-ops, or a repository secret) with Contents: Read and Metadata: Read on the ${ORG} repositories. The default GITHUB_TOKEN cannot read the other repositories in the org, and this script will not fall back to it."
-    fi
-    export GH_TOKEN="$SUITE_READ_TOKEN"
-    unset GITHUB_TOKEN || true
-    return
-  fi
-  if [ -n "${SUITE_READ_TOKEN:-}" ]; then
-    export GH_TOKEN="$SUITE_READ_TOKEN"
-    return
-  fi
-  if [ -n "${GH_TOKEN:-}" ]; then
-    return
-  fi
-  if [ -n "${GITHUB_TOKEN:-}" ]; then
+# Actions provides GITHUB_TOKEN. gh reads GH_TOKEN first, so copy the default
+# token across when that is the one that is set. Never prompt for another secret.
+prefer_default_token() {
+  if [ -z "${GH_TOKEN:-}" ] && [ -n "${GITHUB_TOKEN:-}" ]; then
     export GH_TOKEN="$GITHUB_TOKEN"
+  fi
+  export GIT_TERMINAL_PROMPT=0
+  export GH_PROMPT_DISABLED=1
+}
+
+auth_failure() {
+  local err_file=$1
+  grep -Eq 'HTTP 401|HTTP 403|Bad credentials|authentication required|gh auth login|to authenticate' "$err_file"
+}
+
+ensure_api_mode() {
+  if [ -n "$API_MODE" ]; then
     return
   fi
-  local token=""
-  token=$(gh auth token 2>/dev/null || true)
-  if [ -n "$token" ]; then
-    export GH_TOKEN="$token"
-    return
+  if command -v gh >/dev/null 2>&1; then
+    API_MODE=gh
+  elif command -v curl >/dev/null 2>&1; then
+    API_MODE=curl
+    log "gh is not installed. Reading public repositories anonymously."
+  else
+    die "gh or curl is required to list public repositories."
   fi
-  die "No GitHub token available. Export SUITE_READ_TOKEN or GH_TOKEN with Contents: Read on the ${ORG} repositories, or run gh auth login."
+}
+
+use_anonymous_api() {
+  command -v curl >/dev/null 2>&1 || die "Could not authenticate to GitHub, and curl is not available for an anonymous public read."
+  if [ "$API_MODE" != "curl" ]; then
+    log "No usable token. Reading public repositories anonymously."
+    API_MODE=curl
+  fi
+}
+
+curl_headers() {
+  local accept=${1:-application/vnd.github+json}
+  CURL_HEADERS=(-H "Accept: ${accept}" -H "User-Agent: edge-ops-scope-suite")
+  if [ -n "${GH_TOKEN:-}" ]; then
+    CURL_HEADERS+=(-H "Authorization: Bearer ${GH_TOKEN}")
+  fi
 }
 
 render_notes() {
@@ -252,11 +270,91 @@ reject_overlapping_out() {
   fi
 }
 
+append_repo_tsv() {
+  local json_file=$1
+  local dest=$2
+  python3 - "$json_file" "$dest" <<'PY'
+import json, sys
+src, dest = sys.argv[1], sys.argv[2]
+with open(src, encoding="utf-8") as handle:
+    data = json.load(handle)
+with open(dest, "a", encoding="utf-8") as out:
+    for repo in data:
+        visibility = "private" if repo.get("private") else "public"
+        archived = "yes" if repo.get("archived") else "no"
+        name = repo.get("name") or ""
+        branch = repo.get("default_branch") or ""
+        out.write(f"{name}\t{branch}\t{visibility}\t{archived}\n")
+PY
+}
+
+curl_list_public_repos() {
+  local dest=$1
+  local url="https://api.github.com/orgs/${ORG}/repos?per_page=100&type=public"
+  : > "$dest"
+  local page headers code next
+  while [ -n "$url" ]; do
+    page=$(mktemp)
+    headers=$(mktemp)
+    curl_headers
+    code=$(curl -sS -D "$headers" -o "$page" -w "%{http_code}" "${CURL_HEADERS[@]}" "$url" || true)
+    if [ "$code" != "200" ]; then
+      local detail=""
+      detail=$(python3 -c 'import json,sys
+try:
+    msg = json.load(open(sys.argv[1], encoding="utf-8")).get("message", "")
+except Exception:
+    msg = ""
+print(msg[:200])' "$page" 2>/dev/null || true)
+      rm -f "$page" "$headers"
+      die "Could not list public repositories in ${ORG} (HTTP ${code}). ${detail} The workflow uses the default GITHUB_TOKEN for this public read."
+    fi
+    append_repo_tsv "$page" "$dest"
+    next=$(grep -i '^link:' "$headers" | tr ',' '\n' | sed -n 's/.*<\([^>]*\)>;[[:space:]]*rel="next".*/\1/p' | head -n 1 || true)
+    rm -f "$page" "$headers"
+    url=$next
+  done
+}
+
+curl_visibility_line() {
+  local name=$1
+  local branch_q=$2
+  local body code line
+  body=$(mktemp)
+  curl_headers "application/vnd.github.raw"
+  code=$(curl -sS -o "$body" -w "%{http_code}" "${CURL_HEADERS[@]}" \
+    "https://api.github.com/repos/${ORG}/${name}/contents/VISIBILITY.md?ref=${branch_q}" || true)
+  if [ "$code" = "404" ]; then
+    rm -f "$body"
+    return 2
+  fi
+  if [ "$code" != "200" ]; then
+    local detail=""
+    detail=$(python3 -c 'import json,sys
+try:
+    msg = json.load(open(sys.argv[1], encoding="utf-8")).get("message", "")
+except Exception:
+    msg = ""
+print(msg[:200])' "$body" 2>/dev/null || true)
+    rm -f "$body"
+    die "Could not read ${ORG}/${name}/VISIBILITY.md (HTTP ${code}). ${detail} Public repositories are read with the Actions GITHUB_TOKEN, or anonymously when no token is set."
+  fi
+  line=""
+  IFS= read -r line < "$body" || line=""
+  rm -f "$body"
+  normalize_visibility_line "$line"
+}
+
 fetch_visibility_line() {
   local name=$1
   local branch=$2
   local body err rc line branch_q
   branch_q=${branch//\//%2F}
+  ensure_api_mode
+  if [ "$API_MODE" = "curl" ]; then
+    curl_visibility_line "$name" "$branch_q"
+    return
+  fi
   body=$(mktemp)
   err=$(mktemp)
   set +e
@@ -269,10 +367,16 @@ fetch_visibility_line() {
       rm -f "$body" "$err"
       return 2
     fi
+    if auth_failure "$err"; then
+      rm -f "$body" "$err"
+      use_anonymous_api
+      curl_visibility_line "$name" "$branch_q"
+      return
+    fi
     local detail
     detail=$(tr '\n' ' ' < "$err")
     rm -f "$body" "$err"
-    die "Could not read ${ORG}/${name}/VISIBILITY.md (${detail}). SUITE_READ_TOKEN needs Contents: Read on this repository. A 403 on a private repository stops the build so a repo marked public cannot be skipped by mistake."
+    die "Could not read ${ORG}/${name}/VISIBILITY.md (${detail})."
   fi
   line=""
   IFS= read -r line < "$body" || line=""
@@ -285,16 +389,30 @@ discover_repos() {
   local list err
   list=$(mktemp)
   err=$(mktemp)
-  log "Listing repositories in ${ORG}."
-  if ! gh api --paginate "orgs/${ORG}/repos?per_page=100&type=all" \
-    --jq '.[] | [.name, (.default_branch // ""), (if .private then "private" else "public" end), (if .archived then "yes" else "no" end)] | @tsv' \
-    >"$list" 2>"$err"; then
-    local detail
-    detail=$(tr '\n' ' ' < "$err")
-    rm -f "$list" "$err"
-    die "Could not list repositories in ${ORG} (${detail}). SUITE_READ_TOKEN needs Metadata: Read on the organization. This script does not fall back to GITHUB_TOKEN."
+  ensure_api_mode
+  prefer_default_token
+  log "Listing public repositories in ${ORG}."
+  if [ "$API_MODE" = "gh" ]; then
+    if ! gh api --paginate "orgs/${ORG}/repos?per_page=100&type=public" \
+      --jq '.[] | [.name, (.default_branch // ""), (if .private then "private" else "public" end), (if .archived then "yes" else "no" end)] | @tsv' \
+      >"$list" 2>"$err"; then
+      if auth_failure "$err"; then
+        rm -f "$err"
+        use_anonymous_api
+        curl_list_public_repos "$list"
+      else
+        local detail
+        detail=$(tr '\n' ' ' < "$err")
+        rm -f "$list" "$err"
+        die "Could not list public repositories in ${ORG} (${detail})."
+      fi
+    else
+      rm -f "$err"
+    fi
+  else
+    rm -f "$err"
+    curl_list_public_repos "$list"
   fi
-  rm -f "$err"
   : > "$dest"
   local included=0 skipped=0
   local name branch visibility archived marker decision
@@ -341,8 +459,23 @@ discover_repos() {
   rm -f "$list"
   log "Discovery finished. included=${included} skipped=${skipped}"
   if [ "$included" -lt 1 ]; then
-    die "No public repositories found in ${ORG}. Check that SUITE_READ_TOKEN can list the organization and read VISIBILITY.md, and that at least one repository's first line is public."
+    die "No repositories in ${ORG} have VISIBILITY.md starting with public. The list is the org's public repositories only."
   fi
+}
+
+clone_public_repo() {
+  local name=$1
+  local branch=$2
+  local dest=$3
+  # Public clones do not need a credential in .git. Prefer an anonymous checkout,
+  # then the default token via gh if that is refused.
+  rm -rf "$dest"
+  if git -c credential.helper= clone --depth 1 --branch "$branch" --single-branch --no-tags \
+    "https://github.com/${ORG}/${name}.git" "$dest"; then
+    return 0
+  fi
+  rm -rf "$dest"
+  gh repo clone "https://github.com/${ORG}/${name}.git" "$dest" -- --depth 1 --branch "$branch" --single-branch --no-tags
 }
 
 # gh's credential helper can display a token in `git remote -v` via url.insteadOf.
@@ -369,8 +502,8 @@ clone_repos() {
     [ -n "$name" ] || continue
     dest="${stage}/${name}"
     log "clone ${ORG}/${name} branch=${branch}"
-    if ! gh repo clone "https://github.com/${ORG}/${name}.git" "$dest" -- --depth 1 --branch "$branch" --single-branch --no-tags; then
-      die "Failed to clone ${ORG}/${name} (branch ${branch}). SUITE_READ_TOKEN needs Contents: Read on that repository."
+    if ! clone_public_repo "$name" "$branch" "$dest"; then
+      die "Failed to clone ${ORG}/${name} (branch ${branch}). Public repositories are cloned with the Actions GITHUB_TOKEN, or anonymously when no token is set."
     fi
     scrub_clone_credentials "$dest" "$name"
     sha=$(git -C "$dest" rev-parse HEAD)
@@ -586,10 +719,7 @@ main() {
 
   if [ "$LIST_ONLY" -eq 1 ]; then
     [ -z "$PACK_DIR" ] || die "--list-only cannot be combined with --pack-dir."
-    require_cmd gh
-    prepare_read_token
-    export GIT_TERMINAL_PROMPT=0
-    export GH_PROMPT_DISABLED=1
+    prefer_default_token
     local selected="${WORK_DIR}/selected.tsv"
     discover_repos "$selected"
     LC_ALL=C sort -t $'\t' -k1,1 "$selected"
@@ -606,11 +736,8 @@ main() {
   if [ -n "$PACK_DIR" ]; then
     pack_local_repos "$PACK_DIR" "$stage" "$bundled"
   else
-    require_cmd gh
     require_cmd zip
-    prepare_read_token
-    export GIT_TERMINAL_PROMPT=0
-    export GH_PROMPT_DISABLED=1
+    prefer_default_token
     local selected="${WORK_DIR}/selected.tsv"
     discover_repos "$selected"
     LC_ALL=C sort -t $'\t' -k1,1 -o "$selected" "$selected"

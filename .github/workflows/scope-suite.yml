@@ -11,8 +11,8 @@
 # (zip a tree, then `gh release upload`). Self-hosted labels in this repo are
 # Windows PowerShell 5.1 runners; this job is bash, git, and zip.
 #
-# SUITE_READ_TOKEN reads the other repositories. GITHUB_TOKEN (contents: write
-# on the upload job) attaches the asset. Setup: docs/scope-suite.md.
+# The default GITHUB_TOKEN lists the org's public repositories and uploads the
+# asset (contents: write on the upload job). No extra secret. See docs/scope-suite.md.
 
 name: SCOPE suite bundle
 
@@ -59,17 +59,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-
-      - name: Require SUITE_READ_TOKEN
-        shell: bash
-        env:
-          SUITE_READ_TOKEN: ${{ secrets.SUITE_READ_TOKEN }}
-        run: |
-          set -euo pipefail
-          if [ -z "${SUITE_READ_TOKEN}" ]; then
-            echo "::error::SUITE_READ_TOKEN is not set. Add a fine-grained PAT or GitHub App token as an Actions secret named SUITE_READ_TOKEN (organization secret granted to edge-ops, or a repository secret) with Contents: Read and Metadata: Read on fleethacker-data-crucible repositories. The default GITHUB_TOKEN cannot read the other repositories in the org, and this workflow will not fall back to it."
-            exit 1
-          fi
 
       - name: Resolve release tag
         id: release
@@ -120,13 +109,9 @@ jobs:
 
       - name: Build SCOPE_suite.zip
         shell: bash
-        env:
-          SUITE_READ_TOKEN: ${{ secrets.SUITE_READ_TOKEN }}
-          # Do not let gh fall back to the workflow token, which cannot read the other repos.
-          GH_TOKEN: ""
-          GITHUB_TOKEN: ""
         run: |
           set -euo pipefail
+          # GITHUB_TOKEN is the default Actions token. It can read the org's public repositories.
           bash scripts/build-scope-suite.sh --out dist
 
       - name: Attach the bundle to the release

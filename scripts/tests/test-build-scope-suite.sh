@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Offline checks for scripts/build-scope-suite.sh.
-# Packs a fixture tree, so it does not need SUITE_READ_TOKEN or a GitHub release.
+# Packs a fixture tree, so it does not need GitHub or a release.
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
@@ -90,8 +90,8 @@ git -C "$PACK/repo-a" config commit.gpgsign false
 git -C "$PACK/repo-a" add README.md
 git -C "$PACK/repo-a" commit -q -m "fixture"
 
-# A manual run on a runner has no suite token. Packing a local tree must still work.
-env -u GH_TOKEN -u GITHUB_TOKEN -u SUITE_READ_TOKEN GITHUB_ACTIONS=true \
+# Packing a local tree does not need a token.
+env -u GH_TOKEN -u GITHUB_TOKEN GITHUB_ACTIONS=true \
   "$SCRIPT" --pack-dir "$PACK" --out "$OUT" --work "$TMP/work"
 
 [ -s "$OUT/SCOPE_suite.zip" ] || fail "zip was not written"
@@ -155,9 +155,9 @@ expect_fail "inside --pack-dir" \
 expect_fail "meets or exceeds" \
   "$SCRIPT" --pack-dir "$PACK" --out "$TMP/too-big" --work "$TMP/work-big" --max-bytes 50
 
-expect_fail "SUITE_READ_TOKEN is not set" \
-  env -u GH_TOKEN -u GITHUB_TOKEN -u SUITE_READ_TOKEN GITHUB_ACTIONS=true \
-  "$SCRIPT" --out "$TMP/no-token" --work "$TMP/work-token"
+if grep -n 'SUITE_READ_TOKEN' "$SCRIPT" "$ROOT/.github/workflows/scope-suite.yml" "$ROOT/docs/scope-suite.md" "$ROOT/README.md"; then
+  fail "SUITE_READ_TOKEN is still referenced"
+fi
 
 SHA="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 MAN="$TMP/manifest.txt"
