@@ -97,19 +97,17 @@
 /* Chart room and Phoenix light (.light): dark text on the parchment sidebar and on white cards.
    The base link colour (#1d5f99) clears the light page field the static check measures.
    Night watch and Phoenix dark override it below with harbour blue, which clears navy. */
-:root.light[data-brand=scope] .scope-nav button,
-:root.light[data-brand=scope] .scope-status{color:#3a4c56}
+:root.light[data-brand=scope] .scope-nav button{color:#3a4c56;background:#f3efe2}
+:root.light[data-brand=scope] .scope-status{color:#3a4c56;background:#f3efe2}
 :root.light[data-brand=scope] .scope-nav button[aria-current=page]{color:#132633;background:#ffffff;border-left-color:#1d5f99}
 :root.light[data-brand=scope] .links a,
-:root.light[data-brand=scope] button.launch{color:#1d5f99;border-color:#1d5f99}
+:root.light[data-brand=scope] button.launch{color:#1d5f99;background:transparent;border-color:#1d5f99}
 :root.light[data-brand=scope] .card h3 a:hover{color:#1d5f99}
-/* Dark themes keep harbour blue on navy. These rules are more specific than the parchment-safe
-   #1d5f99 above, so Night watch and Phoenix dark still read as light text. The parchment-safe
-   colour stays on the base rule, which is what the static check measures against the light page field. */
+/* Harbour blue is only used on an explicit navy fill, so the static check does not measure it against the light page field. */
 :root[data-theme=fleet-night-watch][data-brand=scope] .links a,
 :root[data-theme=phoenix-dark][data-brand=scope] .links a,
 :root[data-theme=fleet-night-watch][data-brand=scope] button.launch,
-:root[data-theme=phoenix-dark][data-brand=scope] button.launch{color:#7ab8ec;border-color:#7ab8ec}
+:root[data-theme=phoenix-dark][data-brand=scope] button.launch{color:#7ab8ec;background:#112d40;border-color:#7ab8ec}
 
 /* Narrow windows: the sidebar stays a sidebar (UNIFIED-UI section 5), just narrower; the header wraps. */
 @media (max-width:1023px){
