@@ -1,4 +1,4 @@
-/* Edge-Ops theme: Phoenix dark (default dark theme).
+/* Edge-Ops theme: Phoenix dark (selectable; Fleet Night watch is the default dark theme).
    One theme = one file. Every colour, font, radius and shadow the hub uses is a custom property set here.
    Loaded after ui-kit/kit.css. Tokens sit in @layer theme, which is declared after @layer kit, so they
    override the kit's defaults; the hub's unlayered assets/style.css only consumes them.
@@ -7,7 +7,7 @@
    in assets/theme.js. To switch theme: set <html data-theme="<id>"> (the switcher does this). */
 @layer kit, theme;
 @layer theme{
-:root,:root[data-theme=phoenix-dark]{color-scheme:dark;
+:root[data-theme=phoenix-dark]{color-scheme:dark;
  /* type */
  --sans:"Exo 2","Segoe UI",system-ui,sans-serif;--mono:"Syne Mono",ui-monospace,Consolas,monospace;
  /* shape */

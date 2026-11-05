@@ -1,4 +1,4 @@
-/* Edge-Ops theme: Phoenix light (default light theme).
+/* Edge-Ops theme: Phoenix light (system light theme; Fleet Night watch is the unset default).
    Same token set as phoenix-dark.css; see that file for how themes work.
    Palette: phoenix-lai :root.light (--bg #f4f3ef, --text #1e1d24, gold darkened for text), adjusted for AA. */
 @layer kit, theme;

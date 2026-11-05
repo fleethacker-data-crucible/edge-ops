@@ -39,8 +39,13 @@ Describe 'Bridge Warden catalog entry' {
 }
 
 Describe 'SCOPE skin' {
-    It 'is loaded by index.html after theme.js' {
+    It 'is the default hub and is loaded by index.html after theme.js' {
+        $Index | Should -Match 'data-brand="scope"'
+        $Index | Should -Match 'assets/brand-scope\.css'
         $Index | Should -Match '(?s)<script src="assets/theme\.js"></script>\s*<script src="assets/brand-scope\.js"></script>'
+        $Skin | Should -Match "q === 'edgeops'"
+        $Skin | Should -Match "get\(KEY\) === 'edgeops'"
+        $Skin | Should -Not -Match 'theme\.set\(SCOPE_THEME\)'
     }
     It 'keeps the expansion in one constant whose initials spell SCOPE' {
         $m = [regex]::Match($Skin, "var SCOPE_EXPANSION = '([^']+)'")
@@ -66,11 +71,74 @@ Describe 'SCOPE skin' {
     }
 }
 
+Describe 'primary catalog rows' {
+    It 'leads with the four screenshot rows and keeps voice, secrets and support visible' {
+        $ids = @($Cat.groups | ForEach-Object { $_.id })
+        ($ids[0..3] -join ',') | Should -Be 'capture-media-files,work-collaboration,data-analytics,local-ai'
+        foreach ($extra in @('voice-learning', 'secrets-security', 'support')) {
+            $ids | Should -Contain $extra
+            @($Cat.tools | Where-Object { $_.group -eq $extra }).Count | Should -BeGreaterThan 0
+        }
+    }
+}
+
+Describe 'default theme' {
+    It 'is Fleet Night watch, and the switcher still lists every theme' {
+        $themeJs = Get-Content -Raw (Join-Path $RepoRoot 'assets\theme.js')
+        $themeJs | Should -Match "DEFAULT_PREF = 'fleet-night-watch'"
+        $themeJs | Should -Match "dark: 'fleet-night-watch'"
+        $themeJs | Should -Match "light: 'phoenix-light'"
+        foreach ($id in @('phoenix-dark', 'phoenix-light', 'fleet-night-watch', 'fleet-chart-room', 'System default')) {
+            $themeJs | Should -Match ([regex]::Escape($id))
+        }
+    }
+}
+
 Describe 'Demo button' {
     It 'opens in a new tab and says what it does' {
         $App | Should -Match "el\('a','btn demo','Demo'\)"
         $App | Should -Match "target='_blank'"
         $App | Should -Match "rel='noopener'"
         $App | Should -Match 'this button does not start it'
+    }
+    It 'prefers a commissioning video on hosted pages and loopback from file://' {
+        $App | Should -Match 'demoVideo'
+        $App | Should -Match 'demoPage'
+        $App | Should -Match "location.protocol==='file:'"
+        $App | Should -Match 'https:\\/\\/'
+        $App | Should -Match 'http://127.0.0.1:'
+        $App | Should -Match 'if\(file&&port\)return port;if\(video\)return video;if\(port\)return port;'
+        $App | Should -Match 'isPages\(dv\)'
+        $App | Should -Match 'raw\.githubusercontent'
+        $App | Should -Match 'if\(dv&&isPages\(dv\)\)return dv;'
+    }
+    It 'does not vendor commissioning videos, and only https demo links would count' {
+        $media = @(Get-ChildItem -Path $RepoRoot -Recurse -File -Include *.mp4, *.webm, *.mov -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -notmatch '[\\/]_site[\\/]' -and $_.FullName -notmatch '[\\/]\.git[\\/]' })
+        $media.Count | Should -Be 0
+        foreach ($t in $Cat.tools) {
+            foreach ($field in @('demoVideo', 'demoPage')) {
+                $v = $t.PSObject.Properties[$field]
+                if ($null -ne $v -and $v.Value) { [string]$v.Value | Should -Match '^https://\S+$' }
+            }
+        }
+    }
+}
+
+Describe 'Periscope display and Launch button' {
+    It 'titles the page Periscope and keeps the suite subtitle' {
+        $Index | Should -Match '<title>Periscope</title>'
+        $Index | Should -Match '<h1>Periscope</h1>'
+        $Index | Should -Match 'FleetHacker Edge-Ops utility suite'
+        $Skin | Should -Match "SCOPE_PAGE_TITLE = 'Periscope'"
+    }
+    It 'does not show Launch until the local host status call succeeds' {
+        $Index | Should -Not -Match 'periscope-token'
+        $Index | Should -Not -Match '>Launch<'
+        $App | Should -Match 'api/periscope/status'
+        $App | Should -Match 'body\.ok===true'
+        $App | Should -Match "aria-label','Launch '"
+        $App | Should -Match 'g\.support'
+        $App | Should -Match 'periscopeLocal'
     }
 }

@@ -1,9 +1,11 @@
-/* SCOPE skin for the Edge-Ops hub. Classic script, no build, works from file://. Load it in <head> after theme.js.
-   Switch it on with index.html?brand=scope (remembered in localStorage); ?brand=edgeops switches it off and restores the
-   theme that was chosen before. With nothing in the URL and nothing remembered, the plain Edge-Ops hub renders unchanged.
-   Same catalog, same tools, same data. The skin loads assets/brand-scope.css (the Fleet UI v0.2 look the Fleet apps share),
-   sets the Fleet Night watch theme, retitles the page, and arranges the page into the Fleet shell: a sidebar with the
-   emblem, wordmark and group navigation, a header with the page title and filters, the catalog, and a status bar. */
+/* SCOPE shell for the Edge-Ops hub. Classic script, no build, works from file://. Load it in <head> after theme.js.
+   The shell is the default for GitHub Pages and for the offline client (same index.html). ?brand=edgeops switches it
+   off and remembers that; ?brand=scope turns it back on. With nothing in the URL and nothing remembered, SCOPE renders.
+   The default dark theme is Fleet Night watch, set in assets/theme.js. This file does not overwrite a theme the
+   visitor already chose, so the theme switcher sticks. Same catalog, same tools, same data.
+   The skin loads assets/brand-scope.css (the Fleet UI v0.2 look the Fleet apps share) and arranges the page into the
+   Fleet shell: a sidebar with the emblem, wordmark and group navigation, a header with the page title and filters,
+   the catalog, and a status bar. */
 (function () {
   'use strict';
   // The expansion wording is not settled. Change it here only: one word per letter; the page shows the initials in bold.
@@ -11,12 +13,13 @@
   var SCOPE_NAME = 'SCOPE';
   var SCOPE_THEME = 'fleet-night-watch';
   var SCOPE_EMBLEM = 'assets/emblems/scope.svg';
+  var PLAIN_ICON = 'ui-kit/assets/favicon-32.png';
   // The painted SCOPE emblem goes here when it lands (dark and light variants); until then the line mark above is used.
   var SCOPE_EMBLEM_PAINTED = 'assets/brand/scope/emblem-dark.png', SCOPE_EMBLEM_PAINTED_LIGHT = 'assets/brand/scope/emblem-light.png';
   var PAINTED_DIR = 'assets/emblems/painted/';
   var SCOPE_CSS = 'assets/brand-scope.css';
-  var SCOPE_PAGE_TITLE = 'Tool catalog';
-  var SCOPE_SUBTITLE = 'Standalone utilities for app-whitelisted Windows: PowerShell 5.1, a Chrome-engine browser, no admin, no installs. Built on FleetHacker Edge-Ops.';
+  var SCOPE_PAGE_TITLE = 'Periscope';
+  var SCOPE_SUBTITLE = 'FleetHacker Edge-Ops utility suite';
   var KEY = 'edge-ops-brand', PREV_THEME_KEY = 'edge-ops-brand-prev-theme';
 
   function get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
@@ -24,26 +27,32 @@
   var m = /[?&]brand=([^&#]*)/.exec(location.search), q = m ? decodeURIComponent(m[1]) : '';
   var theme = window.EdgeTheme;
 
+  function plainHub() {
+    // The display name stays Periscope. This only removes the SCOPE shell.
+    document.documentElement.removeAttribute('data-brand');
+    document.title = SCOPE_PAGE_TITLE;
+    var icon = document.querySelector('link[rel="icon"]');
+    if (icon) icon.href = PLAIN_ICON;
+  }
+
+  // ?brand=edgeops is the plain hub. A remembered edgeops choice sticks until ?brand=scope.
   if (q === 'edgeops') {
-    set(KEY, null);
+    set(KEY, 'edgeops');
     var prev = get(PREV_THEME_KEY); set(PREV_THEME_KEY, null);
     if (theme && prev !== null && theme.preference === SCOPE_THEME) theme.set(prev);
+    plainHub();
     return;
   }
-  var on = q === 'scope' || (!q && get(KEY) === 'scope');
-  if (!on) return;
   if (q === 'scope') set(KEY, 'scope');
+  if (q !== 'scope' && get(KEY) === 'edgeops') { plainHub(); return; }
 
-  // The skin is the Fleet Night watch theme. Remember the earlier choice once, so ?brand=edgeops can put it back.
-  if (theme) {
-    if (get(PREV_THEME_KEY) === null && theme.preference !== SCOPE_THEME) set(PREV_THEME_KEY, theme.preference);
-    theme.set(SCOPE_THEME);
-  }
   document.documentElement.setAttribute('data-brand', 'scope');
-  document.title = SCOPE_NAME;
-  var icon = document.querySelector('link[rel="icon"]');
-  if (icon) icon.href = SCOPE_EMBLEM;
-  var css = document.createElement('link'); css.rel = 'stylesheet'; css.href = SCOPE_CSS; document.head.appendChild(css);
+  document.title = SCOPE_PAGE_TITLE;
+  var iconOn = document.querySelector('link[rel="icon"]');
+  if (iconOn) iconOn.href = SCOPE_EMBLEM;
+  if (!document.querySelector('link[rel="stylesheet"][href="' + SCOPE_CSS + '"]')) {
+    var css = document.createElement('link'); css.rel = 'stylesheet'; css.href = SCOPE_CSS; document.head.appendChild(css);
+  }
 
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 
@@ -57,32 +66,61 @@
     next();
   }
 
-  // Cards: swap in the painted emblem and the tagline. app.js redraws the grid on every filter change, so this runs again
-  // whenever the grid's children change.
-  function decorate(data) {
-    var byId = {}; (data.tools || []).forEach(function (t) { byId[t.id] = t; });
-    var cards = document.querySelectorAll('#grid .card:not([data-scope])');
-    for (var k = 0; k < cards.length; k++) {
-      var c = cards[k]; c.setAttribute('data-scope', '');
-      var a = c.querySelector('h3 a'); if (!a) continue;
-      var mm = /tools\/([^/]+)\.html$/.exec(a.getAttribute('href') || ''); var t = mm ? byId[mm[1]] : null; if (!t) continue;
-      if (t.tagline) { var p = c.querySelector('h3 + p'); if (p) p.textContent = t.tagline; }
-      var im = el('img', 'painted'); im.alt = ''; im.setAttribute('aria-hidden', 'true'); im.width = 96; im.height = 96;
-      (function (card) {
-        paintedOrFallback(im, light() ? [PAINTED_DIR + t.id + '-light.png', PAINTED_DIR + t.id + '.png'] : [PAINTED_DIR + t.id + '.png'],
-          function () { card.classList.add('has-painted'); });
-      })(c);
+  var brandImg = null, brandBlock = null;
+  function paintBrand() {
+    if (!brandImg || !brandBlock) return;
+    var sources = light() ? [SCOPE_EMBLEM_PAINTED_LIGHT, SCOPE_EMBLEM_PAINTED, SCOPE_EMBLEM] : [SCOPE_EMBLEM_PAINTED, SCOPE_EMBLEM];
+    var key = sources.join('|');
+    function mark(img) { if (img.src.indexOf(SCOPE_EMBLEM) === -1) brandBlock.classList.add('has-painted'); else brandBlock.classList.remove('has-painted'); }
+    if (brandImg.getAttribute('data-sources') === key && brandImg.getAttribute('src')) { if (brandImg.complete) mark(brandImg); return; }
+    brandBlock.classList.remove('has-painted');
+    brandImg.setAttribute('data-sources', key);
+    paintedOrFallback(brandImg, sources, mark);
+  }
+
+  // Cards: the painted emblem and the tagline. app.js redraws the grid on every filter change, so decorate() runs again
+  // for new cards. restylePainted() swaps light and dark emblems when the theme picker changes.
+  function paintCard(c, t) {
+    if (t.tagline) { var p = c.querySelector('h3 + p'); if (p) p.textContent = t.tagline; }
+    var im = c.querySelector('img.painted');
+    if (!im) {
+      im = el('img', 'painted'); im.alt = ''; im.setAttribute('aria-hidden', 'true'); im.width = 96; im.height = 96;
       c.insertBefore(im, c.firstChild);
     }
+    var sources = light() ? [PAINTED_DIR + t.id + '-light.png', PAINTED_DIR + t.id + '.png'] : [PAINTED_DIR + t.id + '.png'];
+    var key = sources.join('|');
+    function mark() { c.classList.add('has-painted'); }
+    if (im.getAttribute('data-sources') === key && im.getAttribute('src')) { if (im.complete && im.naturalWidth) mark(); return; }
+    c.classList.remove('has-painted');
+    im.setAttribute('data-sources', key);
+    paintedOrFallback(im, sources, mark);
+  }
+  function toolsById(data) { var byId = {}; (data.tools || []).forEach(function (t) { byId[t.id] = t; }); return byId; }
+  function decorate(data) {
+    var byId = toolsById(data);
+    var cards = document.querySelectorAll('#grid .card:not([data-scope])');
+    for (var k = 0; k < cards.length; k++) {
+      var c = cards[k];
+      var a = c.querySelector('h3 a'); if (!a) continue;
+      var mm = /tools\/([^/]+)\.html$/.exec(a.getAttribute('href') || ''); var t = mm ? byId[mm[1]] : null; if (!t) continue;
+      c.setAttribute('data-scope', ''); c.setAttribute('data-tool', t.id);
+      paintCard(c, t);
+    }
+  }
+  function restylePainted() {
+    paintBrand();
+    var byId = toolsById(window.EDGE_OPS_CATALOG || { tools: [] });
+    var cards = document.querySelectorAll('#grid .card[data-tool]');
+    for (var k = 0; k < cards.length; k++) { var t = byId[cards[k].getAttribute('data-tool')]; if (t) paintCard(cards[k], t); }
   }
 
   function brand() {
-    var b = el('div', 'scope-brand');
+    var b = el('div', 'scope-brand'); brandBlock = b;
     var im = el('img', 'emblem'); im.alt = ''; im.setAttribute('aria-hidden', 'true'); im.width = 112; im.height = 112;
+    brandImg = im;
     // With the painted emblem (which carries its own wordmark) the brand block shows it alone, as PacketRat's sidebar does.
-    paintedOrFallback(im, light() ? [SCOPE_EMBLEM_PAINTED_LIGHT, SCOPE_EMBLEM_PAINTED, SCOPE_EMBLEM] : [SCOPE_EMBLEM_PAINTED, SCOPE_EMBLEM],
-      function (img) { if (img.src.indexOf(SCOPE_EMBLEM) === -1) b.classList.add('has-painted'); });
     b.appendChild(im);
+    paintBrand();
     b.appendChild(el('p', 'scope-wordmark', SCOPE_NAME));
     // Fleet wordmark rule: brass rules either side of a compass star.
     var rule = el('div', 'scope-rule'); rule.setAttribute('aria-hidden', 'true');
@@ -101,6 +139,7 @@
   }
 
   // Group navigation drives the hub's own Group filter (the <select id="grp"> that app.js listens to).
+  // Groups stay in catalog order: the four primary rows first, then voice, secrets and support.
   function nav(data, grp) {
     var n = el('nav', 'scope-nav'); n.setAttribute('aria-label', 'Groups');
     n.appendChild(el('div', 'scope-nav-title', 'Groups'));
@@ -161,8 +200,12 @@
     main.appendChild(content);
 
     body.appendChild(side); body.appendChild(main); body.appendChild(status(data));
+    body.classList.add('scope-ready');
     decorate(data);
-    if (window.MutationObserver) new MutationObserver(function () { decorate(window.EDGE_OPS_CATALOG || data); }).observe(grid, { childList: true, subtree: true });
+    if (window.MutationObserver) {
+      new MutationObserver(function () { decorate(window.EDGE_OPS_CATALOG || data); }).observe(grid, { childList: true, subtree: true });
+      new MutationObserver(function () { restylePainted(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'class'] });
+    }
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', shell); else shell();
 })();
