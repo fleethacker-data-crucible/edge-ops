@@ -1,4 +1,4 @@
-﻿<p align="center"><img src="https://raw.githubusercontent.com/fleethacker-data-crucible/dumping-grounds/main/data_crucible_coin_front.png" alt="FleetHacker Data Crucible" width="120"></p>
+﻿<p align="center"><img src="https://github.com/fleethacker-data-crucible/edge-ops/blob/main/assets/brand/scope-emblem-transparent.png" alt="FleetHacker Data Crucible" width="120"></p>
 
 # FleetHacker Edge-Ops
 
