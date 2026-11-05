@@ -1,5 +1,8 @@
 # Periscope local host. Windows PowerShell 5.1 only. Loopback only. No admin.
 # Serves index.html, assets/, catalog.json and ui-kit/ from the edge-ops repo root.
+# Bind is IPv4 loopback only: http://127.0.0.1:<port>/.
+# Host 127.0.0.1:<port> or localhost:<port> is accepted. localhost is only the name for that IPv4 bind.
+# Any other Host is rejected on every response, before a page token is written.
 #   powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File tools\periscope\Periscope.ps1 [-Port n] [-NoBrowser] [-CheckOnly]
 param([int]$Port = 0, [switch]$NoBrowser, [switch]$CheckOnly)
 $ErrorActionPreference = 'Stop'
@@ -62,6 +65,9 @@ function Send-PeriscopeBytes($Context, [int]$Status, [byte[]]$Bytes, [string]$Co
     $res.StatusCode = $Status
     $res.ContentType = $ContentType
     $res.Headers['Cache-Control'] = 'no-store'
+    $res.Headers['X-Content-Type-Options'] = 'nosniff'
+    $res.Headers['X-Frame-Options'] = 'DENY'
+    $res.Headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
     $res.ContentLength64 = $Bytes.Length
     if ($Bytes.Length -gt 0) { $res.OutputStream.Write($Bytes, 0, $Bytes.Length) }
     $res.Close()
@@ -95,10 +101,14 @@ try {
     while ($listener.IsListening) {
         $ctx = $listener.GetContext()
         $req = $ctx.Request
+        $headers = Get-HeaderMap $req
+        if (-not (Test-PeriscopeLoopbackHost -HostHeader ([string]$req.Headers['Host']) -Port $actual)) {
+            Send-PeriscopeBytes $ctx 403 (New-Object byte[] 0) 'text/plain; charset=utf-8'
+            continue
+        }
         $fleet = Invoke-FleetIdEndpoint -Context $ctx -Tool 'periscope' -Version $version -Path $PSCommandPath
         if ($fleet -eq 'shutdown') { $listener.Stop(); break }
         if ($fleet) { continue }
-        $headers = Get-HeaderMap $req
         $bad = Test-FleetHttpAuth $headers $actual $token
         $path = $req.Url.AbsolutePath
         $isApi = $path.StartsWith('/api/periscope/')
@@ -163,9 +173,9 @@ try {
             continue
         }
         if ($isApi) { Send-PeriscopeJson $ctx 404 (New-FleetEnvelope 'periscope' -Code E_NOTFOUND -Message 'no such route'); continue }
-        if ($req.HttpMethod -ne 'GET') { $ctx.Response.StatusCode = 405; $ctx.Response.Close(); continue }
+        if ($req.HttpMethod -ne 'GET') { Send-PeriscopeBytes $ctx 405 (New-Object byte[] 0) 'text/plain; charset=utf-8'; continue }
         $file = Resolve-PeriscopeStatic -Root $repo -UrlPath $path
-        if (-not $file) { $ctx.Response.StatusCode = 404; $ctx.Response.Close(); continue }
+        if (-not $file) { Send-PeriscopeBytes $ctx 404 (New-Object byte[] 0) 'text/plain; charset=utf-8'; continue }
         $bytes = [IO.File]::ReadAllBytes($file)
         $ext = [IO.Path]::GetExtension($file).ToLowerInvariant()
         $type = 'application/octet-stream'
@@ -181,6 +191,10 @@ try {
             '.woff2' { $type = 'font/woff2' }
         }
         if ($ext -eq '.html' -and [IO.Path]::GetFileName($file) -eq 'index.html') {
+            if (-not (Test-PeriscopeFetchSite -Headers $headers)) {
+                Send-PeriscopeBytes $ctx 403 (New-Object byte[] 0) 'text/plain; charset=utf-8'
+                continue
+            }
             $html = Add-PeriscopeTokenMeta -Html ([Text.Encoding]::UTF8.GetString($bytes)) -Token $token
             $bytes = [Text.Encoding]::UTF8.GetBytes($html)
         }

@@ -209,6 +209,57 @@ Describe 'zip root and static files' {
     }
 }
 
+Describe 'local host request checks' {
+    It 'accepts only 127.0.0.1 and localhost for the IPv4 loopback bind' {
+        Test-PeriscopeLoopbackHost -HostHeader '127.0.0.1:8803' -Port 8803 | Should -BeTrue
+        Test-PeriscopeLoopbackHost -HostHeader 'localhost:8803' -Port 8803 | Should -BeTrue
+        Test-PeriscopeLoopbackHost -HostHeader 'LocalHost:8803' -Port 8803 | Should -BeTrue
+        Test-PeriscopeLoopbackHost -HostHeader 'evil.example:8803' -Port 8803 | Should -BeFalse
+        Test-PeriscopeLoopbackHost -HostHeader '127.0.0.1:8804' -Port 8803 | Should -BeFalse
+        Test-PeriscopeLoopbackHost -HostHeader '' -Port 8803 | Should -BeFalse
+    }
+    It 'allows a missing, same-origin, or none Sec-Fetch-Site and rejects the rest' {
+        Test-PeriscopeFetchSite -Headers @{} | Should -BeTrue
+        Test-PeriscopeFetchSite -Headers @{ 'Sec-Fetch-Site' = 'same-origin' } | Should -BeTrue
+        Test-PeriscopeFetchSite -Headers @{ 'Sec-Fetch-Site' = 'none' } | Should -BeTrue
+        Test-PeriscopeFetchSite -Headers @{ 'Sec-Fetch-Site' = 'cross-site' } | Should -BeFalse
+    }
+    It 'checks Host on every response before the page token is added' {
+        $hostPs1 = Get-Content -Raw (Join-Path $PSScriptRoot '..\Periscope.ps1')
+        $tokenAt = $hostPs1.IndexOf('Add-PeriscopeTokenMeta')
+        $hostAt = $hostPs1.IndexOf('Test-PeriscopeLoopbackHost')
+        $hostAt | Should -BeGreaterThan 0
+        $tokenAt | Should -BeGreaterThan $hostAt
+        $hostPs1 | Should -Match 'IPv4 loopback only'
+        $hostPs1 | Should -Match 'X-Content-Type-Options'
+        $hostPs1 | Should -Match "frame-ancestors 'none'"
+    }
+}
+
+Describe 'Gangplank child environment' {
+    It 'drops GANGPLANK_TOKEN and keeps the variables the child needs' {
+        $src = @{
+            SystemRoot = 'C:\Windows'
+            GANGPLANK_TOKEN = 'should-not-pass'
+            PATH = 'C:\Windows'
+            LOCALAPPDATA = 'C:\Users\me\AppData\Local'
+        }
+        $clean = Get-PeriscopeChildEnvironment -Source $src
+        $clean.ContainsKey('GANGPLANK_TOKEN') | Should -BeFalse
+        $clean['SystemRoot'] | Should -Be 'C:\Windows'
+        $clean['LOCALAPPDATA'] | Should -Be 'C:\Users\me\AppData\Local'
+        $clean['PATH'] | Should -Be 'C:\Windows'
+    }
+    It 'writes the DPAPI file under LOCALAPPDATA with CreateNew and scrubs the child environment' {
+        $module = Get-Content -Raw (Join-Path $PSScriptRoot '..\Periscope.psm1')
+        $module | Should -Match 'Periscope\\tokens'
+        $module | Should -Match '\[IO\.FileMode\]::CreateNew'
+        $module | Should -Match 'Get-PeriscopeChildEnvironment'
+        $module | Should -Match 'EnvironmentVariables\.Clear\(\)'
+        $module | Should -Not -Match 'GetTempPath\(\).*token'
+    }
+}
+
 Describe 'Gangplank stays out of process' {
     It 'does not import Gangplank in the host module and does not fetch a utility zip from the child' {
         $module = Get-Content -Raw (Join-Path $PSScriptRoot '..\Periscope.psm1')

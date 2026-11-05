@@ -164,18 +164,79 @@ function Wait-PeriscopeReady {
     }
 }
 
+function Test-PeriscopeLoopbackHost {
+    # Listener prefix is http://127.0.0.1:<port>/ only (IPv4 loopback). localhost is accepted as that same bind's name.
+    param([string]$HostHeader, [int]$Port)
+    if (-not $HostHeader) { return $false }
+    $h = $HostHeader.Trim()
+    if ($h.Equals("127.0.0.1:$Port", [StringComparison]::Ordinal)) { return $true }
+    if ($h.Equals("localhost:$Port", [StringComparison]::OrdinalIgnoreCase)) { return $true }
+    $false
+}
+
+function Test-PeriscopeFetchSite {
+    # Absent, same-origin, or none. Anything else must not receive the page token.
+    param($Headers)
+    $site = ''
+    if ($Headers) {
+        foreach ($k in @($Headers.Keys)) {
+            if ([string]$k -ieq 'sec-fetch-site') { $site = [string]$Headers[$k]; break }
+        }
+    }
+    if (-not $site) { return $true }
+    $s = $site.Trim().ToLowerInvariant()
+    return ($s -eq 'same-origin' -or $s -eq 'none')
+}
+
+function Get-PeriscopeChildEnvironment {
+    # Explicit block for the Gangplank child. GANGPLANK_TOKEN is never copied; the child reads token.bin or its own store.
+    param([hashtable]$Source)
+    $keep = @('SystemRoot','windir','PATH','PATHEXT','TEMP','TMP','USERPROFILE','HOMEDRIVE','HOMEPATH','APPDATA','LOCALAPPDATA','USERNAME','USERDOMAIN','PROCESSOR_ARCHITECTURE','NUMBER_OF_PROCESSORS','OS','ComSpec')
+    $out = @{}
+    if (-not $Source) { return $out }
+    foreach ($name in $keep) {
+        foreach ($key in @($Source.Keys)) {
+            if ([string]$key -eq 'GANGPLANK_TOKEN') { continue }
+            if ([string]$key -ieq $name -and $Source[$key]) { $out[$name] = [string]$Source[$key]; break }
+        }
+    }
+    if ($out.ContainsKey('GANGPLANK_TOKEN')) { $out.Remove('GANGPLANK_TOKEN') }
+    $out
+}
+
 function Protect-PeriscopeToken {
+    # CreateNew so a pre-created name or symlink fails. Owner-only ACL is set before the protected bytes are written.
     param([Parameter(Mandatory)][string]$Token, [Parameter(Mandatory)][string]$Path)
-    Add-Type -AssemblyName System.Security
-    $raw = [Text.Encoding]::UTF8.GetBytes($Token)
-    $prot = [Security.Cryptography.ProtectedData]::Protect($raw, $null, 'CurrentUser')
-    [IO.File]::WriteAllBytes($Path, $prot)
+    $dir = Split-Path -Parent $Path
+    if ($dir -and -not (Test-Path -LiteralPath $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+    $fs = New-Object IO.FileStream($Path, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
+    $fs.Dispose()
+    $windows = ($env:OS -eq 'Windows_NT')
+    if ($windows) {
+        $me = [Security.Principal.WindowsIdentity]::GetCurrent().User
+        $acl = New-Object Security.AccessControl.FileSecurity
+        $acl.SetOwner($me)
+        $acl.SetAccessRuleProtection($true, $false)
+        $acl.AddAccessRule((New-Object Security.AccessControl.FileSystemAccessRule($me, 'FullControl', 'Allow')))
+        [IO.File]::SetAccessControl($Path, $acl)
+        Add-Type -AssemblyName System.Security
+        $raw = [Text.Encoding]::UTF8.GetBytes($Token)
+        $prot = [Security.Cryptography.ProtectedData]::Protect($raw, $null, 'CurrentUser')
+        $bytes = $prot
+    } else {
+        & chmod 600 -- $Path
+        if ($LASTEXITCODE -ne 0) { Remove-Item -LiteralPath $Path -Force -ErrorAction SilentlyContinue; throw 'could not restrict token file' }
+        $bytes = [Text.Encoding]::UTF8.GetBytes($Token)
+    }
+    $out = New-Object IO.FileStream($Path, [IO.FileMode]::Open, [IO.FileAccess]::Write, [IO.FileShare]::None)
+    try { $out.Write($bytes, 0, $bytes.Length) } finally { $out.Dispose() }
 }
 
 function Invoke-PeriscopeGangplankChild {
     param([Parameter(Mandatory)][string]$Repo, [Parameter(Mandatory)][string]$Dest, [string]$Token, [string]$ModulePath, [switch]$UseStore)
     if ($Repo -notmatch '^https://github\.com/[\w.-]+/[\w.-]+/?$') { return @{ ok = $false; code = 'E_ARGS'; message = 'Repository URL is not a GitHub HTTPS URL.' } }
-    $tmpDir = Join-Path ([IO.Path]::GetTempPath()) ('periscope-' + [guid]::NewGuid().ToString('N'))
+    if (-not $env:LOCALAPPDATA) { return @{ ok = $false; code = 'GANGPLANK_API'; message = 'LOCALAPPDATA is not set.' } }
+    $tmpDir = Join-Path (Join-Path $env:LOCALAPPDATA 'Periscope\tokens') ([guid]::NewGuid().ToString('N'))
     New-Item -ItemType Directory -Path $tmpDir -Force | Out-Null
     $tokenFile = Join-Path $tmpDir 'token.bin'
     $requestFile = Join-Path $tmpDir 'request.json'
@@ -189,7 +250,20 @@ function Invoke-PeriscopeGangplankChild {
         $exe = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
         if (-not (Test-Path -LiteralPath $exe)) { $exe = 'powershell.exe' }
         $arg = '-NoProfile -ExecutionPolicy Bypass -File "' + $child + '" -RequestFile "' + $requestFile + '"'
-        $proc = Start-Process -FilePath $exe -ArgumentList $arg -Wait -PassThru -WindowStyle Hidden
+        $psi = New-Object System.Diagnostics.ProcessStartInfo
+        $psi.FileName = $exe
+        $psi.Arguments = $arg
+        $psi.UseShellExecute = $false
+        $psi.CreateNoWindow = $true
+        $inherited = @{}
+        foreach ($key in @($psi.EnvironmentVariables.Keys)) { $inherited[[string]$key] = [string]$psi.EnvironmentVariables[$key] }
+        $clean = Get-PeriscopeChildEnvironment -Source $inherited
+        $psi.EnvironmentVariables.Clear()
+        foreach ($key in @($clean.Keys)) { [void]$psi.EnvironmentVariables.Add([string]$key, [string]$clean[$key]) }
+        $proc = New-Object System.Diagnostics.Process
+        $proc.StartInfo = $psi
+        [void]$proc.Start()
+        $proc.WaitForExit()
         if (Test-Path -LiteralPath $resultFile) {
             $parsed = Get-Content -LiteralPath $resultFile -Raw | ConvertFrom-Json
             return @{ ok = [bool]$parsed.ok; code = [string]$parsed.code; message = [string]$parsed.message }
@@ -358,4 +432,5 @@ Export-ModuleMember -Function Enable-PeriscopeRuntime, Set-PeriscopeBoundary, Re
     Get-PeriscopeLauncherName, Test-PeriscopeLaunchable, Get-PeriscopeCatalogTool, Get-PeriscopeUtilityDir,
     Test-PeriscopeDownloadFolder, Move-PeriscopeNestedLauncher, Expand-PeriscopeZip, Get-PeriscopeGangplankPlan,
     Invoke-PeriscopeLaunch, Get-PeriscopeStatusResult, Get-PeriscopeDownloadStatus, Add-PeriscopeTokenMeta, Resolve-PeriscopeStatic,
+    Test-PeriscopeLoopbackHost, Test-PeriscopeFetchSite, Get-PeriscopeChildEnvironment,
     Invoke-PeriscopePinnedDownload, Write-PeriscopeMarker
