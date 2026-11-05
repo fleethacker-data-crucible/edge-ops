@@ -26,5 +26,7 @@ cream `#f1e4c8` and brass details, one accent colour per tool. The navy disc giv
 | talkforge.svg | new, original SVG in the Fleet mark style |
 | data-noodler.svg | new, original SVG in the Fleet mark style |
 | phoenix-lai.svg | new, original SVG in the Fleet mark style (upstream has PNG logos only) |
+| bridge-warden.svg | new, original SVG in the Fleet mark style (a shield around a helm) |
+| scope.svg | the SCOPE skin's mark (`assets/brand-scope.js`), not a tool: a periscope at the waterline, same style |
 
 If a tool repo changes its mark, copy the new `mark.svg` here.

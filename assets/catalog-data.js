@@ -2,7 +2,7 @@
 window.EDGE_OPS_CATALOG = {
   "suite": "FleetHacker Edge-Ops",
   "org": "fleethacker-data-crucible",
-  "updated": "2026-10-26",
+  "updated": "2026-11-04",
   "groups": [
     {
       "id": "capture-media-files",
@@ -482,6 +482,32 @@ window.EDGE_OPS_CATALOG = {
         "mcp": false,
         "describe": null
       }
+    },
+    {
+      "id": "bridge-warden",
+      "name": "Bridge Warden",
+      "category": "ps-host-browser-ui",
+      "group": "local-ai",
+      "summary": "A governance and orchestration layer between onboard AI agents and the ship. No agent touches the ship directly: every request is checked, logged, and the big ones go to a human.",
+      "launcher": "run.bat",
+      "defaultPort": 8774,
+      "portNote": "Port 8774 is provisional: PORTS.md lists it for Eight-Bells, and Bridge Warden walks 8774-8776 until it gets its own block.",
+      "requirements": {
+        "ps51": true,
+        "chromeEngine": true,
+        "batch": true,
+        "vbs": false,
+        "admin": false,
+        "installs": false,
+        "network": false,
+        "csharpRuntimeCompile": true,
+        "gpu": false,
+        "outlook": false
+      },
+      "status": "unreleased",
+      "external": false,
+      "repo": "https://github.com/fleethacker-data-crucible/bridge-warden",
+      "releases": null
     }
   ]
 };

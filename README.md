@@ -42,6 +42,7 @@ This is the **hub** for the `fleethacker-data-crucible` utility suite. Every too
 | [TalkForge](https://github.com/fleethacker-data-crucible/talkforge) | Browser-only | In-browser neural text-to-speech (Piper/WASM), offline | `serve.bat` | 25000 | Models ship in releases |
 | [Data Noodler](https://github.com/fleethacker-data-crucible/data-noodler) | Data & AI | Flat-file analytics (CSV/Parquet/Arrow/SQLite) | `Data_Noodler.bat` | 8079 | Compiles C# at run time |
 | [Phoenix LAI](https://github.com/fleethacker-data-crucible/phoenix-lai) | Data & AI | Local GPU LLM server (OpenAI API) + chat client | `Phoenix_LAI.bat` | 1234 | GPU; compiles C# at run time |
+| [Bridge Warden](https://github.com/fleethacker-data-crucible/bridge-warden) | PS host + browser UI | A governance and orchestration layer between onboard AI agents and the ship: every request is checked, logged, and the big ones go to a human | `run.bat` | 8774 (provisional) | unreleased; compiles C# at run time |
 
 ## Categories
 
@@ -88,6 +89,8 @@ jobs:
 ## GitHub Pages site
 
 - Landing page: `index.html` + `assets/`. Each tool also gets its own page, rendered from `templates/pages/tool-page.html` using `catalog.json`. The 404 page comes from `templates/pages/404.html`.
+- Each card has a **Demo** button. It opens, in a new tab, the tool's loopback address (`http://127.0.0.1:<defaultPort>/`, where the tool serves once you have started it), or, for a tool with no fixed port, its latest release zip or its repository. It never starts the tool; the hover text says what it opens. Support repos have no button. An optional `portNote` in the catalog is added to that hover text.
+- **SCOPE skin:** `index.html?brand=scope` shows the same hub as SCOPE (wordmark, emblem, expansion line, Fleet Night watch theme) and remembers it; `index.html?brand=edgeops` switches back and restores the earlier theme choice. The names, the expansion wording and the theme are the constants at the top of `assets/brand-scope.js`. Nothing else changes: same catalog, same cards.
 - Build locally (Windows PowerShell 5.1 or pwsh 7):
   `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Build-Site.ps1` â†’ `_site/` (git-ignored).
 - Deploy: `templates/workflows/pages-deploy.yml` (manual `workflow_dispatch` only; `dry_run: true` builds and uploads the artifact without deploying).

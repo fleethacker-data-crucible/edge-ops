@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Bridge Warden">
+  <title>Bridge Warden</title>
+  <circle cx="32" cy="32" r="29.5" fill="#0d2233" stroke="#c9a66b" stroke-width="3"/>
+  <!-- the warden's shield -->
+  <path d="M32 11 L47 16.5 V31 C47 41 40.5 48.5 32 52.5 C23.5 48.5 17 41 17 31 V16.5 Z" fill="#f1e4c8"/>
+  <!-- the helm inside it: the bridge, held by a human hand -->
+  <path d="M32 19.5 V42.5 M20.5 31 H43.5 M23.9 22.9 L40.1 39.1 M40.1 22.9 L23.9 39.1" stroke="#0d2233" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="32" cy="31" r="8.5" fill="none" stroke="#0d2233" stroke-width="2.4"/>
+  <circle cx="32" cy="31" r="3.2" fill="#0d2233"/>
+  <!-- the gate light: green once a person has said yes -->
+  <circle cx="32" cy="31" r="1.6" fill="#4fb386"/>
+</svg>
