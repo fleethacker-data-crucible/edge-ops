@@ -1,0 +1,45 @@
+WEBVTT
+
+00:00:00.000 --> 00:00:04.510
+A supervisor has to staff a mission
+and see where the team is thin.
+
+00:00:04.510 --> 00:00:09.289
+Nobody wants a hidden skills score,
+and a résumé is a claim, not proof.
+
+00:00:09.289 --> 00:00:13.462
+Shellback shows only what people
+confirmed and chose to share.
+
+00:00:13.462 --> 00:00:15.886
+Everyone in this video is fictional.
+
+00:00:16.446 --> 00:00:17.648
+Here is how it works.
+
+00:00:17.648 --> 00:00:21.940
+It all runs on this one computer:
+a small PowerShell server
+
+00:00:21.940 --> 00:00:26.378
+on loopback serves the app,
+and the app runs in your browser.
+
+00:00:27.078 --> 00:00:31.038
+Your workspace is stored in the browser,
+and exports can be encrypted.
+
+00:00:31.738 --> 00:00:34.272
+A résumé goes in as
+pasted text, a text file,
+
+00:00:34.272 --> 00:00:36.525
+a Word file, or the text layer of a PDF.
+
+00:00:36.525 --> 00:00:38.909
+Peer cards and an HR
+feed come in as files.
+
+00:00:39.609 --> 00:00:40.000
+Out come suggestions you confirm,

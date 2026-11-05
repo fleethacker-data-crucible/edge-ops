@@ -1,0 +1,25 @@
+WEBVTT
+
+00:00:00.000 --> 00:00:03.455
+Every tool on this computer needs a model.
+
+00:00:03.455 --> 00:00:11.516
+Each one used to carry its own address, its own key, and its own plan for when the internet drops.
+
+00:00:11.516 --> 00:00:13.902
+Fairlead is the model router.
+
+00:00:13.902 --> 00:00:19.331
+One local address, one key per tool, and a trace of every request.
+
+00:00:19.331 --> 00:00:21.151
+Here is how Fairlead fits together.
+
+00:00:21.151 --> 00:00:28.379
+Fleet tools call one address on this computer, in the OpenAI or the Anthropic dialect, each with its own key.
+
+00:00:28.905 --> 00:00:36.266
+Inside the engine, a request is checked, routed, retried if a target fails, and logged.
+
+00:00:36.266 --> 00:00:40.000
+The log keeps the decision, never the prompt.

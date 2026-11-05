@@ -1,0 +1,35 @@
+WEBVTT
+
+00:00:00.250 --> 00:00:03.420
+Fleet tools need credentials by name, and
+
+00:00:03.420 --> 00:00:06.591
+they need somewhere sensible to keep them.
+
+00:00:06.591 --> 00:00:12.111
+Lazarette Lite is the light answer:
+a browser window on the Windows
+
+00:00:12.111 --> 00:00:16.575
+Credential Manager you already have,
+with no new vault.
+
+00:00:16.575 --> 00:00:20.651
+This is a short run,
+using throwaway credentials only.
+
+00:00:21.401 --> 00:00:24.933
+Lazarette Lite is a browser window
+on the Windows Credential Manager.
+
+00:00:24.933 --> 00:00:30.217
+Double-click the launcher, and a small
+PowerShell server starts on this computer.
+
+00:00:30.917 --> 00:00:35.890
+The server listens on loopback only,
+on a port Windows picks.
+
+00:00:35.890 --> 00:00:40.000
+It answers only your own Windows user's
+processes, with a one-time launch token

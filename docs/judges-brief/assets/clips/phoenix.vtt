@@ -1,0 +1,25 @@
+WEBVTT
+
+00:00:00.000 --> 00:00:04.848
+A developer on a locked-down PC wants an AI pair programmer.
+
+00:00:04.848 --> 00:00:11.394
+Cloud assistants are blocked, and nobody wants project files leaving the machine.
+
+00:00:11.394 --> 00:00:23.272
+Phoenix LAi runs Gemma models on your own GPU, serves them as an OpenAI API, and gives you a chat that edits project files only where you allow it.
+
+00:00:23.272 --> 00:00:26.828
+Everything you will see is running for real.
+
+00:00:27.078 --> 00:00:30.004
+Phoenix is two programs on one PC.
+
+00:00:30.004 --> 00:00:37.252
+The server turns Gemma 4 models into an OpenAI API on port 1234, with a dashboard and a console.
+
+00:00:37.744 --> 00:00:39.279
+Models are plain files in a models folder.
+
+00:00:39.979 --> 00:00:40.000
+The engine runs them on your GPU through the driver's own Vulkan.

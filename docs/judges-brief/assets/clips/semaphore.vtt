@@ -1,0 +1,43 @@
+WEBVTT
+
+00:00:00.250 --> 00:00:06.249
+Every dashboard starts with a question
+that someone has to translate into a tool.
+
+00:00:06.249 --> 00:00:08.619
+Semaphore skips the translation.
+
+00:00:08.619 --> 00:00:13.545
+You describe the page in plain
+English, you review what it drafts,
+
+00:00:13.545 --> 00:00:18.173
+and leadership asks questions
+that your reviewed work answers.
+
+00:00:18.173 --> 00:00:20.543
+All of it runs on this computer.
+
+00:00:20.793 --> 00:00:23.870
+Semaphore is a dashboard
+workbench for analysts,
+
+00:00:23.870 --> 00:00:26.050
+and a question box for leadership.
+
+00:00:26.050 --> 00:00:29.325
+Three pieces: a launcher, a small server
+
+00:00:29.325 --> 00:00:32.272
+on this computer, and the web page.
+
+00:00:32.272 --> 00:00:35.930
+Double-click the launcher,
+and it starts the server,
+
+00:00:35.930 --> 00:00:38.814
+which hands your browser a one-time link.
+
+00:00:39.583 --> 00:00:40.000
+The server listens on loopback
+only, and keeps hoists,
