@@ -77,9 +77,10 @@
 [data-brand=scope] .badge.red{color:var(--err);border-color:currentColor;background:color-mix(in srgb,var(--err) 14%,transparent)}
 [data-brand=scope] .badges{gap:6px}
 [data-brand=scope] .links a{color:var(--scope-accent)}
-/* Demo: the card's one primary action, in the Fleet primary button style (fleet.css .fl-btn--primary: accent fill, ink text,
-   32 px, 6 px radius) with a play glyph, as PacketRat's "Analyze inbox" pairs an icon with its label. */
-[data-brand=scope] .btn.demo{height:32px;padding:0 14px 0 12px;border-radius:6px;border:1px solid transparent;background:var(--scope-accent);color:var(--scope-accent-ink);font-size:13px;font-weight:600;font-family:inherit;letter-spacing:.01em;gap:7px}
+/* Demo: the card's one primary action. Fleet primary button shape (32 px, 6 px radius, icon plus label) filled with the
+   theme's text colour (ivory on Night watch, navy on Chart room) and lettered in the field colour, so it reads on every card
+   without leaning on the accent. */
+[data-brand=scope] .btn.demo{height:32px;padding:0 14px 0 12px;border-radius:6px;border:1px solid transparent;background:var(--text);color:var(--bg);font-size:13px;font-weight:600;font-family:inherit;letter-spacing:.01em;gap:7px}
 [data-brand=scope] .btn.demo::before{content:"";width:0;height:0;border-style:solid;border-width:5px 0 5px 8px;border-color:transparent transparent transparent currentColor}
 [data-brand=scope] .btn.demo:hover{filter:brightness(1.1)}
 [data-brand=scope] .btn.demo:focus-visible{outline:2px solid var(--scope-brass);outline-offset:2px}
