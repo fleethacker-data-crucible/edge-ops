@@ -17,5 +17,6 @@
     'phoenix-lai-client' = @{ Start = 8790;  Size = 9;  Policy = 'multi' }
     'phoenix-lai-dev'    = @{ Start = 8799;  Size = 1;  Policy = 'restart' }
     'semaphore'          = @{ Start = 8800;  Size = 3;  Policy = 'reuse' }
+    'periscope'          = @{ Start = 8803;  Size = 3;  Policy = 'reuse' }
     'talkforge'          = @{ Start = 25000; Size = 10; Policy = 'reuse' }
 }

@@ -2,7 +2,8 @@
    Each theme is one file in assets/themes/<id>.css that sets tokens on :root[data-theme=<id>].
    Switching theme = setting that one attribute; this script does it and remembers the choice.
    To add a theme: add its CSS file, link it in the pages, and add one entry to THEMES below.
-   "System" (the default) follows prefers-color-scheme and DEFAULTS. */
+   Fleet Night watch is the default (SCOPE's dark). "System" follows prefers-color-scheme and DEFAULTS:
+   Night watch when the OS is dark, Phoenix light when it is light. The picker still lists every theme. */
 (function () {
   'use strict';
   var THEMES = [
@@ -11,15 +12,16 @@
     { id: 'fleet-night-watch', label: 'Fleet Night watch', scheme: 'dark' },
     { id: 'fleet-chart-room', label: 'Fleet Chart room', scheme: 'light' }
   ];
-  var DEFAULTS = { dark: 'phoenix-dark', light: 'phoenix-light' };
+  var DEFAULTS = { dark: 'fleet-night-watch', light: 'phoenix-light' };
+  var DEFAULT_PREF = 'fleet-night-watch';
   var KEY = 'edge-ops-theme', root = document.documentElement;
   var mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: light)') : null;
 
   function find(id) { for (var i = 0; i < THEMES.length; i++) { if (THEMES[i].id === id) return THEMES[i]; } return null; }
   // Only 'system' or a registered theme id counts; anything else (a removed or renamed theme) falls back to 'system'.
   function valid(p) { return p === 'system' || !!find(p); }
-  function load() { try { var p = localStorage.getItem(KEY); return valid(p) ? p : 'system'; } catch (e) { return 'system'; } }
-  function save(p) { try { if (p === 'system') localStorage.removeItem(KEY); else localStorage.setItem(KEY, p); } catch (e) {} }
+  function load() { try { var p = localStorage.getItem(KEY); return valid(p) ? p : DEFAULT_PREF; } catch (e) { return DEFAULT_PREF; } }
+  function save(p) { try { if (p === DEFAULT_PREF) localStorage.removeItem(KEY); else localStorage.setItem(KEY, p); } catch (e) {} }
   function resolve(p) { return (p !== 'system' && find(p)) || find(DEFAULTS[mq && mq.matches ? 'light' : 'dark']) || THEMES[0]; }
   function apply(p) {
     var t = resolve(p);

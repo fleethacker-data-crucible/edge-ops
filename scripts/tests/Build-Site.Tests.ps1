@@ -148,3 +148,35 @@ Describe 'catalog.json functional groups (hub grouping, one source of truth)' {
         ($Fallback | ConvertTo-Json -Depth 10 -Compress) | Should -Be ($Cat | ConvertTo-Json -Depth 10 -Compress)
     }
 }
+
+Describe 'Build-Site.ps1 offline catalog fallback' {
+    BeforeAll {
+        Set-StrictMode -Version 2
+        $sync = [pscustomobject]@{
+            id = 'sync'; name = 'Sync'; category = 'support'; group = 'support'; summary = 'Test entry.'
+            status = 'sandbox'; repo = 'https://example.invalid/sync'; requirements = [pscustomobject]@{}
+            demoVideo = 'https://example.invalid/commissioning/sync.mp4'
+            demoPage = 'https://example.invalid/commissioning/sync.html'
+        }
+        $script:Root4 = New-TestRoot @($sync)
+        & $BuildScript -Root $Root4 -OutDir '_site' | Out-Null
+        $js = Get-Content -Raw (Join-Path $Root4 'assets\catalog-data.js')
+        $script:Fb4 = ($js -replace '(?s)^.*?window\.EDGE_OPS_CATALOG\s*=\s*', '' -replace ';\s*$', '') | ConvertFrom-Json
+        $script:Cat4 = Get-Content -Raw (Join-Path $Root4 'catalog.json') | ConvertFrom-Json
+        $script:SiteJs = Get-Content -Raw (Join-Path $Root4 '_site\assets\catalog-data.js')
+        $script:SrcJs = $js
+    }
+    AfterAll {
+        Set-StrictMode -Off
+        if ($Root4 -and (Test-Path $Root4)) { Remove-Item $Root4 -Recurse -Force }
+    }
+    It 'rewrites assets/catalog-data.js from catalog.json, including demo links' {
+        ($Fb4 | ConvertTo-Json -Depth 10 -Compress) | Should -Be ($Cat4 | ConvertTo-Json -Depth 10 -Compress)
+        $tool = @($Fb4.tools) | Where-Object { $_.id -eq 'sync' }
+        $tool.demoVideo | Should -Be 'https://example.invalid/commissioning/sync.mp4'
+        $tool.demoPage | Should -Be 'https://example.invalid/commissioning/sync.html'
+    }
+    It 'ships that same fallback in _site' {
+        $SiteJs | Should -Be $SrcJs
+    }
+}

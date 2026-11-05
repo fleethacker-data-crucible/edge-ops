@@ -199,7 +199,7 @@ try { ... } finally { Exit-FleetLock $l | Out-Null }
 - **Errors:** an API error stops the run; the remaining branches wait for the next run.
 
 ## Regenerate the catalog fallback (PowerShell 5.1)
+`scripts/Build-Site.ps1` rewrites `assets/catalog-data.js` from `catalog.json` (no BOM) and copies that same file into `_site/`. Run:
 ```powershell
-$json = Get-Content .\catalog.json -Raw
-Set-Content .\assets\catalog-data.js ("window.EDGE_OPS_CATALOG = " + $json + ";") -Encoding UTF8
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Build-Site.ps1
 ```

@@ -24,6 +24,7 @@ Each tool owns **one small contiguous block** that starts at its default. It mov
 | Phoenix LAI client | 8790-8798 | multi | - | several clients may run at once |
 | Phoenix LAI dev e2e | 8799 (1 port) | restart | - | test fixture |
 | Semaphore | 8800-8802 | reuse | - | moved out of 8774-8776, which overlapped Eight-Bells, Scrimshaw and Fairlead; 8800 and up was unused |
+| Periscope (local catalog host) | **8803-8805** | reuse | `Launch-Periscope.bat -Port <n>` | serves this repo's site on 127.0.0.1; walks only this block. 8803 is the first free port after Semaphore |
 | TalkForge static server | 25000-25009 | reuse | `serve-windows.ps1 -Port <n>` | was 25000 up to 65535 |
 | Test Chrome debug ports | 9300-9399 (reserved) | - | - | `Start-IsolatedChrome` ([tools/test-harness](tools/test-harness/)); tools must not default here |
 | CI-only test ports | 18000-18999 | - | - | e.g. Shellback CI uses 18765 |
