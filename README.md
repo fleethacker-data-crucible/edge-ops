@@ -48,6 +48,7 @@ This is the **hub** for the `fleethacker-data-crucible` utility suite. Every too
 
 - **Browser-only:** HTML/JS that runs from `file://` or a tiny static server.
 - **PowerShell host + browser UI:** a PS 5.1 `HttpListener`/`TcpListener` on loopback serving a local web UI.
+- **Security:** credential and secret handling on your own workstation, served on loopback like the PowerShell host tools.
 - **Support repo:** no code or UI to run (for example a sandbox another tool writes to).
 - **GPU or build machine:** needs installs (for example Python), so it runs off the workstation, not on app-whitelisted Windows. No tool is in this category at the moment.
 - **Data & AI:** heavier tools. Some compile bundled C# through the built-in .NET Framework at run time; some app-control policies block this.

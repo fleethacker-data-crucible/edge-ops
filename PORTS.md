@@ -19,7 +19,7 @@ Each tool owns **one small contiguous block** that starts at its default. It mov
 | Eight-Bells | 8774 (1 port) | reuse | - | was the first port of the unassigned "New tool A" block |
 | Scrimshaw | 8775 (1 port) | reuse | - | second port of the old "New tool A" block |
 | Fairlead (OpenAI-compatible `/v1`) | **8776** (1 port, fixed) | reuse | - | every Fleet app defaults to `127.0.0.1:8776`, so it never moves |
-| Windlass (OpenAI-compatible `/v1`) | **8777-8779** | exclusive | `Windlass.bat serve --port <n>` | holds a long model load and generation; was the "New tool B" block |
+| Windlass (OpenAI-compatible `/v1`) | **8777-8779** | exclusive | `Launch-Windlass.bat serve --port <n>` | holds a long model load and generation; was the "New tool B" block |
 | Phoenix LAI server UI | **8780-8789** | exclusive | - | holds the GPU lease; was 8765-8789 |
 | Phoenix LAI client | 8790-8798 | multi | - | several clients may run at once |
 | Phoenix LAI dev e2e | 8799 (1 port) | restart | - | test fixture |
@@ -28,6 +28,8 @@ Each tool owns **one small contiguous block** that starts at its default. It mov
 | TalkForge static server | 25000-25009 | reuse | `serve-windows.ps1 -Port <n>` | was 25000 up to 65535 |
 | Test Chrome debug ports | 9300-9399 (reserved) | - | - | `Start-IsolatedChrome` ([tools/test-harness](tools/test-harness/)); tools must not default here |
 | CI-only test ports | 18000-18999 | - | - | e.g. Shellback CI uses 18765 |
+
+**Unregistered defaults.** Halyard is not in the table yet. It currently defaults to 8773 with a free-port fallback (Halyard `docs/OPERATIONS.md`; `catalog.json` says `defaultPort` 8773), which sits inside PacketRat's exclusive 8771-8773 block. It needs its own block here and a matching change in the Halyard repo; do not add it to the table or `FleetPorts.psd1` until that block is agreed.
 
 ## Self-detection and policies
 
