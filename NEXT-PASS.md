@@ -22,6 +22,7 @@ The repo itself is tidy: `catalog.json` is valid and matches `assets/catalog-dat
   - on start it force-kills any process matching `*server.ps1*` (lines 171-176), contrary to `CONVENTIONS.md:28`
 - [ ] **Keystone override:** the one at `PORTS.md:11` (`-NoBrowser 8770`) doesn't use the standard `-Port <n>` switch (`CONVENTIONS.md:24`).
 - [ ] **Phoenix `"network": false` (`catalog.json:12`) is wrong.** The client can call any OpenAI provider on the LAN or the internet.
+- [ ] **Halyard's port is unregistered and collides with PacketRat.** Halyard defaults to 8773 with a free-port fallback (Halyard `docs/OPERATIONS.md`, `catalog.json` `defaultPort`), inside PacketRat's exclusive 8771-8773 block (`PORTS.md`). Give it its own block in `PORTS.md` and `FleetPorts.psd1`, then move its default in the Halyard repo.
 
 ## 3. Workflows and scripts
 
