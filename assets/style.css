@@ -23,3 +23,9 @@ main:focus{outline:none}
    gives the edge on light themes (>=14.6:1) and the brass ring on dark themes (>=6.2:1), so both clear 3:1 non-text. */
 .card h3 .emblem{flex:none;width:32px;height:32px}
 .tool-title{display:flex;align-items:center;gap:.75rem}.tool-title .emblem{flex:none;width:48px;height:48px}
+/* SCOPE skin (assets/brand-scope.js sets <html data-brand="scope">): wordmark, emblem and expansion line in the header.
+   Tokens only; the colours come from the theme the skin selects. */
+[data-brand=scope] header h1{display:flex;align-items:center;gap:1rem;margin:0 0 .25rem;font-size:2.1rem;letter-spacing:.2em}
+[data-brand=scope] header h1 .emblem{flex:none;width:52px;height:52px}
+[data-brand=scope] .scope-expansion{margin:0 0 .25rem;font-size:.95rem;letter-spacing:.06em;color:var(--text)}
+[data-brand=scope] .scope-expansion b{color:var(--brand)}
