@@ -1,0 +1,43 @@
+WEBVTT
+
+00:00:00.250 --> 00:00:02.527
+Training videos leak.
+
+00:00:02.547 --> 00:00:06.418
+A customer's email, a phone number,
+
+00:00:06.438 --> 00:00:09.308
+an API key left on screen.
+
+00:00:09.328 --> 00:00:15.060
+Capstan is the screen recorder
+and editor that hides
+
+00:00:15.080 --> 00:00:19.152
+them before the video leaves your PC.
+
+00:00:19.172 --> 00:00:21.489
+Record a tab, cut it,
+
+00:00:21.509 --> 00:00:25.496
+blur it, caption it, export the MP4.
+
+00:00:25.516 --> 00:00:28.031
+No installer, no cloud.
+
+00:00:28.281 --> 00:00:30.793
+Here is how Capstan fits together.
+
+00:00:30.813 --> 00:00:34.281
+A PowerShell launcher serves
+the editor on localhost,
+
+00:00:34.301 --> 00:00:37.130
+and the editor runs in
+your browser window.
+
+00:00:37.592 --> 00:00:39.544
+Inside, four stages:
+
+00:00:39.564 --> 00:00:40.000
+record, edit, redact and caption, export.

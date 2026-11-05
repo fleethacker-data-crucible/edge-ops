@@ -1,0 +1,47 @@
+<section id="constraint" data-transition="fade" style="background:#F3EEE3;color:#14213D;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<p style="font-size:24px;letter-spacing:4px;text-transform:uppercase;color:#75601F;font-weight:600">Design for Fleet conditions · Rule 9</p>
+<h2 style="font-family:'Exo 2', Arial, sans-serif;font-size:60px;font-weight:700;line-height:1.1">We build for the Sailor at 0200 on a locked-down PC</h2>
+<div style="display:flex;flex-direction:row;gap:40px">
+<div style="flex:1;display:flex;flex-direction:column;gap:20px">
+<h3 style="font-family:'Exo 2', Arial, sans-serif;font-size:30px;font-weight:600;color:#75601F">What the workstation allows</h3>
+<div style="display:flex;flex-direction:row;gap:20px;align-items:center;background:#FBF9F3;padding:20px 28px;border-radius:14px;border:1px solid #DCD4C2">
+<x-icon name="Lock" style="width:40px;height:40px;color:#14213D"></x-icon>
+<p style="font-size:26px;line-height:1.35">Standard user. No admin rights, no installers, no package managers.</p>
+</div>
+<div style="display:flex;flex-direction:row;gap:20px;align-items:center;background:#FBF9F3;padding:20px 28px;border-radius:14px;border:1px solid #DCD4C2">
+<x-icon name="Warning" style="width:40px;height:40px;color:#14213D"></x-icon>
+<p style="font-size:26px;line-height:1.35">Application control. No Node, Python, git.exe, PowerShell 7 or prebuilt DLLs.</p>
+</div>
+<div style="display:flex;flex-direction:row;gap:20px;align-items:center;background:#FBF9F3;padding:20px 28px;border-radius:14px;border:1px solid #DCD4C2">
+<x-icon name="Cloud" style="width:40px;height:40px;color:#14213D"></x-icon>
+<p style="font-size:26px;line-height:1.35">Connectivity that comes and goes: EMCON, DDIL, expeditionary units with no link at all.</p>
+</div>
+<div style="display:flex;flex-direction:row;gap:20px;align-items:center;background:#FBF9F3;padding:20px 28px;border-radius:14px;border:1px solid #DCD4C2">
+<x-icon name="Clock" style="width:40px;height:40px;color:#14213D"></x-icon>
+<p style="font-size:26px;line-height:1.35">What ships is Windows PowerShell 5.1, .NET Framework 4.8 and an Edge or Chrome browser. Nothing else.</p>
+</div>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:20px">
+<h3 style="font-family:'Exo 2', Arial, sans-serif;font-size:30px;font-weight:600;color:#2E6E8E">How every tool in the suite answers</h3>
+<div style="display:flex;flex-direction:row;gap:20px;align-items:center;background:#14213D;padding:20px 28px;border-radius:14px">
+<x-icon name="Play" style="width:40px;height:40px;color:#C9A24A"></x-icon>
+<p style="font-size:26px;line-height:1.35;color:#F3EEE3">One double-click on a .bat starts powershell.exe for that process only. Machine policy is never changed.</p>
+</div>
+<div style="display:flex;flex-direction:row;gap:20px;align-items:center;background:#14213D;padding:20px 28px;border-radius:14px">
+<x-icon name="Code" style="width:40px;height:40px;color:#C9A24A"></x-icon>
+<p style="font-size:26px;line-height:1.35;color:#F3EEE3">Engines ship as C# source compiled in memory at start. No DLL, no NuGet, no third-party code.</p>
+</div>
+<div style="display:flex;flex-direction:row;gap:20px;align-items:center;background:#14213D;padding:20px 28px;border-radius:14px">
+<x-icon name="Home" style="width:40px;height:40px;color:#C9A24A"></x-icon>
+<p style="font-size:26px;line-height:1.35;color:#F3EEE3">The browser is the product. Each server binds to 127.0.0.1 only and checks Host and Origin on every request.</p>
+</div>
+<div style="display:flex;flex-direction:row;gap:20px;align-items:center;background:#14213D;padding:20px 28px;border-radius:14px">
+<x-icon name="Verified" style="width:40px;height:40px;color:#C9A24A"></x-icon>
+<p style="font-size:26px;line-height:1.35;color:#F3EEE3">Released as a zip with a SHA-256 beside it, verified offline. A CI gate fails any non-loopback listener or binary.</p>
+</div>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5B6677">Source: edge-ops target environment, comms TECH-STACK-BASELINE and LISTENER-EVALUATION (workstation run 25 Oct 2026)</p>
+<p style="position:absolute;right:128px;bottom:64px;font-size:24px;color:#5B6677;width:120px;text-align:right">4</p>
+<aside>This is the constraint every other team hits on day one. We have lived inside it for months. The 25 October workstation run on Windows 11 Enterprise as a standard user proved loopback servers start without a URL reservation or admin rights. Rule 9 asks teams to consider portability, limited connectivity and shipboard constraints; this slide is our answer.</aside>
+</section>

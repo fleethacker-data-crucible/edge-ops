@@ -1,0 +1,42 @@
+WEBVTT
+
+00:00:00.250 --> 00:00:02.891
+Important tasking gets buried in email.
+
+00:00:02.891 --> 00:00:06.102
+PacketRat reads the mail,
+finds what needs you,
+
+00:00:06.102 --> 00:00:10.748
+shows the reason and the source for
+every action, and sends nothing.
+
+00:00:11.548 --> 00:00:16.377
+PacketRat is for anyone whose
+important tasking gets buried in email.
+
+00:00:16.377 --> 00:00:21.287
+It turns an inbox into a short action
+queue, with the reason beside every item.
+
+00:00:21.987 --> 00:00:25.391
+Mail comes in three ways:
+exported message files,
+
+00:00:25.391 --> 00:00:27.892
+classic Outlook, or Microsoft Graph.
+
+00:00:27.892 --> 00:00:32.576
+This demo reads files. Outlook and
+Graph are built, but not verified live.
+
+00:00:33.276 --> 00:00:34.805
+Everything runs on this PC.
+
+00:00:34.805 --> 00:00:39.967
+A launcher starts a PowerShell service
+on loopback, a browser shows the queue,
+
+00:00:39.967 --> 00:00:40.000
+and your rules, dismissals and
+counts live in a local data folder.

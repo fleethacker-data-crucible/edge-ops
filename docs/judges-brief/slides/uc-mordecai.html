@@ -1,0 +1,29 @@
+<section id="uc-mordecai" data-transition="fade" style="background:#0E1A2B;color:#F3EEE3;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:24px">
+<p style="font-size:24px;letter-spacing:4px;text-transform:uppercase;color:#C9A24A;font-weight:600">Challenge 16 · MORDECAI, adult supervision for shipboard AI</p>
+<h2 style="font-family:'Exo 2', Arial, sans-serif;font-size:56px;font-weight:700;line-height:1.1">Two agents, one rudder: the Warden arbitrates before anything moves</h2>
+<div style="display:flex;flex-direction:row;gap:20px;align-items:center">
+<div style="flex:2;display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;flex-direction:column;gap:6px;background:#162640;padding:20px 24px;border-radius:14px;border-left:6px solid #4C9CC2"><p style="font-size:24px;font-weight:600;color:#4C9CC2">Navigation agent</p><p style="font-size:24px;line-height:1.3">Intent: come right to 040 to open the CPA on a crossing contact</p></div>
+<div style="display:flex;flex-direction:column;gap:6px;background:#162640;padding:20px 24px;border-radius:14px;border-left:6px solid #4C9CC2"><p style="font-size:24px;font-weight:600;color:#4C9CC2">Damage-control agent</p><p style="font-size:24px;line-height:1.3">Intent: hold course and speed while flooding aft is isolated</p></div>
+</div>
+<x-shape kind="arrow-right" style="width:56px;height:28px;background:#C9A24A"></x-shape>
+<div style="flex:3;display:flex;flex-direction:column;gap:10px;background:#C9A24A;padding:24px 28px;border-radius:18px;color:#0E1A2B">
+<p style="font-family:'Exo 2', Arial, sans-serif;font-size:32px;font-weight:700">Bridge Warden</p>
+<p style="font-size:24px;line-height:1.35"><b>Same tick:</b> the conflict detector flags both intents on one resource, the rudder.</p>
+<p style="font-size:24px;line-height:1.35"><b>Authority matrix:</b> which agent may command that actuator in this condition, and at what autonomy level.</p>
+<p style="font-size:24px;line-height:1.35"><b>Resolve or escalate:</b> policy decides the safe default; anything above its authority goes to the OOD with a two-minute decision window.</p>
+<p style="font-size:24px;line-height:1.35"><b>Log:</b> both intents, the decision and who made it, in the hash-chained ledger. Reversible.</p>
+</div>
+<x-shape kind="arrow-right" style="width:56px;height:28px;background:#C9A24A"></x-shape>
+<div style="flex:1;display:flex;flex-direction:column;gap:8px;align-items:center;background:#162640;padding:24px 16px;border-radius:14px;border:2px solid #C9A24A"><x-icon name="Settings" style="width:56px;height:56px;color:#C9A24A"></x-icon><p style="font-size:24px;font-weight:600;text-align:center">One actuator</p><p style="font-size:24px;line-height:1.3;text-align:center;color:#C9D3DF">receives one checked order, or none</p></div>
+</div>
+<div style="display:flex;flex-direction:row;gap:16px">
+<div style="flex:1;display:flex;flex-direction:column;gap:6px;background:#162640;padding:18px 22px;border-radius:14px"><p style="font-size:24px;font-weight:600;color:#C9A24A">May do</p><p style="font-size:24px;line-height:1.3;color:#C9D3DF">Scoped reads and tools per agent; recommend within its autonomy level</p></div>
+<div style="flex:1;display:flex;flex-direction:column;gap:6px;background:#162640;padding:18px 22px;border-radius:14px"><p style="font-size:24px;font-weight:600;color:#C9A24A">Never do</p><p style="font-size:24px;line-height:1.3;color:#C9D3DF">Touch an actuator directly; exceed action limits; act while quarantined</p></div>
+<div style="flex:1;display:flex;flex-direction:column;gap:6px;background:#162640;padding:18px 22px;border-radius:14px"><p style="font-size:24px;font-weight:600;color:#C9A24A">Needs approval</p><p style="font-size:24px;line-height:1.3;color:#C9D3DF">Escalated conflicts; a periodic system check every two minutes, two misses and it SAFE-STOPs itself</p></div>
+<div style="flex:1;display:flex;flex-direction:column;gap:6px;background:#162640;padding:18px 22px;border-radius:14px"><p style="font-size:24px;font-weight:600;color:#C9A24A">How to stop</p><p style="font-size:24px;line-height:1.3;color:#C9D3DF">Pause or constrain one agent; hold SAFE-STOP two seconds to stop them all</p></div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#8A97A8">Engine and the four controls are prior work. The shared-actuator scenario is staged at the event on the existing simulator (contact, overheat, storm, rogue injects). Quarterdeck, the Warden as a shared library for any Fleet app, is planned.</p>
+<p style="position:absolute;right:128px;bottom:64px;font-size:24px;color:#8A97A8;width:120px;text-align:right">9</p>
+<aside>MORDECAI and challenge 9 are the same problem from two angles: a dozen independently built AI systems sharing physical resources with nobody arbitrating. Bridge Warden already treats every actuator as a resource and every order as an intent, so the contradictory-order case is a conflict-detector scenario, not a new product. The authority card on this slide is the Rule 6 statement judges look for.</aside>
+</section>

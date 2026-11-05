@@ -1,0 +1,49 @@
+WEBVTT
+
+00:00:00.250 --> 00:00:01.513
+Every backlog drifts.
+
+00:00:01.533 --> 00:00:04.412
+Stories without acceptance criteria.
+
+00:00:04.432 --> 00:00:06.700
+Features without a parent.
+
+00:00:06.720 --> 00:00:08.271
+Sizes nobody agreed.
+
+00:00:08.291 --> 00:00:11.170
+Halyard is the product owner's mate.
+
+00:00:11.190 --> 00:00:14.920
+It reads the backlog, finds the drift,
+drafts the fix,
+
+00:00:14.940 --> 00:00:17.490
+and waits for a person to approve it.
+
+00:00:17.510 --> 00:00:19.404
+Nothing moves without your say.
+
+00:00:19.954 --> 00:00:22.277
+Here is how Halyard fits together.
+
+00:00:22.297 --> 00:00:24.502
+Everything runs on one machine.
+
+00:00:24.522 --> 00:00:27.378
+A PowerShell launcher compiles the engine
+in memory,
+
+00:00:27.398 --> 00:00:29.666
+and the browser talks to it on localhost.
+
+00:00:30.366 --> 00:00:35.832
+Inside the engine: review,
+intelligence for drafting and sizing,
+
+00:00:35.852 --> 00:00:38.490
+planning, and a proposal store.
+
+00:00:38.510 --> 00:00:40.000
+Every change starts as a proposal.

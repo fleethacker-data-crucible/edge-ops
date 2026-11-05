@@ -1,0 +1,44 @@
+WEBVTT
+
+00:00:00.250 --> 00:00:04.247
+Most people who need to change a project
+were never taught Git.
+
+00:00:04.247 --> 00:00:09.503
+Gangplank puts them on a branch of their
+own, in a browser, checks what they save,
+
+00:00:09.503 --> 00:00:12.748
+and hands the work to the team as a
+review request.
+
+00:00:12.748 --> 00:00:14.652
+The shared branch never moves.
+
+00:00:14.652 --> 00:00:16.234
+Gangplank runs on your PC.
+
+00:00:16.234 --> 00:00:21.795
+A PowerShell server listens on localhost,
+your browser is the interface,
+
+00:00:21.795 --> 00:00:25.398
+and nothing like git,
+Node or Python is needed.
+
+00:00:26.098 --> 00:00:30.855
+Inside the server: Smart Save,
+the Sentinel secret scan,
+
+00:00:30.855 --> 00:00:32.325
+and an audit log.
+
+00:00:32.325 --> 00:00:35.083
+You edit files in an ordinary folder.
+
+00:00:35.783 --> 00:00:39.838
+Out to GitHub or GitLab over HTTPS,
+on a branch of your own.
+
+00:00:39.838 --> 00:00:40.000
+AI help goes through Fairlead only.

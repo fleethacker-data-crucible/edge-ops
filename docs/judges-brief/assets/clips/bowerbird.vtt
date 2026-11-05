@@ -1,0 +1,43 @@
+WEBVTT
+
+00:00:00.000 --> 00:00:02.638
+Screenshots pile up as Screenshot,
+
+00:00:02.638 --> 00:00:06.363
+date, time, and nobody can
+find the one they need.
+
+00:00:06.363 --> 00:00:08.384
+Bowerbird is the file mate.
+
+00:00:08.384 --> 00:00:13.923
+It reads them, proposes honest names,
+and moves nothing until you approve.
+
+00:00:13.923 --> 00:00:15.258
+Bowerbird runs on one PC.
+
+00:00:15.258 --> 00:00:21.040
+A PowerShell launcher starts the engine,
+and your browser talks to it on localhost.
+
+00:00:21.740 --> 00:00:26.930
+The engine indexes and searches, proposes
+renames, and organizes by rules.
+
+00:00:26.930 --> 00:00:29.218
+The index is encrypted on disk.
+
+00:00:29.585 --> 00:00:31.695
+Model calls go through Fairlead,
+
+00:00:31.695 --> 00:00:34.925
+with Bowerbird's own key from
+Credential Manager.
+
+00:00:34.925 --> 00:00:37.548
+The OpenAI key stays in Lazarette.
+
+00:00:37.548 --> 00:00:40.000
+Semaphore export and SnapShackle
+names exist in the code,

@@ -1,0 +1,39 @@
+WEBVTT
+
+00:00:00.250 --> 00:00:05.863
+A trainer has to turn a procedure into
+a graded course the LMS can track,
+
+00:00:05.863 --> 00:00:09.862
+and know the package works
+before anyone uploads it.
+
+00:00:09.862 --> 00:00:13.715
+Scrimshaw builds the course,
+drafts the first quiz
+
+00:00:13.715 --> 00:00:17.414
+through Fairlead,
+and publishes a SCORM package.
+
+00:00:17.414 --> 00:00:22.831
+The procedure and the learner are
+synthetic, and the LMS is a stand-in.
+
+00:00:23.081 --> 00:00:24.912
+It all runs on this one computer.
+
+00:00:24.912 --> 00:00:28.988
+Launch dot bat starts a small
+PowerShell server on loopback,
+
+00:00:28.988 --> 00:00:32.112
+and the editor and player
+run in your browser.
+
+00:00:32.812 --> 00:00:38.630
+Courses autosave in browser storage,
+with a dot scrim file for backup.
+
+00:00:39.130 --> 00:00:40.000
+In: slides you build, PowerPoint,

@@ -1,0 +1,44 @@
+WEBVTT
+
+00:00:00.000 --> 00:00:05.094
+The relieving watchstander needs
+to know what remains unresolved,
+
+00:00:05.094 --> 00:00:07.132
+and where the evidence is.
+
+00:00:07.132 --> 00:00:10.319
+Eight Bells is a focused
+watch-turnover tool:
+
+00:00:10.319 --> 00:00:13.789
+it reads the log, flags
+what needs a second look,
+
+00:00:13.789 --> 00:00:18.179
+and drafts the turnover with a
+source line behind every point.
+
+00:00:18.179 --> 00:00:19.927
+Today's log is synthetic.
+
+00:00:20.177 --> 00:00:21.912
+Here is how it works.
+
+00:00:21.912 --> 00:00:26.298
+Everything runs on this one computer:
+the page in your browser,
+
+00:00:26.298 --> 00:00:31.242
+a small PowerShell server on loopback,
+and a launcher you double-click.
+
+00:00:31.242 --> 00:00:32.869
+Closing the tab stops the server.
+
+00:00:33.569 --> 00:00:38.041
+Records live in an encrypted
+store for your Windows account,
+
+00:00:38.041 --> 00:00:40.000
+with a hash-chained audit trail.

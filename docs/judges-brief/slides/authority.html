@@ -1,0 +1,21 @@
+<section id="authority" data-transition="fade" style="background:#0E1A2B;color:#F3EEE3;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:24px">
+<p style="font-size:24px;letter-spacing:4px;text-transform:uppercase;color:#C9A24A;font-weight:600">Preserve human authority · Rule 6 · Naval Agentic AI category</p>
+<h2 style="font-family:'Exo 2', Arial, sans-serif;font-size:56px;font-weight:700;line-height:1.1">The same four questions are answered in every tool that uses a model</h2>
+<table style="font-size:24px;color:#F3EEE3;border:1px solid #2A4066">
+<tr style="background:#1E3356"><th style="width:16%;text-align:left">Tool</th><th style="width:24%;text-align:left">Where a person approves</th><th style="width:22%;text-align:left">What it never does</th><th style="width:20%;text-align:left">How it is watched</th><th style="width:18%;text-align:left">How it stops</th></tr>
+<tr><td>Bridge Warden</td><td>Escalated conflicts, two-minute window; system check every two minutes</td><td>Let an agent touch an actuator or exceed its action limits</td><td>Warden Control, the Why? panel, hash-chained ledger</td><td>Hold SAFE-STOP two seconds; pause or constrain one agent</td></tr>
+<tr style="background:#162640"><td>PacketRat</td><td>Archive, move and rule changes need --yes; replies are drafts</td><td>Send or delete mail; run an AI proposal by itself</td><td>Queue, stats, hash-chained action log with verify</td><td>Runs only when started; closing the tab stops it</td></tr>
+<tr><td>Halyard</td><td>Writes only what you approve, only to the sandbox; gated promote</td><td>Touch a real backlog without approval</td><td>Journal of every write</td><td>Operator write lease; rollback from the journal</td></tr>
+<tr style="background:#162640"><td>Bowerbird</td><td>Every rename or move is proposed, then confirmed in the page</td><td>Move a file unasked</td><td>Durable move journal with source-hash checks</td><td>Close the tab</td></tr>
+<tr><td>Eight Bells</td><td>Reviewer dispositions; a two-person rule on lessons learned</td><td>Replace the authoritative record; trust AI output unreviewed</td><td>Hash-chained audit trail with a verify route</td><td>End session in the sidebar</td></tr>
+<tr style="background:#162640"><td>Fairlead</td><td>A provider off the machine only when the user allows it; a local-only route for files</td><td>Send local context to the cloud without consent</td><td>Durable request log: who, what, which model; per-key budgets</td><td>Quit from the tray, with confirmation</td></tr>
+</table>
+<div style="display:flex;flex-direction:row;gap:24px">
+<p style="flex:1;font-size:24px;line-height:1.35;padding:18px 24px;background:#162640;border-radius:12px;color:#C9D3DF">Each tool publishes its own human-authority page; PacketRat also answers it from the command line and the API, and a test fails if the page and the code drift apart.</p>
+<p style="flex:1;font-size:24px;line-height:1.35;padding:18px 24px;background:#162640;border-radius:12px;color:#C9D3DF">Keys never pass through a page or a command line. Lazarette holds them; Fairlead reads them by item name; each app sees only its own.</p>
+<p style="flex:1;font-size:24px;line-height:1.35;padding:18px 24px;background:#C9A24A;border-radius:12px;color:#0E1A2B"><b>Planned:</b> Quarterdeck lifts Bridge Warden’s authority card into a shared library, so every agentic app in the suite answers these four questions the same way.</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#8A97A8">Source: each repo’s HUMAN-AUTHORITY, ACTION-LOG or README page; Fleet Relationship Map</p>
+<p style="position:absolute;right:128px;bottom:64px;font-size:24px;color:#8A97A8;width:120px;text-align:right">13</p>
+<aside>The Naval Agentic AI category requires a team to define what the agent may do, may never do, needs approval for, how it is logged and how it is stopped. This table is that definition for the six tools judges will see in the demos. The logs are tamper-evident, not tamper-proof, and the docs say so; do not claim more than the code proves.</aside>
+</section>

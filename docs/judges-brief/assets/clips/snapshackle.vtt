@@ -1,0 +1,42 @@
+WEBVTT
+
+00:00:00.250 --> 00:00:03.524
+A support engineer
+has to share a screenshot of a ticket,
+
+00:00:03.524 --> 00:00:06.799
+and it shows an email,
+a phone number and a deploy token.
+
+00:00:06.799 --> 00:00:11.713
+SnapShackle covers them before the picture
+leaves, and keeps the evidence.
+
+00:00:11.713 --> 00:00:15.642
+Everything on screen is invented,
+and this is an expanding prototype.
+
+00:00:15.892 --> 00:00:17.592
+Here is how it works.
+
+00:00:17.592 --> 00:00:22.461
+It all runs on this one computer:
+double-click the launcher and a PowerShell
+
+00:00:22.461 --> 00:00:25.728
+host on loopback
+serves the studio to your browser.
+
+00:00:26.429 --> 00:00:29.720
+Captures and settings
+stay in one local folder:
+
+00:00:29.720 --> 00:00:32.240
+a PNG, and a small record beside it.
+
+00:00:32.940 --> 00:00:35.636
+What goes in is pixels from this PC:
+
+00:00:35.636 --> 00:00:40.000
+a region, a window or a screen,
+or an image you open or drop in.

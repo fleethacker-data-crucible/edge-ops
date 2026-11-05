@@ -49,6 +49,8 @@ Write-Utf8 (Join-Path $Root 'assets/catalog-data.js') $fallbackJs
 Copy-Item (Join-Path $Root 'index.html') $out
 Copy-Item (Join-Path $Root 'catalog.json') $out
 Copy-Item (Join-Path $Root 'assets') (Join-Path $out 'assets') -Recurse
+# The judges brief (docs/judges-brief) is served at /judges-brief/ on the Pages site.
+Copy-Item (Join-Path $Root 'docs/judges-brief') (Join-Path $out 'judges-brief') -Recurse
 Remove-Item (Join-Path $out 'assets/themes/README.md') -ErrorAction SilentlyContinue  # docs, not site content
 Remove-Item (Join-Path $out 'assets/emblems/README.md') -ErrorAction SilentlyContinue  # docs, not site content
 # UI kit runtime only (no demo/dev files); pages reference it relatively as ui-kit/ or ../ui-kit/.

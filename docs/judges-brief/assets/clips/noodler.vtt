@@ -1,0 +1,43 @@
+WEBVTT
+
+00:00:00.250 --> 00:00:03.278
+A fuel log with a million and a half
+
+00:00:03.298 --> 00:00:06.326
+rows will not open in a spreadsheet.
+
+00:00:06.346 --> 00:00:08.748
+Data Noodler is for that job.
+
+00:00:08.768 --> 00:00:12.476
+It reads big flat files
+on a locked-down PC,
+
+00:00:12.496 --> 00:00:16.288
+answers questions in
+plain SQL, and turns the
+
+00:00:16.308 --> 00:00:20.440
+answer into a dashboard,
+all on your own machine.
+
+00:00:20.460 --> 00:00:22.779
+The data today is synthetic.
+
+00:00:23.049 --> 00:00:25.460
+Here is how it fits together.
+
+00:00:25.480 --> 00:00:27.994
+You double-click Data_Noodler. bat.
+
+00:00:28.014 --> 00:00:31.694
+That starts a small
+PowerShell server that listens
+
+00:00:31.714 --> 00:00:35.543
+on localhost only,
+and your browser shows the pages.
+
+00:00:36.263 --> 00:00:40.000
+Behind it is the data engine, written
+in C and compiled in memory at start.

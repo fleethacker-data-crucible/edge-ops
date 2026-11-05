@@ -1,0 +1,40 @@
+WEBVTT
+
+00:00:00.250 --> 00:00:04.716
+Some questions deserve a model far
+bigger than this computer can hold.
+
+00:00:05.184 --> 00:00:08.213
+A seventy billion parameter model is over
+
+00:00:08.253 --> 00:00:11.322
+forty gigabytes before it answers a word.
+
+00:00:11.894 --> 00:00:15.145
+Windlass hauls it through memory one layer
+
+00:00:15.185 --> 00:00:18.319
+at a time, so an ordinary PC can run it.
+
+00:00:18.803 --> 00:00:23.317
+It is slow on purpose,
+and everything you see today runs live.
+
+00:00:23.889 --> 00:00:28.725
+Our demo model is a small three
+billion one, so you can watch it work.
+
+00:00:29.475 --> 00:00:31.135
+Here is how it works.
+
+00:00:31.175 --> 00:00:33.810
+Windlass reads a GGUF
+model file from your drive.
+
+00:00:33.850 --> 00:00:37.616
+It reads the header first,
+never the whole model.
+
+00:00:37.656 --> 00:00:40.000
+Everything stays on this
+one computer, on loopback.
