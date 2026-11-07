@@ -1,10 +1,10 @@
-/*! FleetOrb v0.1.0 | vanilla, no deps, classic script (works from file://). Global: FleetOrb.
-    A draggable, voice-reactive orb drawn on a 2D canvas. Canvas 2D rather than WebGL, because WebGL is often
+/*! Binnacle v0.1.0 | vanilla, no deps, classic script (works from file://). Global: Binnacle.
+    A draggable, voice-reactive orb drawn on a 2D canvas. Load binnacle.css with it. Canvas 2D rather than WebGL, because WebGL is often
     blocked or software-rendered on locked-down workstations.
 
-      var orb = FleetOrb.mount({ id: 'assistant', look: 'ring', theme: 'aurora', size: 260 });
-      FleetOrb.voice.set('speaking', 0.3, 'Turnover is ready.');   state, level 0..1 (linear RMS), optional caption
-      FleetOrb.voice.fromAudio(audioElement);                      or take state and level from real playback
+      var orb = Binnacle.mount({ id: 'assistant', look: 'ring', theme: 'aurora', size: 260 });
+      Binnacle.voice.set('speaking', 0.3, 'Turnover is ready.');   state, level 0..1 (linear RMS), optional caption
+      Binnacle.voice.fromAudio(audioElement);                      or take state and level from real playback
 
     Voice contract "fleet.voice/1": any page can drive every orb without importing this file:
       window.dispatchEvent(new CustomEvent('fleet:voice',
@@ -12,7 +12,7 @@
     See README.md for the full API. */
 (function () {
   'use strict';
-  if (window.FleetOrb) return;
+  if (window.Binnacle) return;
 
   var VERSION = '0.1.0';
   var SCHEMA = 'fleet.voice/1';
@@ -72,6 +72,7 @@
   ];
   var CALM_FRAME_MS = 33;     /* idle and approval do not need 60 fps */
   var INLINE_FRAME_MS = 50;   /* tiles in a gallery are previews */
+  var DOCK_HALF = 118;        /* half the picker's width, plus a small gap */
   var SLOW_DRAW_MS = 11;      /* average draw time that triggers a step down */
   var SLOW_GAP_MS = 45;       /* average gap between frames that triggers a step down */
 
@@ -611,38 +612,6 @@
     ctx.globalAlpha = 1;
   }
 
-  /* ---- styles ---- */
-  function injectStyles() {
-    if (document.getElementById('fleet-orb-css')) return;
-    var st = document.createElement('style');
-    st.id = 'fleet-orb-css';
-    st.textContent =
-      '.fleet-orb{position:fixed;left:0;top:0;z-index:9000;pointer-events:none;font:12px/1.3 var(--sans,"Segoe UI",system-ui,sans-serif);will-change:transform}' +
-      '.fleet-orb canvas{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}' +
-      /* Only this circle takes the mouse, so the page stays clickable around the orb. */
-      '.fleet-orb-hit{position:absolute;left:13%;top:13%;width:74%;height:74%;display:block;border-radius:50%;border:0;padding:0;margin:0;min-width:0;min-height:0;background:transparent;box-shadow:none;cursor:grab;pointer-events:auto;touch-action:none;user-select:none;-webkit-user-select:none}' +
-      '.fleet-orb-hit:hover,.fleet-orb-hit:active{background:transparent;filter:none}' +
-      '.fleet-orb-hit:focus-visible{outline:2px solid #f2ead6;outline-offset:2px;box-shadow:0 0 0 4px #060f24}' +
-      '.fleet-orb.dragging .fleet-orb-hit{cursor:grabbing}' +
-      '.fleet-orb-dock{position:absolute;left:50%;top:88%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:4px;width:max-content;max-width:300px;pointer-events:none}' +
-      '.fleet-orb.up .fleet-orb-dock{top:auto;bottom:88%;flex-direction:column-reverse}' +
-      '.fleet-orb-cap{background:#060f24;color:#f2ead6;border:1px solid #243a6a;border-radius:4px;padding:3px 8px;text-align:center}' +
-      '.fleet-orb-cap b{color:#e8c15a;font-weight:600}' +
-      '.fleet-orb-cap[hidden]{display:none}' +
-      '.fleet-orb.inline{position:relative;left:auto;top:auto;z-index:auto;will-change:auto}' +
-      '.fleet-orb.inline .fleet-orb-hit{cursor:pointer}' +
-      '.fleet-orb-pick{display:flex;flex-wrap:wrap;justify-content:center;gap:2px;max-width:224px;background:#060f24;border:1px solid #243a6a;border-radius:4px;padding:2px;visibility:hidden;opacity:0;transition:opacity .15s,visibility 0s .6s}' +
-      '.fleet-orb:hover .fleet-orb-pick,.fleet-orb:focus-within .fleet-orb-pick{visibility:visible;opacity:1;pointer-events:auto;transition:opacity .15s,visibility 0s}' +
-      '.fleet-orb.dragging .fleet-orb-pick{visibility:hidden;opacity:0}' +
-      '.fleet-orb-pick button{all:unset;box-sizing:border-box;font:inherit;color:#f2ead6;padding:3px 7px;border-radius:3px;cursor:pointer;white-space:nowrap}' +
-      '.fleet-orb-pick button:hover{background:#243a6a}' +
-      '.fleet-orb-pick button[aria-pressed=true]{background:#e8c15a;color:#1a1310}' +
-      '.fleet-orb-pick button:focus-visible{outline:2px solid #f2ead6;outline-offset:1px}' +
-      '.fleet-orb-pick button.swatch{width:20px;height:20px;padding:0;margin:3px 3px 1px;border-radius:50%;border:1px solid #f2ead6}' +
-      '.fleet-orb-pick button.swatch[aria-pressed=true]{outline:2px solid #f2ead6;outline-offset:1px}';
-    document.head.appendChild(st);
-  }
-
   /* ---- one loop for every orb on the page ---- */
   var orbs = [], looping = false;
   function loop(now) {
@@ -669,9 +638,8 @@
   /* ---- mount ---- */
   function mount(opts) {
     opts = opts || {};
-    injectStyles();
     var id = opts.id || 'assistant';
-    var key = 'fleet-orb:' + id;
+    var key = 'binnacle:' + id;
     var persist = opts.persist !== false;
     var saved = persist ? loadSaved(key) : {};
     var size = Math.round(clamp(opts.size || 260, 120, 640));
@@ -691,15 +659,16 @@
     var pos = { x: 0, y: 0 };
 
     var el = document.createElement('div');
-    el.className = 'fleet-orb' + (inline ? ' inline' : ''); el.style.width = el.style.height = size + 'px';
+    el.className = 'binnacle' + (inline ? ' inline' : ''); el.style.width = el.style.height = size + 'px';
+    if (opts.zIndex !== undefined) el.style.setProperty('--binnacle-z', String(opts.zIndex));
     var canvas = document.createElement('canvas'); canvas.setAttribute('aria-hidden', 'true');
-    var hit = document.createElement('button'); hit.type = 'button'; hit.className = 'fleet-orb-hit';
-    var dock = document.createElement('div'); dock.className = 'fleet-orb-dock';
-    var cap = document.createElement('div'); cap.className = 'fleet-orb-cap'; cap.setAttribute('role', 'status');
+    var hit = document.createElement('button'); hit.type = 'button'; hit.className = 'binnacle-hit';
+    var dock = document.createElement('div'); dock.className = 'binnacle-dock';
+    var cap = document.createElement('div'); cap.className = 'binnacle-cap'; cap.setAttribute('role', 'status');
     dock.appendChild(cap);
     var pick = null;
     if (opts.picker !== false) {
-      pick = document.createElement('div'); pick.className = 'fleet-orb-pick';
+      pick = document.createElement('div'); pick.className = 'binnacle-pick';
       pick.setAttribute('role', 'group'); pick.setAttribute('aria-label', 'Orb look');
       Object.keys(LOOKS).forEach(function (name) {
         var b = document.createElement('button'); b.type = 'button'; b.textContent = LOOKS[name].label; b.setAttribute('data-look', name);
@@ -741,7 +710,9 @@
       pos.x = w > margin * 2 ? clamp(to.x, margin, w - margin) : w / 2;
       pos.y = h > margin * 2 ? clamp(to.y, margin, h - margin) : h / 2;
       el.style.transform = 'translate3d(' + Math.round(pos.x - size / 2) + 'px,' + Math.round(pos.y - size / 2) + 'px,0)';
-      el.classList.toggle('up', pos.y + size * 0.38 + 64 > h);   /* flip the caption above the orb near the bottom */
+      el.classList.toggle('up', pos.y + size * 0.38 + 64 > h);
+      var shift = Math.min(0, w - DOCK_HALF - pos.x) + Math.max(0, DOCK_HALF - pos.x);
+      el.style.setProperty('--binnacle-shift', Math.round(shift) + 'px');   /* flip the caption above the orb near the bottom */
     }
 
     function build() {
@@ -918,7 +889,7 @@
     return api;
   }
 
-  window.FleetOrb = {
+  window.Binnacle = {
     version: VERSION, schema: SCHEMA, mount: mount, voice: voice,
     looks: Object.keys(LOOKS).map(function (k) { return { id: k, label: LOOKS[k].label }; }),
     themes: Object.keys(THEMES).map(function (k) { return { id: k, label: THEMES[k].label }; }),

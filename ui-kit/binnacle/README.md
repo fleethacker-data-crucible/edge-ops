@@ -1,15 +1,15 @@
-# FleetOrb v0.1.0
+# Binnacle v0.1.0
 
-A draggable animated orb for an AI assistant. It shows what the assistant is doing and reacts to live audio level. It is one classic script with no dependencies, and it works offline from `file://` in Chrome and Edge. Nothing loads from a CDN. It is independent of the kit, so it also runs on pages that do not use `kit.css`.
+A draggable animated orb for an AI assistant. It shows what the assistant is doing and reacts to live audio level. It is one classic script and one stylesheet with no dependencies, and it works offline from `file://` in Chrome and Edge. Nothing loads from a CDN. It is independent of the kit, so it also runs on pages that do not use `kit.css`.
 
 It draws on a 2D canvas. WebGL would allow more particles, but it is often blocked or software-rendered on locked-down workstations.
 
-![Five looks in five themes](docs/orb-themes.png)
+![Five looks in five themes](docs/themes.png)
 
-![Five looks in all five states](docs/orb-states.png)
+![Five looks in all five states](docs/states.png)
 
 ## Try it
-Open `orb-demo.html` in a browser. It shows all 25 combinations live; click one to put it on the orb. Voice is simulated and no microphone is used.
+Open `demo.html` in a browser. It shows all 25 combinations live; click one to put it on the orb. Voice is simulated and no microphone is used.
 
 ## Looks and themes
 | Looks | Themes |
@@ -20,10 +20,11 @@ Every look works in every theme. Users choose from the picker that appears when 
 
 ## Add it to a page
 ```html
-<script src="vendor/ui-kit/orb/orb.js" defer></script>
+<link rel="stylesheet" href="vendor/ui-kit/binnacle/binnacle.css">
+<script src="vendor/ui-kit/binnacle/binnacle.js" defer></script>
 <script defer>
   addEventListener('DOMContentLoaded', function () {
-    FleetOrb.mount({ id: 'assistant', name: 'Phoenix' });
+    Binnacle.mount({ id: 'assistant', name: 'Phoenix' });
   });
 </script>
 ```
@@ -41,6 +42,7 @@ Every look works in every theme. Users choose from the picker that appears when 
 | `persist` | `true` | Remember position, look and theme in `localStorage`. |
 | `inline` | `false` | Sit in the page flow as a tile, inside `parent`, with no dragging. Tiles run at 20 fps and stop while scrolled away. |
 | `parent` | `document.body` | The element to add the orb to. |
+| `zIndex` | `9000` | Stacking order. Set it below your dialogs. |
 | `quality` | `auto` | `auto`, `high`, `medium` or `low`. |
 | `reducedMotion` | System setting | `true` or `false` overrides `prefers-reduced-motion` and `[data-reduced-motion=true]`. |
 | `onActivate` | None | Called on a click or Enter that was not a drag. This is the hook for push-to-talk. |
@@ -75,16 +77,16 @@ window.dispatchEvent(new CustomEvent('fleet:voice', {
 ```
 Every field is optional. `level` is linear RMS, 0 to 1, unsmoothed; send it 30 to 60 times a second, and the orb applies its own attack and decay. `text` is the caption. Unknown states are ignored, and a state change clears the caption unless the same event gives a new one.
 
-**2. A direct call:** `FleetOrb.voice.set(state, level, text)`, or `FleetOrb.voice.setLevel(level)`.
+**2. A direct call:** `Binnacle.voice.set(state, level, text)`, or `Binnacle.voice.setLevel(level)`.
 
 **3. Real audio.** The page plays the audio and the orb measures it:
 ```js
-var stop = FleetOrb.voice.fromAudio(audioElement);   // speaking while it plays, idle when it stops
-var stop = FleetOrb.voice.fromAnalyser(analyserNode); // level only, for Web Audio playback
+var stop = Binnacle.voice.fromAudio(audioElement);   // speaking while it plays, idle when it stops
+var stop = Binnacle.voice.fromAnalyser(analyserNode); // level only, for Web Audio playback
 ```
 `fromAudio` must be called once per element, and audio from another origin needs CORS headers or the browser mutes it.
 
-`FleetOrb.voice.simulate(true)` stands in for audio until a real source is connected. Remove that one line when TalkForge is wired in.
+`Binnacle.voice.simulate(true)` stands in for audio until a real source is connected. Remove that one line when TalkForge is wired in.
 
 ## Slow machines and reduced motion
 - With `quality: 'auto'`, the orb steps down when frames run slow: fewer particles, a lower pixel ratio and a lower frame rate. `stats()` reports the step it is on.
@@ -92,12 +94,14 @@ var stop = FleetOrb.voice.fromAnalyser(analyserNode); // level only, for Web Aud
 - With reduced motion set, the orb draws one still picture per state and does not animate. The caption still shows the state.
 
 ## Tests
+The orb uses no inline styles or scripts, so it runs under `style-src 'self'`.
+
 `tests/browser-check.mjs` drives headless Edge with real mouse input. It covers dragging, staying on screen, remembered position, click-through, keyboard, the picker, the voice event, every look in every state, level response, the real audio path, frame rate at normal speed and at 6x CPU throttle, and reduced motion. It needs Node 22 or newer and is not part of CI. From the repo root, with the server running in a second terminal:
 ```bash
 python -m http.server 25191 --bind 127.0.0.1 --directory ui-kit
 ```
 ```bash
-node ui-kit/orb/tests/browser-check.mjs "$TEMP/orb-check/shots"
+node ui-kit/binnacle/tests/browser-check.mjs "$TEMP/binnacle-check/shots"
 ```
 
 ## Licence

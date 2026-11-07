@@ -1,14 +1,14 @@
-/* Controls for orb-demo.html. Nothing here is needed to use the orb. */
+/* Controls for demo.html. Nothing here is needed to use the orb. */
 (function () {
   'use strict';
-  var voice = FleetOrb.voice;
+  var voice = Binnacle.voice;
   var CAPTIONS = {
     listening: 'Go ahead.',
     thinking: 'Checking 212 files against the index.',
     speaking: 'Turnover is ready. Two items are open for the next watch.',
     approval: 'Move 14 screenshots to Archive? Approve or deny.'
   };
-  var main = FleetOrb.mount({ id: 'assistant', name: 'Assistant' });
+  var main = Binnacle.mount({ id: 'assistant', name: 'Assistant' });
   var $ = function (id) { return document.getElementById(id); };
   var simulated = true, reduced = false;
 
@@ -20,7 +20,7 @@
     Array.prototype.forEach.call($('states').children, function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-state') === id)); });
   }
 
-  FleetOrb.states.forEach(function (s) {
+  Binnacle.states.forEach(function (s) {
     var b = document.createElement('button');
     b.type = 'button'; b.className = 'ghost'; b.textContent = s.label; b.setAttribute('data-state', s.id);
     b.addEventListener('click', function () { voice.set(s.id, undefined, CAPTIONS[s.id] || ''); });
@@ -71,14 +71,14 @@
 
   var tiles = [];
   /* Every look in every theme, live. Clicking a tile applies it to the orb. */
-  FleetOrb.looks.forEach(function (look) {
+  Binnacle.looks.forEach(function (look) {
     var head = document.createElement('h3'); head.textContent = look.label;
     var row = document.createElement('div'); row.className = 'demo-tiles';
     $('gallery').appendChild(head); $('gallery').appendChild(row);
-    FleetOrb.themes.forEach(function (theme) {
+    Binnacle.themes.forEach(function (theme) {
       var tile = document.createElement('div'); tile.className = 'demo-tile';
       row.appendChild(tile);
-      tiles.push(FleetOrb.mount({
+      tiles.push(Binnacle.mount({
         id: 'tile-' + look.id + '-' + theme.id, name: 'Use this:', look: look.id, theme: theme.id, size: 150, inline: true, parent: tile,
         persist: false, picker: false, caption: false, quality: 'medium',
         onActivate: function () { main.setLook(look.id); main.setTheme(theme.id); }
@@ -102,5 +102,5 @@
     var s = main.stats();
     $('readout').textContent = voice.state + ' | level ' + voice.level.toFixed(2) + ' | ' + s.look + ' | ' + main.theme + ' | ' + s.fps + ' fps | draw ' + s.avgDrawMs + ' ms | quality step ' + s.tier;
   }, 500);
-  window.orbDemo = { main: main, tiles: tiles };
+  window.binnacleDemo = { main: main, tiles: tiles };
 }());
