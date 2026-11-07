@@ -190,10 +190,10 @@ await ev(`Binnacle.voice.setLevel(0); 0`);
 
 // real audio path: <audio> -> Web Audio -> level -> speaking -> idle
 await ev(`Binnacle.voice.set('idle',0,''); document.getElementById('tone').click(); 0`);
-let peak = 0, st = '';
-for (let i = 0; i < 30; i++) { await sleep(60); const v = await ev(`({l:Binnacle.voice.level,s:Binnacle.voice.state})`); peak = Math.max(peak, v.l); st = v.s; }
-check('fromAudio goes to speaking with a real level', st === 'speaking' && peak > 0.03, { st, peak });
-await sleep(2600);
+let peak = 0, spoke = false;   // sampled in the page: polling from here can outlast the 4 s clip on a busy machine
+for (let i = 0; i < 30; i++) { await sleep(60); const v = await ev(`({l:Binnacle.voice.level,s:Binnacle.voice.state})`); if (v.s === 'speaking') { spoke = true; peak = Math.max(peak, v.l); } }
+check('fromAudio goes to speaking with a real level', spoke && peak > 0.03, { spoke, peak });
+await ev(`new Promise(r => { const t = setInterval(() => { if (Binnacle.voice.state === 'idle') { clearInterval(t); r(); } }, 50); setTimeout(r, 6000); })`);
 const after = await ev(`({l:Binnacle.voice.level,s:Binnacle.voice.state})`);
 check('fromAudio returns to idle at the end', after.s === 'idle' && after.l === 0, after);
 
