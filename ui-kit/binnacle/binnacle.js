@@ -670,17 +670,20 @@
     if (opts.picker !== false) {
       pick = document.createElement('div'); pick.className = 'binnacle-pick';
       pick.setAttribute('role', 'group'); pick.setAttribute('aria-label', 'Orb look');
+      var lookRow = document.createElement('div'), themeRow = document.createElement('div');
+      lookRow.className = themeRow.className = 'binnacle-pick-row';
+      pick.appendChild(lookRow); pick.appendChild(themeRow);
       Object.keys(LOOKS).forEach(function (name) {
         var b = document.createElement('button'); b.type = 'button'; b.textContent = LOOKS[name].label; b.setAttribute('data-look', name);
         b.addEventListener('click', function () { api.setLook(name); });
-        pick.appendChild(b);
+        lookRow.appendChild(b);
       });
       Object.keys(THEMES).forEach(function (name) {
         var t = THEMES[name], b = document.createElement('button');
         b.type = 'button'; b.className = 'swatch'; b.title = t.label; b.setAttribute('aria-label', 'Theme: ' + t.label); b.setAttribute('data-theme', name);
         b.style.background = 'linear-gradient(135deg,' + t.ring[0] + ',' + t.ring[2] + ' 50%,' + t.ring[4] + ')';
         b.addEventListener('click', function () { api.setTheme(name); });
-        pick.appendChild(b);
+        themeRow.appendChild(b);
       });
       dock.appendChild(pick);
     }
@@ -797,7 +800,7 @@
       var b = document.createElement('b'); b.textContent = label; cap.appendChild(b);
       if (voice.text) cap.appendChild(document.createTextNode(': ' + voice.text));
       cap.hidden = opts.caption === false || (voice.state === 'idle' && !voice.text);
-      if (pick) Array.prototype.forEach.call(pick.children, function (c) {
+      if (pick) Array.prototype.forEach.call(pick.querySelectorAll('button'), function (c) {
         c.setAttribute('aria-pressed', String(c.getAttribute('data-look') === look || c.getAttribute('data-theme') === theme));
       });
     }

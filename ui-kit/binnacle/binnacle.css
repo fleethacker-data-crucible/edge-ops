@@ -12,7 +12,7 @@
 .binnacle-cap[hidden]{display:none}
 .binnacle.inline{position:relative;left:auto;top:auto;z-index:auto;will-change:auto}
 .binnacle.inline .binnacle-hit{cursor:pointer}
-.binnacle-pick{display:flex;flex-wrap:wrap;justify-content:center;gap:2px;max-width:224px;background:#060f24;border:1px solid #243a6a;border-radius:4px;padding:2px;visibility:hidden;opacity:0;transition:opacity .15s,visibility 0s .6s}
+.binnacle-pick{display:flex;flex-direction:column;align-items:center;gap:2px;max-width:224px;background:#060f24;border:1px solid #243a6a;border-radius:4px;padding:2px;visibility:hidden;opacity:0;transition:opacity .15s,visibility 0s .6s}
 .binnacle:hover .binnacle-pick,.binnacle:focus-within .binnacle-pick{visibility:visible;opacity:1;pointer-events:auto;transition:opacity .15s,visibility 0s}
 .binnacle.dragging .binnacle-pick{visibility:hidden;opacity:0}
 .binnacle-pick button{all:unset;box-sizing:border-box;font:inherit;color:#f2ead6;padding:3px 7px;border-radius:3px;cursor:pointer;white-space:nowrap}
@@ -21,3 +21,4 @@
 .binnacle-pick button:focus-visible{outline:2px solid #f2ead6;outline-offset:1px}
 .binnacle-pick button.swatch{width:20px;height:20px;padding:0;margin:3px 3px 1px;border-radius:50%;border:1px solid #f2ead6}
 .binnacle-pick button.swatch[aria-pressed=true]{outline:2px solid #f2ead6;outline-offset:1px}
+.binnacle-pick-row{display:flex;flex-wrap:wrap;justify-content:center;gap:2px}
