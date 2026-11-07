@@ -10,6 +10,7 @@ The kit is one CSS file and one JS file. It needs no npm, no build step and no C
 | `fonts/` | Exo 2 (variable font, weights 400–700) and Syne Mono, both subset to Latin-1 as woff2 (about 38 KB). Licensed under SIL OFL 1.1; the license texts are included. |
 | `assets/` | `coin-64.png` (used as `img.logo`) and `favicon-32.png`, both taken from `dumping-grounds`. |
 | `demo.html` | Shows every component. Open it directly in a browser. |
+| `orb/` | Optional draggable assistant orb with a voice state and level interface. Separate from `kit.css` and `kit.js`; see [orb/README.md](orb/README.md). |
 | `check-contrast.py` | Checks every token pair and badge colour against AA. It exits non-zero if any pair fails. |
 | `VERSION` | `0.2.2`. The same version is stamped at the top of `kit.css` and `kit.js`. |
 

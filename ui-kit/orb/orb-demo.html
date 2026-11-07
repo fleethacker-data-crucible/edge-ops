@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FleetOrb – Demo</title>
+<link rel="icon" href="../assets/favicon-32.png">
+<link rel="stylesheet" href="../kit.css">
+<script src="../kit.js" defer></script>
+<script src="orb.js" defer></script>
+<script src="orb-demo.js" defer></script>
+<style>
+.demo-chat{display:flex;flex-direction:column;gap:10px;max-width:640px}
+.demo-chat p{margin:0}
+.demo-readout{font-family:var(--mono);min-height:1.4em}
+.demo-level{width:220px;max-width:100%}
+.demo-tiles{display:flex;flex-wrap:wrap;gap:6px}
+.demo-tile{display:flex;flex-direction:column;align-items:center;gap:2px;width:150px}
+#gallery h3{margin:6px 0 0;font-size:14px}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to main content</a>
+<div class="app">
+<header class="topbar">
+  <a class="brand" href="orb-demo.html"><img class="logo" src="../assets/coin-64.png" alt="" width="40" height="40"><span><h1>Assistant orb</h1><span class="sub">FleetOrb prototype. Simulated voice, no microphone</span></span></a>
+  <span class="spacer"></span>
+  <button type="button" class="ghost" data-kit-theme-toggle>Light mode: off</button>
+</header>
+<main id="main" class="main stack" tabindex="-1">
+  <section class="box stack" aria-labelledby="h-try">
+    <h2 id="h-try">Try it</h2>
+    <p>Drag the orb anywhere. Hover over it to change its look and theme, or pick one of the 25 below. With it focused, the arrow keys move it and Home sends it back. It stays where you leave it after a reload.</p>
+    <div class="row" role="group" aria-label="Voice state" id="states"></div>
+    <div class="row">
+      <label class="field">Audio level <input class="demo-level" id="level" type="range" min="0" max="100" value="0"></label>
+      <button type="button" class="ghost" id="simulate" aria-pressed="true">Simulated voice: on</button>
+      <button type="button" class="ghost" id="tone">Play test audio</button>
+    </div>
+    <div class="row" role="group" aria-label="Orb options">
+      <button type="button" class="ghost" id="reduce" aria-pressed="false">Reduced motion: off</button>
+      <button type="button" class="ghost" id="home">Reset position</button>
+    </div>
+    <p class="muted demo-readout" id="readout" aria-hidden="true"></p>
+  </section>
+  <section class="box stack" aria-labelledby="h-gallery">
+    <h2 id="h-gallery">5 looks, 5 themes</h2>
+    <p>All 25 follow the voice state above. Click one to put it on the orb.</p>
+    <div id="gallery"></div>
+  </section>
+  <section class="box stack" aria-labelledby="h-page">
+    <h2 id="h-page">The page stays usable</h2>
+    <p>Drag the orb next to this button and click right beside it. Only the disc takes the mouse, not the square around it.</p>
+    <div class="row"><button type="button" id="clicker">Clicked 0 times</button></div>
+    <div class="demo-chat">
+      <p><b>You:</b> Is the turnover ready?</p>
+      <p><b>Assistant:</b> Turnover is ready. Two items are open for the next watch.</p>
+    </div>
+  </section>
+</main>
+</div>
+</body>
+</html>
