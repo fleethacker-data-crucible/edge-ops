@@ -75,7 +75,7 @@ window.dispatchEvent(new CustomEvent('fleet:voice', {
   detail: { schema: 'fleet.voice/1', state: 'speaking', level: 0.21, text: 'Turnover is ready.' }
 }));
 ```
-Every field is optional. `level` is linear RMS, 0 to 1, unsmoothed; send it 30 to 60 times a second, and the orb applies its own attack and decay. `text` is the caption. Unknown states are ignored, and a state change clears the caption unless the same event gives a new one.
+Every field is optional. `level` is linear RMS, 0 to 1; send it 30 to 60 times a second. Light smoothing by the sender is fine, because the orb applies its own attack and decay. `text` is the caption. Unknown states are ignored, and a state change clears the caption unless the same event gives a new one.
 
 **2. A direct call:** `Binnacle.voice.set(state, level, text)`, or `Binnacle.voice.setLevel(level)`.
 
@@ -84,7 +84,9 @@ Every field is optional. `level` is linear RMS, 0 to 1, unsmoothed; send it 30 t
 var stop = Binnacle.voice.fromAudio(audioElement);   // speaking while it plays, idle when it stops
 var stop = Binnacle.voice.fromAnalyser(analyserNode); // level only, for Web Audio playback
 ```
-`fromAudio` must be called once per element, and audio from another origin needs CORS headers or the browser mutes it.
+`fromAudio` must be called once per element, and audio from another origin needs CORS headers or the browser mutes it. A browser allows only one Web Audio source per element, so `fromAudio` throws on an element the page has already wired up.
+
+**TalkForge.** On TalkForge's own page, do not call `fromAudio`: the page already wires up its element and fires `fleet:voice`, so an orb there only needs to be mounted. It sends `speaking`, `thinking` and `idle`, with no caption. `fromAudio` is for other pages that play TalkForge audio in their own element.
 
 `Binnacle.voice.simulate(true)` stands in for audio until a real source is connected. Remove that one line when TalkForge is wired in.
 
