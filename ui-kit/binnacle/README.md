@@ -4,10 +4,6 @@ A draggable animated orb for an AI assistant. It shows what the assistant is doi
 
 It draws on a 2D canvas. WebGL would allow more particles, but it is often blocked or software-rendered on locked-down workstations.
 
-![Five looks in five themes](docs/themes.png)
-
-![Five looks in all five states](docs/states.png)
-
 ## Try it
 Open `demo.html` in a browser. It shows all 25 combinations live; click one to put it on the orb. Voice is simulated and no microphone is used.
 
