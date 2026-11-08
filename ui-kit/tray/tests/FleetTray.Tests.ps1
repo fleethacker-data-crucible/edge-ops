@@ -82,5 +82,7 @@ Describe 'Source rules' {
     It 'uses no P/Invoke, no network and no GetHicon, so every tool can carry it' {
         $src = Get-Content (Join-Path $PSScriptRoot '..\FleetTrayArt.cs') -Raw
         $src | Should -Not -Match 'DllImport|System\.Net|GetHicon\(|Process\.Start|https?://'
+        # phoenix-lai's guard refuses any shell name, in code or comments, whatever the case.
+        $src | Should -Not -Match '(?i)powershell|pwsh|cmd\.exe|conhost|wscript|cscript|mshta|rundll32'
     }
 }
