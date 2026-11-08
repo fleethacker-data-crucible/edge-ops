@@ -72,9 +72,10 @@ Describe 'Colours' {
 }
 
 Describe '.ico export' {
-    It 'writes every size from 16 to 256 px' {
+    It 'writes every tray size from 16 to 48 px, and stays small' {
         $bytes = [FleetTray.Art]::AppIcoBytes('lazarette')
-        [BitConverter]::ToUInt16($bytes, 4) | Should -Be 9
+        [BitConverter]::ToUInt16($bytes, 4) | Should -Be 7
+        $bytes.Length | Should -BeLessThan 40000
     }
 }
 
