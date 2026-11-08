@@ -11,6 +11,7 @@ The kit is one CSS file and one JS file. It needs no npm, no build step and no C
 | `assets/` | `coin-64.png` (used as `img.logo`) and `favicon-32.png`, both taken from `dumping-grounds`. |
 | `demo.html` | Shows every component. Open it directly in a browser. |
 | `binnacle/` | Optional draggable assistant orb with a voice state and level interface. Separate from `kit.css` and `kit.js`; see [binnacle/README.md](binnacle/README.md). |
+| `tray/` | Crisp tray icons for PowerShell and C# tools: each tool's letter tile drawn at the tray's exact size, with status badges and dots; see [tray/README.md](tray/README.md). |
 | `check-contrast.py` | Checks every token pair and badge colour against AA. It exits non-zero if any pair fails. |
 | `VERSION` | `0.2.2`. The same version is stamped at the top of `kit.css` and `kit.js`. |
 
