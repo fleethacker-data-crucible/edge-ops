@@ -7,7 +7,9 @@ BeforeAll {
     function New-TestRoot([object[]]$Tools) {
         $root = Join-Path ([System.IO.Path]::GetTempPath()) ('edgeops-build-' + [guid]::NewGuid().ToString('N'))
         New-Item -ItemType Directory -Path $root | Out-Null
-        foreach ($item in @('index.html', 'assets', 'templates', 'ui-kit')) {
+        # Build-Site.ps1 also copies docs/judges-brief (served at /judges-brief/).
+        New-Item -ItemType Directory -Path (Join-Path $root 'docs') | Out-Null
+        foreach ($item in @('index.html', 'assets', 'templates', 'ui-kit', 'docs\judges-brief')) {
             Copy-Item (Join-Path $RepoRoot $item) (Join-Path $root $item) -Recurse
         }
         $catalog = Get-Content -Raw (Join-Path $RepoRoot 'catalog.json') | ConvertFrom-Json
