@@ -78,6 +78,7 @@ Every `.ps1`/`.psm1` must run on stock **Windows PowerShell 5.1** (`powershell.e
 - Free-port checks should test **both** IPv4 (`127.0.0.1`) and IPv6 (`::1`) loopback, because `localhost` can resolve to either (`Test-LoopbackPortFree` in the snippet).
 - A tool may stop **its own** previous instance only through its policy: the shutdown endpoint first, then `Stop-Process` on the self-reported pid after checking that process's command line or path (a `.pid` file plus the same check is fine until the tool serves the id endpoint). Never stop or take over another program.
 - Closing the window or exiting stops the server and removes the `.pid` file.
+- **Shared services** (Fairlead, the TalkForge speech server) are started on demand by the app that needs them, through `Start-FleetService` in [tools/fleet-port/FleetPort.psm1](tools/fleet-port/FleetPort.psm1), not with a hand-rolled start. See [PORTS.md](PORTS.md#starting-shared-services).
 - Host skeleton: [templates/host/Start-ToolName.ps1](templates/host/Start-ToolName.ps1).
 
 ## CLI and API for agents

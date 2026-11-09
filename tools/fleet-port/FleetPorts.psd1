@@ -18,5 +18,10 @@
     'phoenix-lai-dev'    = @{ Start = 8799;  Size = 1;  Policy = 'restart' }
     'semaphore'          = @{ Start = 8800;  Size = 3;  Policy = 'reuse' }
     'periscope'          = @{ Start = 8803;  Size = 3;  Policy = 'reuse' }
-    'talkforge'          = @{ Start = 25000; Size = 10; Policy = 'reuse' }
+    'halyard'            = @{ Start = 8806;  Size = 3;  Policy = 'reuse' }
+    # PROPOSED (2026-11-08): Lazarette still binds 8765 (inside SnapShackle's block) with an OS-port fallback until its repo moves here.
+    'lazarette'          = @{ Start = 8809;  Size = 1;  Policy = 'reuse' }
+    'talkforge'          = @{ Start = 25000; Size = 9;  Policy = 'reuse' }
+    # TalkForge's speech server (talkforge serve), started on demand by Start-FleetService; fixed so callers can find it.
+    'talkforge-speech'   = @{ Start = 25009; Size = 1;  Policy = 'reuse' }
 }

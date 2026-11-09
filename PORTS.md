@@ -18,22 +18,25 @@ Each tool owns **one small contiguous block** that starts at its default. It mov
 | PacketRat (formerly MailHawk) | **8771-8773** | exclusive | `Launch-PacketRat.bat -Port <n>` | moved from 8766 (now inside SnapShackle's block); holds the Outlook COM lease |
 | Eight-Bells | 8774 (1 port) | reuse | - | was the first port of the unassigned "New tool A" block |
 | Scrimshaw | 8775 (1 port) | reuse | - | second port of the old "New tool A" block |
-| Fairlead (OpenAI-compatible `/v1`) | **8776** (1 port, fixed) | reuse | - | every Fleet app defaults to `127.0.0.1:8776`, so it never moves |
+| Fairlead (OpenAI-compatible `/v1`) | **8776** (1 port, fixed) | reuse | - | every Fleet app defaults to `127.0.0.1:8776`, so it never moves. Apps start it on demand with `Start-FleetService -Name fairlead` ([below](#starting-shared-services)) |
 | Windlass (OpenAI-compatible `/v1`) | **8777-8779** | exclusive | `Launch-Windlass.bat serve --port <n>` | holds a long model load and generation; was the "New tool B" block |
 | Phoenix LAI server UI | **8780-8789** | exclusive | - | holds the GPU lease; was 8765-8789 |
 | Phoenix LAI client | 8790-8798 | multi | - | several clients may run at once |
 | Phoenix LAI dev e2e | 8799 (1 port) | restart | - | test fixture |
 | Semaphore | 8800-8802 | reuse | - | moved out of 8774-8776, which overlapped Eight-Bells, Scrimshaw and Fairlead; 8800 and up was unused |
 | Periscope (local catalog host) | **8803-8805** | reuse | `Launch-Periscope.bat -Port <n>` | serves this repo's site on 127.0.0.1; walks only this block. 8803 is the first free port after Semaphore |
-| TalkForge static server | 25000-25009 | reuse | `serve-windows.ps1 -Port <n>` | was 25000 up to 65535 |
+| Halyard | **8806-8808** | reuse | `HALYARD_PORT` in `config\halyard.env` | registered 2026-11-08 from Halyard's own default (`HalyardSettings.PortBlockStart`/`PortBlockEnd`, no fallback outside the block). This file used to say 8773, inside PacketRat's block; Halyard had already moved |
+| Lazarette (**proposed**) | **8809** (1 port, fixed) | reuse | `Port` in Lazarette's config; clients read `LAZARETTE_PORT` | **Proposed 2026-11-08, not yet in the Lazarette repo.** Today Lazarette prefers **8765**, inside SnapShackle's 8765-8766 block, and falls back to an OS-assigned port (`lib/server/Http.ps1`), which breaks both rules above. Fix: move its default to 8809 and drop the port-0 fallback, in the same change as the 8765 default in `tools/Lazarette.Client.ps1` and `docs/TOOLS.md`. 8809 is the one free port between Halyard and Drydock's unregistered 8810-8829 |
+| TalkForge page server | 25000-25008 | reuse | `serve-windows.ps1 -Port <n>` | was 25000 up to 65535. Gave 25009 to the speech server on 2026-11-08; TalkForge's launcher still walks to 25009 until its repo follows |
+| TalkForge speech server (`talkforge serve`) | **25009** (1 port, fixed) | reuse | `talkforge serve --port <n>` | registry id `talkforge-speech`. Loopback, bearer token. Fairlead, Semaphore and Lazarette call `127.0.0.1:25009`, so it never moves. Apps start it on demand with `Start-FleetService -Name talkforge`. It reports `tool: talkforge` like the page server; its id `path` (`tools\talkforge.mjs`) tells the two apart |
 | Test Chrome debug ports | 9300-9399 (reserved) | - | - | `Start-IsolatedChrome` ([tools/test-harness](tools/test-harness/)); tools must not default here |
 | CI-only test ports | 18000-18999 | - | - | e.g. Shellback CI uses 18765 |
 
-**Unregistered defaults.** Halyard is not in the table yet. It currently defaults to 8773 with a free-port fallback (Halyard `docs/OPERATIONS.md`; `catalog.json` says `defaultPort` 8773), which sits inside PacketRat's exclusive 8771-8773 block. It needs its own block here and a matching change in the Halyard repo; do not add it to the table or `FleetPorts.psd1` until that block is agreed.
+**Unregistered defaults.** Drydock scans 8810-8829 (Drydock `lib/core/Common.ps1`) and is not in the table yet. Halyard was listed here as unregistered on 8773; it has used its own block, 8806-8808, since it moved off PacketRat's ports, and is now registered.
 
 ## Self-detection and policies
 
-Helper: [tools/fleet-port/FleetPort.psm1](tools/fleet-port/FleetPort.psm1) (`Get-FleetPortBlock`, `Test-FleetSelf`, `Resolve-FleetPort`, `Stop-FleetInstance`, `Invoke-FleetIdEndpoint`).
+Helper: [tools/fleet-port/FleetPort.psm1](tools/fleet-port/FleetPort.psm1) (`Get-FleetPortBlock`, `Test-FleetSelf`, `Resolve-FleetPort`, `Stop-FleetInstance`, `Invoke-FleetIdEndpoint`; for shared services, `Start-FleetService` and `Get-FleetServiceState`).
 
 - **Id endpoint:** every tool answers `GET /__fleethacker/id` on loopback with JSON `{"tool":"<id>","version":"<x.y.z>","pid":<n>,"path":"<script or exe>"}` (`path` is optional and is used only to verify a pid before Stop-Process).
 - **Shutdown endpoint:** `POST /__fleethacker/shutdown` with header `X-FleetHacker-Shutdown: 1` asks the tool to exit cleanly (close leases, remove its `.pid` file). Both endpoints require a loopback caller, a loopback `Host` and an `Origin` that is absent or same-origin.
@@ -55,6 +58,17 @@ Helper: [tools/fleet-port/FleetPort.psm1](tools/fleet-port/FleetPort.psm1) (`Get
   4. `/__fleethacker/id` on the port, re-checked right before the kill, still reports the same tool and pid.
 
   Only when the proof is uncertain does the launcher show **"An older &lt;Tool&gt; v&lt;X&gt; is still running; close its window and relaunch."** and exit **without stopping anything**. Uncertain covers an extra prefix on the port (for example `/legacy/`), a `+`, `*` or non-loopback host or bound ip, an unparseable URL, more than one queue or process, an empty queue, another pid, a failed id re-check, a non-English netsh layout (only English is understood), and a netsh error or non-zero exit.
+
+## Starting shared services
+
+**Decision (2026-11-08):** each app starts the shared services it depends on, when it needs them, through one helper: `Start-FleetService` in [tools/fleet-port/FleetPort.psm1](tools/fleet-port/FleetPort.psm1). No app is the launcher hub (Lazarette included). Usage and guarantees: [tools/fleet-port/README.md](tools/fleet-port/README.md#starting-a-shared-service).
+
+| Service | Port | Started as | Outlives the caller | Needs |
+|---|---|---|---|---|
+| Fairlead | 8776 | `scripts\Start-Fairlead.ps1 --no-browser` in Windows PowerShell, hidden, through the shell | yes (shared tray app) | nothing secret; Fairlead reads its own config |
+| TalkForge speech server | 25009 | `node tools\talkforge.mjs serve --port <p> --idle-timeout 30`, hidden child, output drained | no (stops after 30 idle minutes, or with `Stop-FleetServiceChild`) | `TALKFORGE_TOKEN` (16+ characters), in the child's environment only |
+
+The helper never starts a service on a port another program holds, and never starts one twice: a start is decided under a named mutex and recorded in `%LOCALAPPDATA%\FleetHacker\services\<name>-<port>.json`, which every app reads.
 
 ## Port handling standard
 
