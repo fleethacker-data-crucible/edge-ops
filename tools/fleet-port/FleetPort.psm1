@@ -505,4 +505,428 @@ function Invoke-FleetIdEndpoint {
     return $handled
 }
 
-Export-ModuleMember -Function Get-FleetPortBlock, Test-FleetPortFree, Test-FleetSelf, Stop-FleetInstance, Resolve-FleetPort, Invoke-FleetIdEndpoint
+# ===================================================================================================================
+# Shared services: start a dependency on demand (Start-FleetService, Get-FleetServiceState, Stop-FleetServiceChild)
+# ===================================================================================================================
+<#
+  The services a Fleet app may start for itself. One entry per service:
+    FolderName      folder name looked for next to the caller and in %USERPROFILE%\Projects
+    Marker          file (relative to the folder) that proves it is that service, and the script that is started
+    Port            default loopback port (PORTS.md)
+    Tool            the id it reports at GET /__fleethacker/id
+    IdPathLeaf      when set, a reported id path must end with this (tells TalkForge's speech server from its page server)
+    Exe             'powershell' (Windows PowerShell 5.1) or 'node' (Node.js on PATH)
+    Arguments       {script} = full path of Marker, {port} = port, {idle} = IdleMinutes
+    PortArgument    appended (with {port}) only when the port is not the default; '' when Arguments already carries it
+    Launch          'shell': detached through the shell, hidden, inherits no handles, outlives the caller (its
+                    environment cannot be set). 'child': a hidden child with stdout/stderr redirected and drained,
+                    environment set from -Environment, the caller's secret-looking variables removed.
+    OutlivesCaller  true for 'shell' services, false for 'child' services (documentation; Launch decides)
+    StartSeconds    a start this recent is still "starting"; after it, an unanswered start is "unavailable"
+    TrackPid        'child' only: the start has failed as soon as the started process exits
+    RequiredEnvironment  names that -Environment must carry, with the minimum length of each value
+    RemoveEnvironment    names always removed from a child's environment before -Environment is applied
+#>
+$script:FleetServices = @{
+    'fairlead'  = @{
+        DisplayName = 'Fairlead'; FolderName = 'Fairlead'; Marker = 'scripts\Start-Fairlead.ps1'; Port = 8776
+        Tool = 'fairlead'; IdPathLeaf = ''; Exe = 'powershell'
+        Arguments = '-STA -NoLogo -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "{script}" --no-browser'
+        PortArgument = '-Port {port}'; Launch = 'shell'; OutlivesCaller = $true; StartSeconds = 60; TrackPid = $false
+        RequiredEnvironment = @{}; RemoveEnvironment = @(); IdleMinutes = 0
+    }
+    'talkforge' = @{
+        DisplayName = 'TalkForge'; FolderName = 'TalkForge'; Marker = 'tools\talkforge.mjs'; Port = 25009
+        Tool = 'talkforge'; IdPathLeaf = 'tools\talkforge.mjs'; Exe = 'node'
+        Arguments = '"{script}" serve --port {port} --idle-timeout {idle}'
+        PortArgument = ''; Launch = 'child'; OutlivesCaller = $false; StartSeconds = 45; TrackPid = $true
+        RequiredEnvironment = @{ 'TALKFORGE_TOKEN' = 16 }; RemoveEnvironment = @('TALKFORGE_TOKEN', 'TALKFORGE_TOKEN_FILE', 'TALKFORGE_LAZARETTE_ITEM'); IdleMinutes = 30
+    }
+}
+# Caller variables with names like these never reach a 'child' service (unless passed in -Environment).
+$script:FleetSecretEnvPattern = '(?i)(TOKEN|SECRET|PASSWORD|PASSWD|PASSPHRASE|API_?KEY|_KEY$|CREDENTIAL)'
+# Processes this caller started as 'child', keyed "<name>:<port>": kept so their output stays drained and so
+# Stop-FleetServiceChild can end them. Nothing another app started is ever in here.
+$script:FleetServiceChildren = [hashtable]::Synchronized(@{})
+
+function Get-FleetServiceDefinition {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][string]$Name)
+    $key = $Name.ToLowerInvariant()
+    if (-not $script:FleetServices.ContainsKey($key)) { throw "Unknown Fleet service '$Name'. Known: $((@($script:FleetServices.Keys) | Sort-Object) -join ', ')." }
+    $d = $script:FleetServices[$key].Clone()
+    $d.Name = $key
+    return $d
+}
+
+# The service folder: -Folder exactly when given (no fallback), else <sibling of the caller>\<FolderName>
+# (the caller's folder and its parent are both tried, since entry scripts often live in server\ or src\),
+# else %USERPROFILE%\Projects\<FolderName>. Returns @{ Folder; Problem }.
+function Find-FleetServiceFolder {
+    param($Definition, [string]$Folder, [string]$CallerRoot)
+    $marker = $Definition.Marker
+    if ($Folder) {
+        if (Test-Path -LiteralPath (Join-Path $Folder $marker) -PathType Leaf) { return @{ Folder = (ConvertTo-FleetAbsolutePath $Folder); Problem = '' } }
+        return @{ Folder = ''; Problem = "$($Definition.DisplayName) was not found in $Folder (no $marker there). Fix the configured folder, or start $($Definition.DisplayName) yourself." }
+    }
+    $candidates = New-Object System.Collections.Generic.List[string]
+    if ($CallerRoot) {
+        $r = $CallerRoot
+        for ($i = 0; $i -lt 2 -and $r; $i++) {
+            $parent = Split-Path -Parent $r
+            if ($parent) { $candidates.Add((Join-Path $parent $Definition.FolderName)) }
+            $r = $parent
+        }
+    }
+    if ($env:USERPROFILE) { $candidates.Add((Join-Path $env:USERPROFILE (Join-Path 'Projects' $Definition.FolderName))) }
+    foreach ($c in $candidates) {
+        if (Test-Path -LiteralPath (Join-Path $c $marker) -PathType Leaf) { return @{ Folder = (ConvertTo-FleetAbsolutePath $c); Problem = '' } }
+    }
+    return @{ Folder = ''; Problem = "$($Definition.DisplayName) was not found next to this app or in your Projects folder. Set its folder in the app's settings, or start $($Definition.DisplayName) yourself." }
+}
+
+# The script a node.exe command line runs (the first argument that is not an option), or $null.
+# Refuses ($null) on options that run other code first (-e, -p, -r, --eval, --print, --require, --import, --loader).
+function Get-FleetNodeScriptFromCommandLine {
+    param([string]$CommandLine)
+    [string[]]$argv = Split-FleetCommandLine $CommandLine
+    if ($null -eq $argv -or $argv.Count -lt 2) { return $null }
+    $exeLeaf = ($argv[0] -split '[\\/]')[-1].ToLowerInvariant()
+    if (@('node', 'node.exe') -notcontains $exeLeaf) { return $null }
+    for ($k = 1; $k -lt $argv.Count; $k++) {
+        $a = $argv[$k]
+        if ($a -match '^(?i)(-e|-p|-r|-pe|--eval|--print|--require|--import|--loader|--experimental-loader)(=|$)') { return $null }
+        if ($a.StartsWith('-')) { continue }
+        return $a
+    }
+    return $null
+}
+
+# PIDs listening on the port: Get-NetTCPConnection, or netstat.exe -ano when that cmdlet is missing.
+function Get-FleetServicePortOwner {
+    param([int]$Port)
+    if (Get-Command Get-NetTCPConnection -ErrorAction SilentlyContinue) {
+        return @(Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue | ForEach-Object { [int]$_.OwningProcess } | Sort-Object -Unique)
+    }
+    $netstat = Join-Path ([Environment]::SystemDirectory) 'netstat.exe'
+    if (-not (Test-Path -LiteralPath $netstat)) { return @() }
+    $owners = @()
+    foreach ($line in @(& $netstat -ano -p TCP 2>$null) + @(& $netstat -ano -p TCPv6 2>$null)) {
+        if ([string]$line -match '^\s*TCP\s+(\S+):(\d+)\s+\S+\s+LISTENING\s+(\d+)\s*$' -and [int]$Matches[2] -eq $Port) { $owners += [int]$Matches[3] }
+    }
+    return @($owners | Sort-Object -Unique)
+}
+
+<#
+  Is the program on the port this service? Returns @{ Ok; Id; Problem } (Problem 'none' when nothing FleetHacker answers).
+  Ok only when GET /__fleethacker/id reports the service's tool id and a pid above 4 that owns the listening port, and,
+  when it reports a path: that path is absolute, ends with IdPathLeaf when the service has one, and EXACTLY equals the
+  pid's ExecutablePath, its PowerShell -File script or its node script (never a substring match).
+#>
+function Test-FleetServiceIdentity {
+    param($Definition, [int]$Port, [int]$TimeoutMs = 1500,
+        [scriptblock]$GetProcessInfo = { param($i) Get-FleetProcessInfo -ProcessId $i },
+        [scriptblock]$GetPortOwner = { param($p) Get-FleetServicePortOwner -Port $p })
+    $id = Test-FleetSelf -Port $Port -Tool $Definition.Tool -TimeoutMs $TimeoutMs
+    if (-not $id) { return @{ Ok = $false; Id = $null; Problem = 'none' } }
+    if (-not $id.IsSelf) { return @{ Ok = $false; Id = $id; Problem = "FleetHacker tool '$($id.Tool)'" } }
+    $procId = [int]$id.Pid
+    if ($procId -le 4) { return @{ Ok = $false; Id = $id; Problem = "a program that reports pid $procId" } }
+    $owners = @(& $GetPortOwner $Port)
+    if ($owners -notcontains $procId) { return @{ Ok = $false; Id = $id; Problem = "a program that says it is $($Definition.Tool) pid $procId, but the port is held by pid(s) '$($owners -join ', ')'" } }
+    if ($id.Path) {
+        $want = ConvertTo-FleetAbsolutePath $id.Path
+        if (-not $want) { return @{ Ok = $false; Id = $id; Problem = "a program that reports a path that is not absolute ('$($id.Path)')" } }
+        if ($Definition.IdPathLeaf -and -not $want.EndsWith('\' + $Definition.IdPathLeaf, [StringComparison]::OrdinalIgnoreCase)) {
+            return @{ Ok = $false; Id = $id; Problem = "another $($Definition.DisplayName) program ($want), not the one this app needs" }
+        }
+        $info = & $GetProcessInfo $procId
+        $match = $false
+        if ($info) {
+            $match = Test-FleetProcessIdentity -Path $want -CommandLine $info.CommandLine -ExecutablePath $info.ExecutablePath
+            if (-not $match) {
+                $nodeScript = ConvertTo-FleetAbsolutePath (Get-FleetNodeScriptFromCommandLine $info.CommandLine)
+                $match = [bool]($nodeScript -and [string]::Equals($nodeScript, $want, [StringComparison]::OrdinalIgnoreCase))
+            }
+        }
+        if (-not $match) { return @{ Ok = $false; Id = $id; Problem = "a program that says it is $($Definition.Tool) at $want, but pid $procId is not running that file" } }
+    }
+    return @{ Ok = $true; Id = $id; Problem = '' }
+}
+
+# ---- recent-start guard: a named mutex around the decision, and a small state file per service and port ----
+function Get-FleetServiceStateDirectory {
+    param([string]$StateDirectory)
+    if ($StateDirectory) { return $StateDirectory }
+    $base = $env:LOCALAPPDATA
+    if (-not $base) { $base = [IO.Path]::GetTempPath() }
+    return (Join-Path $base 'FleetHacker\services')
+}
+
+function Get-FleetServiceStartRecord {
+    param([string]$Directory, [string]$Name, [int]$Port)
+    $f = Join-Path $Directory ('{0}-{1}.json' -f $Name, $Port)
+    if (-not (Test-Path -LiteralPath $f -PathType Leaf)) { return $null }
+    try {
+        $o = [IO.File]::ReadAllText($f, [Text.Encoding]::UTF8) | ConvertFrom-Json
+        $at = [datetime]::Parse([string]$o.startedAt, [Globalization.CultureInfo]::InvariantCulture, [Globalization.DateTimeStyles]::RoundtripKind)
+        return @{ StartedAt = $at.ToUniversalTime(); Pid = [int]$o.pid; Path = $f }
+    } catch { return $null }
+}
+
+function Set-FleetServiceStartRecord {
+    param([string]$Directory, [string]$Name, [int]$Port, [int]$ProcessId)
+    if (-not (Test-Path -LiteralPath $Directory)) { [void](New-Item -ItemType Directory -Path $Directory -Force) }
+    $f = Join-Path $Directory ('{0}-{1}.json' -f $Name, $Port)
+    $json = (New-Object PSObject -Property ([ordered]@{ name = $Name; port = $Port; pid = $ProcessId; startedAt = [datetime]::UtcNow.ToString('o'); by = $PID })) | ConvertTo-Json -Compress
+    $tmp = $f + '.' + [guid]::NewGuid().ToString('N') + '.tmp'
+    [IO.File]::WriteAllText($tmp, $json, (New-Object Text.UTF8Encoding $false))
+    if (Test-Path -LiteralPath $f) { [IO.File]::Replace($tmp, $f, $null) } else { [IO.File]::Move($tmp, $f) }
+}
+
+function Clear-FleetServiceStartRecord {
+    param([string]$Directory, [string]$Name, [int]$Port)
+    Remove-Item -LiteralPath (Join-Path $Directory ('{0}-{1}.json' -f $Name, $Port)) -Force -ErrorAction SilentlyContinue
+}
+
+function Test-FleetProcessAlive {
+    param([int]$ProcessId)
+    if ($ProcessId -le 0) { return $false }
+    $p = Get-Process -Id $ProcessId -ErrorAction SilentlyContinue
+    return [bool]($p -and -not $p.HasExited)
+}
+
+function New-FleetServiceResult {
+    param([string]$State, [string]$Message, [bool]$StartedHere = $false, $Definition, [int]$Port, [string]$Reason = '', [int]$ProcessId = 0, [string]$Version = '', [string]$Folder = '')
+    New-Object PSObject -Property ([ordered]@{
+        State = $State; Message = $Message; StartedHere = $StartedHere; Name = $Definition.Name; Port = $Port
+        Url = "http://127.0.0.1:$Port"; Pid = $ProcessId; Version = $Version; Folder = $Folder; Reason = $Reason })
+}
+
+<#
+.SYNOPSIS
+    The state of a shared service on its port. Starts nothing, stops nothing.
+.DESCRIPTION
+    State is one of:
+      running      the port answers /__fleethacker/id as this service, and its pid and path check out
+      starting     a start was recorded in the last StartSeconds (by any app) and it is not answering yet
+      stopped      nothing listens and no start is in progress (Start-FleetService would start it)
+      unavailable  the port is held by another program (Reason 'port-taken'), or a recent start failed
+                   (Reason 'exited' or 'timeout'); Message says what to do
+#>
+function Get-FleetServiceState {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][string]$Name,
+        [int]$Port = 0,
+        [string]$StateDirectory = '',
+        [int]$ProbeTimeoutMs = 1500
+    )
+    $d = Get-FleetServiceDefinition -Name $Name
+    if ($Port -le 0) { $Port = [int]$d.Port }
+    $dir = Get-FleetServiceStateDirectory $StateDirectory
+    $rec = Get-FleetServiceStartRecord -Directory $dir -Name $d.Name -Port $Port
+    $recent = $false
+    if ($rec) { $recent = (([datetime]::UtcNow - $rec.StartedAt).TotalSeconds -lt [int]$d.StartSeconds) }
+    $dn = $d.DisplayName
+    if (-not (Test-FleetPortFree -Port $Port)) {
+        $who = Test-FleetServiceIdentity -Definition $d -Port $Port -TimeoutMs $ProbeTimeoutMs
+        if ($who.Ok) {
+            if ($rec) { Clear-FleetServiceStartRecord -Directory $dir -Name $d.Name -Port $Port }
+            return (New-FleetServiceResult 'running' "$dn is running." $false $d $Port '' ([int]$who.Id.Pid) ([string]$who.Id.Version))
+        }
+        # Just started: the port can be open a moment before the id answers.
+        if ($recent -and $who.Problem -eq 'none') { return (New-FleetServiceResult 'starting' "$dn is starting." $false $d $Port 'starting' $rec.Pid) }
+        $what = 'another program'
+        if ($who.Problem -ne 'none') { $what = $who.Problem }
+        return (New-FleetServiceResult 'unavailable' "Port $Port is in use by $what, so $dn was not started there. Close that program, or set $dn to another port." $false $d $Port 'port-taken')
+    }
+    if ($rec) {
+        if ($d.TrackPid -and -not (Test-FleetProcessAlive $rec.Pid)) {
+            Clear-FleetServiceStartRecord -Directory $dir -Name $d.Name -Port $Port
+            return (New-FleetServiceResult 'unavailable' "$dn stopped while starting. Start it in a terminal to see why." $false $d $Port 'exited')
+        }
+        if ($recent) { return (New-FleetServiceResult 'starting' "$dn is starting." $false $d $Port 'starting' $rec.Pid) }
+        Clear-FleetServiceStartRecord -Directory $dir -Name $d.Name -Port $Port
+        return (New-FleetServiceResult 'unavailable' "$dn was started but did not answer on port $Port within $($d.StartSeconds) s. Start it yourself to see why." $false $d $Port 'timeout')
+    }
+    return (New-FleetServiceResult 'stopped' "$dn is not running." $false $d $Port 'not-running')
+}
+
+function Resolve-FleetServiceExe {
+    param([string]$Exe)
+    if ($Exe -eq 'powershell') {
+        $p = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
+        if (Test-Path -LiteralPath $p) { return $p }
+        return $null
+    }
+    $c = Get-Command "$Exe.exe" -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+    if (-not $c) { $c = Get-Command $Exe -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1 }
+    if ($c) { return [string]$c.Source }
+    return $null
+}
+
+# The ProcessStartInfo that would run the service. Separate so the tests can check exactly what would run.
+function New-FleetServiceStartInfo {
+    param($Definition, [string]$ExePath, [string]$Folder, [int]$Port, [hashtable]$Environment = @{})
+    $script = Join-Path $Folder $Definition.Marker
+    $arguments = $Definition.Arguments.Replace('{script}', $script).Replace('{port}', [string]$Port).Replace('{idle}', [string]$Definition.IdleMinutes)
+    if ($Definition.PortArgument -and $Port -ne [int]$Definition.Port) { $arguments += ' ' + $Definition.PortArgument.Replace('{port}', [string]$Port) }
+    $si = New-Object Diagnostics.ProcessStartInfo
+    $si.FileName = $ExePath
+    $si.Arguments = $arguments
+    $si.WorkingDirectory = $Folder
+    $si.WindowStyle = [Diagnostics.ProcessWindowStyle]::Hidden
+    if ($Definition.Launch -eq 'shell') {
+        # Through the shell: no handle of this process is inherited, so the service outlives the caller.
+        $si.UseShellExecute = $true
+        return $si
+    }
+    $si.UseShellExecute = $false
+    $si.CreateNoWindow = $true
+    # Read and dropped by the caller, never inherited: an inherited handle keeps the caller's console or pipe open.
+    $si.RedirectStandardOutput = $true
+    $si.RedirectStandardError = $true
+    $si.RedirectStandardInput = $true
+    foreach ($n in @($si.EnvironmentVariables.Keys | ForEach-Object { [string]$_ })) {
+        if (($Definition.RemoveEnvironment -contains $n) -or ($n -match $script:FleetSecretEnvPattern)) { $si.EnvironmentVariables.Remove($n) }
+    }
+    foreach ($k in $Environment.Keys) { $si.EnvironmentVariables[[string]$k] = [string]$Environment[$k] }
+    return $si
+}
+
+<#
+.SYNOPSIS
+    Makes sure a shared service (fairlead, talkforge) is running: reuses a verified one, otherwise starts it once.
+.DESCRIPTION
+    Probes the port and /__fleethacker/id (tool, pid owns the listener, path matches the process when reported).
+    Never starts on a port another program holds, and never starts twice: the decision is taken under a named mutex
+    (Local\FleetHacker.FleetService.<name>.<port>) and a start is recorded in <StateDirectory>\<name>-<port>.json, which
+    every app and runspace reads, so a start in the last StartSeconds is reported as 'starting' instead of repeated.
+    Fairlead ('shell') starts detached and hidden through the shell and outlives the caller. TalkForge ('child') starts
+    as a hidden child with its output drained, the token only in its environment (never on its command line), and the
+    caller's secret-looking variables removed; Stop-FleetServiceChild ends it.
+    Returns @{ State = running|starting|unavailable; Message; StartedHere; Name; Port; Url; Pid; Version; Folder; Reason }.
+    Expected failures do not throw; Message is a sentence for the person.
+.EXAMPLE
+    $r = Start-FleetService -Name talkforge -Environment @{ TALKFORGE_TOKEN = $token } -WaitSeconds 20
+    $token = $null
+    if ($r.State -ne 'running') { Write-Log $r.Message }
+#>
+function Start-FleetService {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][string]$Name,
+        [string]$Folder = '',
+        [int]$Port = 0,
+        [hashtable]$Environment = @{},
+        [int]$WaitSeconds = 0,
+        [string]$CallerRoot = '',
+        [string]$StateDirectory = '',
+        [int]$ProbeTimeoutMs = 1500,
+        [int]$MutexWaitSeconds = 30
+    )
+    $d = Get-FleetServiceDefinition -Name $Name
+    if ($Port -le 0) { $Port = [int]$d.Port }
+    if (-not $CallerRoot) { $CallerRoot = [string]$MyInvocation.PSScriptRoot }
+    $dir = Get-FleetServiceStateDirectory $StateDirectory
+    $dn = $d.DisplayName
+    $no = { param($msg, $why) New-FleetServiceResult 'unavailable' $msg $false $d $Port $why }
+
+    $mutex = New-Object System.Threading.Mutex($false, ('Local\FleetHacker.FleetService.{0}.{1}' -f $d.Name, $Port))
+    $held = $false
+    $result = $null
+    try {
+        try { $held = $mutex.WaitOne([TimeSpan]::FromSeconds($MutexWaitSeconds)) }
+        catch [System.Threading.AbandonedMutexException] { $held = $true }
+        if (-not $held) { return (& $no "Another app is still deciding whether to start $dn. Try again in a moment." 'busy') }
+
+        $now = Get-FleetServiceState -Name $d.Name -Port $Port -StateDirectory $dir -ProbeTimeoutMs $ProbeTimeoutMs
+        if ($now.State -ne 'stopped') { $result = $now }
+        else {
+            if ($d.Launch -eq 'shell' -and $Environment.Count -gt 0) { return (& $no "$dn is started through the shell, which cannot set its environment; pass no -Environment." 'bad-call') }
+            foreach ($req in $d.RequiredEnvironment.Keys) {
+                $v = $null; if ($Environment.ContainsKey($req)) { $v = [string]$Environment[$req] }
+                if (-not $v -or $v.Length -lt [int]$d.RequiredEnvironment[$req]) {
+                    $v = $null
+                    return (& $no "$dn needs $req (at least $($d.RequiredEnvironment[$req]) characters) to start. Check the item that holds it." 'no-secret')
+                }
+                $v = $null
+            }
+            $found = Find-FleetServiceFolder -Definition $d -Folder $Folder -CallerRoot $CallerRoot
+            if (-not $found.Folder) { return (& $no $found.Problem 'not-found') }
+            $exe = Resolve-FleetServiceExe $d.Exe
+            if (-not $exe) {
+                $need = 'Windows PowerShell 5.1'; if ($d.Exe -eq 'node') { $need = 'Node.js 18 or newer' }
+                return (& $no "$dn needs $need, and it was not found on this computer." 'no-runtime')
+            }
+            $si = $null; $p = $null
+            try {
+                $si = New-FleetServiceStartInfo -Definition $d -ExePath $exe -Folder $found.Folder -Port $Port -Environment $Environment
+                $p = [Diagnostics.Process]::Start($si)
+                $childPid = 0; if ($p) { $childPid = $p.Id }
+                if ($d.Launch -eq 'child') {
+                    $p.BeginOutputReadLine(); $p.BeginErrorReadLine()   # drained with no handler: the lines are dropped
+                    try { $p.StandardInput.Close() } catch { }
+                    $key = "$($d.Name):$Port"
+                    $old = $script:FleetServiceChildren[$key]
+                    if ($old) { try { $old.Dispose() } catch { } }
+                    $script:FleetServiceChildren[$key] = $p
+                } elseif ($p) { $p.Dispose() }
+                Set-FleetServiceStartRecord -Directory $dir -Name $d.Name -Port $Port -ProcessId $childPid
+                $result = New-FleetServiceResult 'starting' "$dn is starting." $true $d $Port 'starting' $childPid '' $found.Folder
+            } catch {
+                return (& $no "$dn could not be started ($($_.Exception.GetType().Name)). Start it yourself to see why." 'start-failed')
+            } finally {
+                # The values were copied into the child at start; drop this copy.
+                if ($si -and -not $si.UseShellExecute) { foreach ($k in @($Environment.Keys)) { try { $si.EnvironmentVariables.Remove([string]$k) } catch { } } }
+                $si = $null
+            }
+        }
+    } finally {
+        if ($held) { try { $mutex.ReleaseMutex() } catch { } }
+        $mutex.Dispose()
+    }
+
+    if ($WaitSeconds -gt 0 -and $result.State -eq 'starting') {
+        $startedHere = $result.StartedHere; $folderUsed = $result.Folder
+        $sw = [Diagnostics.Stopwatch]::StartNew()
+        do {
+            Start-Sleep -Milliseconds 250
+            $result = Get-FleetServiceState -Name $d.Name -Port $Port -StateDirectory $dir -ProbeTimeoutMs $ProbeTimeoutMs
+        } while ($result.State -eq 'starting' -and $sw.Elapsed.TotalSeconds -lt $WaitSeconds)
+        $result.StartedHere = $startedHere
+        if (-not $result.Folder) { $result.Folder = $folderUsed }
+        if ($result.State -eq 'starting') { $result.Message = "$dn is still starting after $WaitSeconds s." }
+    }
+    return $result
+}
+
+<#
+.SYNOPSIS
+    Stops a 'child' service (TalkForge) that THIS process started with Start-FleetService. A service started by another
+    app, by hand, or through the shell (Fairlead) is never touched. Returns $true when it stopped one.
+#>
+function Stop-FleetServiceChild {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][string]$Name, [int]$Port = 0, [string]$StateDirectory = '')
+    $d = Get-FleetServiceDefinition -Name $Name
+    if ($Port -le 0) { $Port = [int]$d.Port }
+    $key = "$($d.Name):$Port"
+    $p = $script:FleetServiceChildren[$key]
+    $script:FleetServiceChildren.Remove($key)
+    if (-not $p) { return $false }
+    $dir = Get-FleetServiceStateDirectory $StateDirectory
+    try {
+        if ($p.HasExited) { return $false }
+        $childPid = $p.Id
+        $p.Kill()
+        [void]$p.WaitForExit(5000)
+        $rec = Get-FleetServiceStartRecord -Directory $dir -Name $d.Name -Port $Port
+        if ($rec -and $rec.Pid -eq $childPid) { Clear-FleetServiceStartRecord -Directory $dir -Name $d.Name -Port $Port }
+        return $true
+    } catch { return $false } finally { try { $p.Dispose() } catch { } }
+}
+
+Export-ModuleMember -Function Get-FleetPortBlock, Test-FleetPortFree, Test-FleetSelf, Stop-FleetInstance, Resolve-FleetPort, Invoke-FleetIdEndpoint,
+    Get-FleetServiceDefinition, Get-FleetServiceState, Start-FleetService, Stop-FleetServiceChild

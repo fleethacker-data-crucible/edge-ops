@@ -22,7 +22,9 @@ The repo itself is tidy: `catalog.json` is valid and matches `assets/catalog-dat
   - on start it force-kills any process matching `*server.ps1*` (lines 171-176), contrary to `CONVENTIONS.md:28`
 - [ ] **Keystone override:** the one at `PORTS.md:11` (`-NoBrowser 8770`) doesn't use the standard `-Port <n>` switch (`CONVENTIONS.md:24`).
 - [ ] **Phoenix `"network": false` (`catalog.json:12`) is wrong.** The client can call any OpenAI provider on the LAN or the internet.
-- [ ] **Halyard's port is unregistered and collides with PacketRat.** Halyard defaults to 8773 with a free-port fallback (Halyard `docs/OPERATIONS.md`, `catalog.json` `defaultPort`), inside PacketRat's exclusive 8771-8773 block (`PORTS.md`). Give it its own block in `PORTS.md` and `FleetPorts.psd1`, then move its default in the Halyard repo.
+- [x] **Halyard's port is unregistered and collides with PacketRat.** Done 2026-11-08: Halyard had already moved to 8806-8808 in its own repo; that block is now registered in `PORTS.md` and `FleetPorts.psd1`, and `catalog.json` says 8806.
+- [ ] **Lazarette sits on 8765, inside SnapShackle's block, with an OS-port fallback.** `PORTS.md` proposes 8809 (one fixed port). Agree it, then move the default and drop the fallback in the Lazarette repo (`lib/core/Config.ps1`, `lib/server/Http.ps1`, `tools/Lazarette.Client.ps1`), and update `catalog.json`.
+- [ ] **TalkForge's page server still walks to 25009,** which is now the speech server's own port. Cap its block at 25008 in the TalkForge repo (`Start-TalkForge.ps1`).
 
 ## 3. Workflows and scripts
 
