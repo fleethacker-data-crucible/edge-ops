@@ -2,6 +2,7 @@
 import { spawn } from 'node:child_process';
 import { mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
+import { jsNumericLiteral } from './js-numeric-literal.mjs';
 
 const OUT = process.argv[2];
 if (!OUT) { console.error('usage: node browser-check.mjs <screenshot folder>'); process.exit(64); }
@@ -107,8 +108,8 @@ check('survives corrupt saved data', (await ev('binnacleDemo.main.look')) === 'r
 
 // page clicks pass through the square corners of the orb, and are blocked only by the disc
 const b = await ev(`(()=>{const k=document.getElementById('clicker');k.scrollIntoView({block:'center'});const r=k.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2}})()`);
-await ev(`binnacleDemo.main.moveTo(${b.x + 118}, ${b.y + 118}); 0`);   // button sits in the top-left corner of the orb's square
-const inside = await ev(`(()=>{const o=document.querySelector('.binnacle:not(.inline)').getBoundingClientRect();const c=${JSON.stringify(b)};return c.x>o.left&&c.x<o.right&&c.y>o.top&&c.y<o.bottom})()`);
+await ev(`binnacleDemo.main.moveTo(${jsNumericLiteral(b.x + 118)}, ${jsNumericLiteral(b.y + 118)}); 0`);   // button sits in the top-left corner of the orb's square
+const inside = await ev(`(()=>{const o=document.querySelector('.binnacle:not(.inline)').getBoundingClientRect();const c={x:${jsNumericLiteral(b.x)},y:${jsNumericLiteral(b.y)}};return c.x>o.left&&c.x<o.right&&c.y>o.top&&c.y<o.bottom})()`);
 check('button is inside the orb square', inside);
 await mouse('mouseMoved', b.x, b.y, { buttons: 0, button: 'none' });
 await mouse('mousePressed', b.x, b.y); await mouse('mouseReleased', b.x, b.y);
