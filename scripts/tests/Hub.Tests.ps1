@@ -25,16 +25,29 @@ Describe 'catalog.json and its file:// fallback' {
 
 Describe 'Bridge Warden catalog entry' {
     BeforeAll { $script:Bw = $Cat.tools | Where-Object { $_.id -eq 'bridge-warden' } }
-    It 'is in the Local AI platform group, unreleased, on the provisional port 8774' {
+    It 'is in the Local AI platform group, unreleased, on the proposed port 8832' {
         $Bw | Should -Not -BeNullOrEmpty
         $Bw.group | Should -Be 'local-ai'
         $Bw.status | Should -Be 'unreleased'
-        $Bw.defaultPort | Should -Be 8774
-        $Bw.portNote | Should -Match 'provisional'
+        $Bw.defaultPort | Should -Be 8832
+        $Bw.portNote | Should -Match '8832'
         $Bw.portNote | Should -Match 'Eight-Bells'
     }
     It 'claims no status in its wording' {
         ($Bw.summary + ' ' + $Bw.portNote) | Should -Not -Match $Claim
+    }
+}
+
+Describe 'catalog ports follow PORTS.md' {
+    It 'uses the registered defaults for Lazarette, SnapShackle and Shellback' {
+        ($Cat.tools | Where-Object { $_.id -eq 'lazarette' }).defaultPort | Should -Be 8809
+        ($Cat.tools | Where-Object { $_.id -eq 'snapshackle' }).defaultPort | Should -Be 8765
+        ($Cat.tools | Where-Object { $_.id -eq 'snapshackle' }).portNote | Should -Match '8765-8766'
+        ($Cat.tools | Where-Object { $_.id -eq 'shellback' }).defaultPort | Should -Be 8767
+    }
+    It 'puts Bowerbird and Capstan on the proposed free ports' {
+        ($Cat.tools | Where-Object { $_.id -eq 'bowerbird' }).defaultPort | Should -Be 8830
+        ($Cat.tools | Where-Object { $_.id -eq 'capstan' }).defaultPort | Should -Be 8831
     }
 }
 
