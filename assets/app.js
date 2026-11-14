@@ -6,6 +6,15 @@
   function render(data){
     window.EDGE_OPS_CATALOG=data;
     var grid=document.getElementById('grid'),q=document.getElementById('q'),cat=document.getElementById('cat'),grp=document.getElementById('grp');
+    var statusEl=document.getElementById('match-status'),statusTimer=null,statusReady=false;
+    function announce(n){
+      var text=n===1?'1 tool matches':n+' tools match';
+      function apply(){if(statusEl)statusEl.textContent=text;}
+      if(!statusReady){statusReady=true;apply();return;}
+      if(statusTimer)clearTimeout(statusTimer);
+      statusTimer=setTimeout(apply,200);
+    }
+    function resetFilters(){q.value='';cat.value='';grp.value='';draw();q.focus();}
     // Group order is the order in catalog.json. The first four are the primary rows; voice, secrets and support follow and stay visible.
     // Groups come from catalog.json ("groups", in display order; a tool's "group" is a group id). A tool with no or an unknown group lands under "Other".
     var groups=(data.groups||[]).slice(),gById={};
@@ -17,7 +26,11 @@
     function draw(){
       var s=q.value.toLowerCase(),c=cat.value,gv=grp.value;grid.innerHTML='';
       var hits=data.tools.filter(function(t){var g=gOf(t);return(!c||t.category===c)&&(!gv||g.id===gv)&&(!s||(t.name+' '+t.summary+' '+g.name).toLowerCase().indexOf(s)>=0);});
-      if(!hits.length){grid.appendChild(el('p','empty','No tools match your search.'));return;}
+      if(!hits.length){
+        var empty=el('div','empty');empty.appendChild(document.createTextNode('No tools match your search. '));
+        var reset=el('button','ghost small','Reset');reset.type='button';reset.addEventListener('click',resetFilters);empty.appendChild(reset);
+        grid.appendChild(empty);announce(0);return;
+      }
       groups.forEach(function(g){
         var gh=hits.filter(function(t){return gOf(t)===g;});if(!gh.length)return;
         var sec=el('section','group'),hd=el('h2','group-title',g.name);hd.id='group-'+(g.id||'other');sec.setAttribute('aria-labelledby',hd.id);sec.appendChild(hd);
@@ -25,6 +38,7 @@
         var cards=el('div','cards');sec.appendChild(cards);grid.appendChild(sec);
         gh.forEach(function(t){card(cards,t,g);});
       });
+      announce(hits.length);
     }
     function safeHttps(url){return(typeof url==='string'&&/^https:\/\/\S+$/.test(url))?url:'';}
     function isPages(u){return /\.github\.io\//i.test(u);}
