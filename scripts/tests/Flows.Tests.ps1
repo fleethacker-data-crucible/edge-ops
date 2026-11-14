@@ -30,7 +30,7 @@ Describe 'docs/FLOWS.md hand-off file formats' {
 Describe 'CONVENTIONS.md voice section' {
     It 'has a Voice section that points at the TalkForge contract and the Fairlead routes' {
         $Conv | Should -Match '(?m)^## Voice \(speech out and in\)'
-        foreach ($needle in @('VOICE-CONTRACT.md', '/v1/audio/speech', '/v1/audio/transcriptions', '127.0.0.1:8776', 'Lazarette')) {
+        foreach ($needle in @('VOICE-CONTRACT.md', '/v1/audio/speech', '/v1/audio/transcriptions', '127.0.0.1:8776', 'Lazarette', 'ui-kit/speech/SpeechIn.psm1')) {
             $Conv.Contains($needle) | Should -BeTrue -Because "the voice section should mention $needle"
         }
     }
