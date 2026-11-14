@@ -156,6 +156,26 @@ Describe 'Demo button' {
     }
 }
 
+Describe 'filter match status' {
+    It 'takes the live region off the tool grid' {
+        $Index | Should -Match '<main id="grid" tabindex="-1" aria-label="Tools"></main>'
+        $Index | Should -Not -Match 'id="grid"[^>]*aria-live'
+    }
+    It 'announces the debounced match count from a status element' {
+        $Index | Should -Match '<p id="match-status" class="sr-only" role="status"></p>'
+        $App | Should -Match "getElementById\('match-status'\)"
+        $App | Should -Match "n===1\?'1 tool matches':n\+' tools match'"
+        $App | Should -Match 'setTimeout\(apply,200\)'
+        $App | Should -Match 'announce\(hits\.length\)'
+        $App | Should -Match 'announce\(0\)'
+    }
+    It 'offers a reset when nothing matches' {
+        $App | Should -Match 'No tools match your search\. '
+        $App | Should -Match "el\('button','ghost small','Reset'\)"
+        $App | Should -Match "q\.value='';cat\.value='';grp\.value='';draw\(\);q\.focus\(\)"
+    }
+}
+
 Describe 'Periscope display and Launch button' {
     It 'titles the page Periscope and keeps the suite subtitle' {
         $Index | Should -Match '<title>Periscope</title>'

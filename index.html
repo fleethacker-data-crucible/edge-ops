@@ -16,7 +16,8 @@
 <header><div class="prefs"><label for="theme">Theme</label> <select id="theme" data-theme-select></select></div><h1>Periscope</h1>
 <p>FleetHacker Edge-Ops utility suite</p>
 <div class="controls"><input id="q" type="search" placeholder="Filter tools or groups…" aria-label="Filter tools or groups"><select id="cat" aria-label="Category"><option value="">All categories</option></select><select id="grp" aria-label="Group"><option value="">All groups</option></select></div></header>
-<main id="grid" tabindex="-1" aria-label="Tools" aria-live="polite"></main>
+<p id="match-status" class="sr-only" role="status"></p>
+<main id="grid" tabindex="-1" aria-label="Tools"></main>
 <footer><a href="https://github.com/fleethacker-data-crucible/edge-ops">edge-ops on GitHub</a> · <a href="https://github.com/fleethacker-data-crucible/edge-ops/blob/main/CONVENTIONS.md">Conventions</a> · <a href="https://github.com/fleethacker-data-crucible/edge-ops/blob/main/PORTS.md">Ports</a> · MIT</footer>
 <script src="assets/catalog-data.js"></script>
 <script src="assets/app.js"></script>
