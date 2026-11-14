@@ -1,4 +1,4 @@
-# fleet-action (v0.3.0, reference copy)
+# fleet-action (v0.3.1, reference copy)
 
 > The canonical module now lives in [fleethacker-data-crucible/fleet-action-baseline](https://github.com/fleethacker-data-crucible/fleet-action-baseline) (being built). This folder is a reference copy; vendor from the baseline repo once it ships.
 
@@ -46,7 +46,7 @@ Invoke-FleetJob -Job .\example-job.json     # destructive steps need "confirm": 
 - **The session token is full authority** over the app. Anyone who can read it can run every action, including destructive ones.
 - **confirm / `--yes` is an accident guard, not a security control.** It stops a script or agent from deleting by mistake; it does not prove a human agreed. Real human confirmation would have to happen on the server side (a GUI prompt the app shows) and is planned for a later version.
 - **Token file:** created empty, then locked before the token is written. On Windows: inheritance off, owner and a single FullControl rule for the current user only. Elsewhere: `chmod 600`. Delete it when the app stops (`Remove-FleetSessionToken` in a `finally`).
-- **Request order:** Host, Origin and Bearer token are checked before the body is read. Bodies need a `Content-Length` (chunked or unknown length gets 411) and are capped at 1 MB (413); the body is read with a bounded buffer. `Invoke-FleetHttpAction` always closes the response.
+- **Request order:** Host, Origin and Bearer token are checked before the body is read. Bodies need a `Content-Length` (chunked or unknown length gets 411) and are capped at 1 MB (413); the body is read with a bounded buffer. `Invoke-FleetHttpAction` always closes the response. If building that response throws, the caller still gets an `E_INTERNAL` envelope, and the response is closed.
 - **Arguments:** anything the schema doesn't declare is rejected, and scalar-typed args must be single values.
 - **Errors:** `E_INTERNAL` returns a generic message; details go only to `%LOCALAPPDATA%\FleetHacker\<app>\actions.log`. Destructive calls are logged there too.
 - **Job values are untrusted.** `${steps.<id>.result.<field>}` copies text from an earlier step's result into a later step's args. Handlers must validate those values like any other input (paths, IDs, URLs).
@@ -59,6 +59,6 @@ Invoke-FleetJob -Job .\example-job.json     # destructive steps need "confirm": 
 
 ## Tests
 
-`Invoke-Pester tools/fleet-action/tests` (Pester 5): 41 tests (one is Windows-only, one non-Windows-only), including a real `HttpListener` round trip on 127.0.0.1:8903.
+`Invoke-Pester tools/fleet-action/tests` (Pester 5): 44 tests (one is Windows-only, one non-Windows-only), including a real `HttpListener` round trip on 127.0.0.1:8903 and 127.0.0.1:8904.
 
-Not in v0.3: YAML jobs (v2 at the earliest), `fleet.ps1` cross-app dispatcher, MCP generation, GUI parity test, server-side human confirmation.
+Not in v0.3.1: YAML jobs (v2 at the earliest), `fleet.ps1` cross-app dispatcher, MCP generation, GUI parity test, server-side human confirmation.
