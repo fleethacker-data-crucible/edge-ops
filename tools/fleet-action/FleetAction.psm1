@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Fleet Action Framework v0.3.0 (Windows PowerShell 5.1). ASCII only. MIT.
+    Fleet Action Framework v0.3.1 (Windows PowerShell 5.1). ASCII only. MIT.
 .DESCRIPTION
     One registry of <app> <noun> <verb> actions shared by the GUI, the CLI, the loopback HTTP API
     and JSON job files. Spec: comms proposals/fleet-action-framework/README.md (refs comms #68).
@@ -10,7 +10,8 @@
       - Listeners must bind exactly http://127.0.0.1:<port>/ (use New-FleetHttpListener), never + or *.
 #>
 Set-StrictMode -Version 2
-$script:FleetActionVersion = '0.3.0'
+$script:FleetActionVersion = '0.3.1'
+$script:FleetHttpFault = $false
 $script:Actions = @{}
 $script:LogRoot = $env:LOCALAPPDATA
 $script:MaxBodyBytes = 1048576
@@ -373,12 +374,21 @@ function Invoke-FleetHttpAction {
         $len = $rq.ContentLength64; if (-not $rq.HasEntityBody) { $len = 0 }
         $r = Invoke-FleetHttpCore -Method $rq.HttpMethod -Path $rq.Url.AbsolutePath -Headers $hd -ContentLength $len `
                 -Chunked:($te -ne '') -ReadBody { Read-FleetBoundedBody $rq.InputStream $len } -Port $Port -Token $Token -App $App
+        # One-shot test fault, cleared before the error envelope is built. Not an app setting.
+        if ($script:FleetHttpFault) { $script:FleetHttpFault = $false; throw 'response build failed' }
         $bytes = (New-Object Text.UTF8Encoding($false)).GetBytes(($r.Body | ConvertTo-Json -Depth 20))
         $res.StatusCode = $r.Status; $res.ContentType = 'application/json; charset=utf-8'; $res.Headers['Cache-Control'] = 'no-store'
         $res.OutputStream.Write($bytes, 0, $bytes.Length)
     } catch {
         Write-FleetActionLog $App "http error: $($_.Exception.Message)"
-        try { $res.StatusCode = 500 } catch { }
+        try {
+            $errEnv = New-FleetEnvelope 'http' -Code E_INTERNAL -Message $script:InternalMessage
+            $errBytes = (New-Object Text.UTF8Encoding($false)).GetBytes(($errEnv | ConvertTo-Json -Depth 20))
+            $res.StatusCode = 500
+            $res.ContentType = 'application/json; charset=utf-8'
+            $res.Headers['Cache-Control'] = 'no-store'
+            $res.OutputStream.Write($errBytes, 0, $errBytes.Length)
+        } catch { }
     } finally {
         try { $res.Close() } catch { }
     }

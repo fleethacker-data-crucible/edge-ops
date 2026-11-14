@@ -61,6 +61,19 @@ Describe 'Invoke-FleetJob' {
         $job = '{"version":1,"steps":[{"app":"other","noun":"marker","verb":"add","args":{"clip":"c"}}]}' | ConvertFrom-Json
         (Invoke-FleetJob $job).result.steps[0].envelope.result.markerId | Should -Be 'other'
     }
+    It 'rejects a step whose app does not match the registered action' {
+        $job = '{"version":1,"steps":[{"app":"other","noun":"marker","verb":"add","args":{"clip":"c"}}]}' | ConvertFrom-Json
+        $e = Invoke-FleetJob $job
+        $e.ok | Should -BeFalse
+        $e.error.code | Should -Be 'E_NOTFOUND'
+        $e.steps[0].envelope.error.code | Should -Be 'E_NOTFOUND'
+    }
+    It 'keeps a step that is missing noun inside an error envelope' {
+        $e = Invoke-FleetJob ('{"version":1,"steps":[{"app":"demo","verb":"add"}]}' | ConvertFrom-Json)
+        $e.ok | Should -BeFalse
+        $e.error.code | Should -Be 'E_ARGS'
+        $e.error.message | Should -Match 'noun'
+    }
     It 'stops on first failure' {
         $job = '{"version":1,"steps":[{"app":"demo","noun":"boom","verb":"go"},{"app":"demo","noun":"marker","verb":"add","args":{"clip":"x"}}]}' | ConvertFrom-Json
         $e = Invoke-FleetJob $job; $e.ok | Should -BeFalse; @($e.steps).Count | Should -Be 1
@@ -150,6 +163,37 @@ Describe 'HTTP' {
             $code = 0; try { $wc.UploadString("http://127.0.0.1:$port/api/v1/ping/go", '{}') } catch { $code = [int]$_.Exception.InnerException.Response.StatusCode }
             $code | Should -Be 401
             $wc.Headers['Authorization'] = "Bearer $Tok"
+            ($wc.UploadString("http://127.0.0.1:$port/api/v1/ping/go", '{}') | ConvertFrom-Json).result.pong | Should -Be 1
+        } finally { [void]$h.AsyncWaitHandle.WaitOne(3000); $ps.Dispose() }
+    }
+    It 'writes an error envelope and closes when building the response throws' {
+        $port = 8904; $mod = (Get-Module FleetAction).Path
+        $ps = [PowerShell]::Create()
+        [void]$ps.AddScript({
+            param($mod, $port, $tok)
+            Import-Module $mod; Set-FleetActionLogRoot ''
+            & (Get-Module FleetAction) { $script:FleetHttpFault = $true }
+            Register-FleetAction -App demo -Noun ping -Verb go -Handler { @{ pong = 1 } }
+            $l = New-FleetHttpListener -Port $port; $l.Start()
+            try { for ($i = 0; $i -lt 2; $i++) { Invoke-FleetHttpAction -Context $l.GetContext() -Port $port -Token $tok -App demo } } finally { $l.Close() }
+        }).AddArgument($mod).AddArgument($port).AddArgument($Tok)
+        $h = $ps.BeginInvoke(); Start-Sleep -Milliseconds 500
+        try {
+            $wc = New-Object Net.WebClient
+            $wc.Headers['Authorization'] = "Bearer $Tok"
+            $text = $null; $code = 0
+            try { $wc.UploadString("http://127.0.0.1:$port/api/v1/ping/go", '{}') } catch {
+                $ex = $_.Exception; if ($ex.InnerException) { $ex = $ex.InnerException }
+                $code = [int]$ex.Response.StatusCode
+                $sr = New-Object IO.StreamReader($ex.Response.GetResponseStream())
+                try { $text = $sr.ReadToEnd() } finally { $sr.Dispose() }
+            }
+            $code | Should -Be 500
+            $text | Should -Not -Match 'response build failed'
+            $body = $text | ConvertFrom-Json
+            $body.ok | Should -BeFalse
+            $body.error.code | Should -Be 'E_INTERNAL'
+            $body.error.message | Should -Be 'internal error (details in the local log)'
             ($wc.UploadString("http://127.0.0.1:$port/api/v1/ping/go", '{}') | ConvertFrom-Json).result.pong | Should -Be 1
         } finally { [void]$h.AsyncWaitHandle.WaitOne(3000); $ps.Dispose() }
     }
