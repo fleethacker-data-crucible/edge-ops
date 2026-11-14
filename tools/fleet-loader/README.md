@@ -64,9 +64,25 @@ These are proposals for the team to confirm; changing one is a small edit.
 - **Who cuts it:** whoever cuts a fleet Release writes the manifest from the tested assets (a generator is not built yet) and runs this verifier on the assets before publishing.
 - **Version number:** `snapshot` is a free name such as `2026.11.0`; nothing parses it.
 
+## Installing (local files only)
+
+[FleetInstall.psm1](FleetInstall.psm1) unpacks a snapshot that [Test-FleetSnapshot](FleetSnapshot.psm1) has already accepted, into `-Root` (default `%LOCALAPPDATA%\FleetHacker\apps`). A failed check unpacks nothing.
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\fleet-loader\Install-FleetSnapshot.ps1 `
+    -Manifest .\snapshot.json -AssetDir D:\fleet\assets -Catalog .\catalog.json
+```
+
+- **Stable.** `Install-FleetSnapshot` records each tool's channel as `stable` in `install-state.json` next to the tools (schema `edge-ops.fleet-install/1`).
+- **Beta.** `Install-FleetToolBeta` unpacks one zip only after it matches the published checksum the caller passes. It does not contact GitHub. The record's channel is `beta`.
+- **Switch back.** `Switch-FleetToolToStable` reinstalls that tool from the pinned asset and sets the channel back to `stable`.
+- **Air-gapped bundle.** `Install-FleetBundle` takes one local zip that contains `snapshot.json` and `assets\`, and unpacks it only after the caller-supplied SHA256 matches.
+- **Launch.** `Start-FleetTool -DryRun` resolves one `.ps1` or `.bat` under that tool's folder and names `System32\WindowsPowerShell\v1.0\powershell.exe` or `System32\cmd.exe`. It does not start an `.exe` from the zip. Without `-DryRun` it starts that System32 program. On a machine without Windows PowerShell it returns `E_UNSUPPORTED` and starts nothing.
+- **Unpack rules.** Entry names that are absolute, contain `..`, or a drive letter are refused. The written path has to stay under the destination. A link is refused. The expanded size is capped (default 2 GiB) and so is the entry count (default 10000).
+
 ## Not built (still to do for issue 34)
 
-Downloading from GitHub, unpacking into the user's profile, launching, the beta channel and its checksum check, switching a tool between channels, the bundled single-file snapshot for air-gapped machines, tokens for private repos, and the hub UI. All of that needs the network or a design decision.
+Downloading from GitHub, the hub UI, and a token for private repos. Those need a decision: where a snapshot is published, which utilities the first snapshot pins, who cuts it, and where a private-repo token would live (not in the browser, and not in this module). No token is read or stored here.
 
 ## Tests
 

@@ -80,7 +80,16 @@ function Read-FleetSnapshotManifest {
     $v = Get-FleetProp $manifest 'snapshot'
     if ($null -ne $v) { [void](Test-FleetPattern $v $schema.properties.snapshot 'snapshot' $errors) }
     $v = Get-FleetProp $manifest 'created'
-    if ($null -ne $v) { [void](Test-FleetPattern $v $schema.properties.created 'created' $errors) }
+    if ($null -ne $v) {
+        # PowerShell 7 ConvertFrom-Json turns an ISO-8601 timestamp into a DateTime.
+        # Windows PowerShell 5.1 leaves it as text. Both must match the schema pattern.
+        if ($v -is [datetime]) {
+            $dt = [datetime]$v
+            if ($dt.Kind -eq [datetimekind]::Local) { $dt = $dt.ToUniversalTime() }
+            $v = $dt.ToString('yyyy-MM-ddTHH:mm:ssZ')
+        }
+        [void](Test-FleetPattern $v $schema.properties.created 'created' $errors)
+    }
     $v = Get-FleetProp $manifest 'notes'
     if ($null -ne $v) { [void](Test-FleetPattern $v $schema.properties.notes 'notes' $errors) }
 
