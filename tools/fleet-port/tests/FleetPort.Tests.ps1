@@ -159,6 +159,16 @@ Describe 'Get-FleetPortBlock (registry)' {
             $ports.Contains($want[$k][2]) | Should -BeTrue -Because "PORTS.md should list $k as $($want[$k][2])"
         }
     }
+    It 'proposes Bowerbird, Capstan and Bridge Warden on the next free ports, in step with PORTS.md' {
+        $want = @{ 'bowerbird' = @(8830, 1, '8830** (1 port)'); 'capstan' = @(8831, 1, '8831** (1 port)'); 'bridge-warden' = @(8832, 1, '8832** (1 port)') }
+        $ports = Get-Content -Raw (Join-Path $PSScriptRoot '..\..\..\PORTS.md')
+        foreach ($k in $want.Keys) {
+            $b = Get-FleetPortBlock -Tool $k
+            $b.Start | Should -Be $want[$k][0]
+            ($b.End - $b.Start + 1) | Should -Be $want[$k][1]
+            $ports.Contains($want[$k][2]) | Should -BeTrue -Because "PORTS.md should list $k as $($want[$k][2])"
+        }
+    }
     It 'rejects an unknown tool' {
         { Get-FleetPortBlock -Tool 'no-such-tool' } | Should -Throw -ExpectedMessage '*has no port block*'
     }

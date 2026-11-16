@@ -21,6 +21,10 @@
     'halyard'            = @{ Start = 8806;  Size = 3;  Policy = 'reuse' }
     # PROPOSED (2026-11-08): Lazarette still binds 8765 (inside SnapShackle's block) with an OS-port fallback until its repo moves here.
     'lazarette'          = @{ Start = 8809;  Size = 1;  Policy = 'reuse' }
+    # PROPOSAL (2026-11-14, issue 37): not in those repos yet. Next free ports after Drydock's unregistered 8810-8829.
+    'bowerbird'          = @{ Start = 8830;  Size = 1;  Policy = 'reuse' }
+    'capstan'            = @{ Start = 8831;  Size = 1;  Policy = 'reuse' }
+    'bridge-warden'      = @{ Start = 8832;  Size = 1;  Policy = 'reuse' }
     'talkforge'          = @{ Start = 25000; Size = 9;  Policy = 'reuse' }
     # TalkForge's speech server (talkforge serve), started on demand by Start-FleetService; fixed so callers can find it.
     'talkforge-speech'   = @{ Start = 25009; Size = 1;  Policy = 'reuse' }
