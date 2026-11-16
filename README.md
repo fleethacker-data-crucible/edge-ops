@@ -67,7 +67,7 @@ All tools are prototypes or previews unless stated otherwise. Get local authoriz
 
 - [CONVENTIONS.md](CONVENTIONS.md): repo, README, launcher, and release rules.
 - [docs/FLOWS.md](docs/FLOWS.md): the files Fleet apps hand to one another, and where each format is defined.
-- [tools/fleet-loader/](tools/fleet-loader/README.md): the fleet snapshot manifest and its offline verifier (proposal, issue 34).
+- [tools/fleet-loader/](tools/fleet-loader/README.md): the fleet snapshot manifest, its offline verifier, and the local installer (issue 34). RGLM cuts `fleet/snapshot.json`. A private-repo token, if a later download needs one, lives in Windows Credential Manager.
 - [templates/TOOL-README-TEMPLATE.md](templates/TOOL-README-TEMPLATE.md): the README layout every tool uses.
 - [templates/workflows/release-zip.yml](templates/workflows/release-zip.yml) (still staged there, not yet in `.github/workflows/`; moving it needs a token with `workflow` scope): reusable release packaging. Once it is in place, a tool repo calls it with:
 

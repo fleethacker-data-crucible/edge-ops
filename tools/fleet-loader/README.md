@@ -1,6 +1,6 @@
-# Fleet snapshot manifest and verifier
+# Fleet snapshot manifest, verifier, and local install
 
-Offline pieces of the fleet loader proposed in [edge-ops issue 34](https://github.com/fleethacker-data-crucible/edge-ops/issues/34): a manifest that pins one tested set of packaged Release assets (the **stable** channel), and a script that checks a folder of downloaded assets against it and **fails closed**. Nothing here downloads, unpacks or runs anything, and nothing uses the network.
+Offline pieces of the fleet loader in [edge-ops issue 34](https://github.com/fleethacker-data-crucible/edge-ops/issues/34): a manifest that pins one tested set of packaged Release assets (the **stable** channel), a script that checks a folder of those assets and **fails closed**, and an installer that unpacks only after that check passes. Nothing here contacts the network.
 
 | File | What it is |
 |---|---|
@@ -56,17 +56,35 @@ It fails closed. Each of these makes the whole result not OK, and nothing is eve
 
 Files in the folder that the manifest does not list are ignored: they are never used. Hashes compare without regard to case.
 
-## Defaults chosen for the open questions in issue 34
+## Decisions (2026-11-14)
 
-These are proposals for the team to confirm; changing one is a small edit.
+Jeremy decided the open questions in issue 34. This folder follows them.
 
-- **Where the manifest lives:** committed in edge-ops (suggested path `fleet/snapshot.json`, reviewed as a pull request), and attached to the matching fleet Release as well. No real snapshot is committed yet: a snapshot is a tested set, and none has been cut.
-- **Who cuts it:** whoever cuts a fleet Release writes the manifest from the tested assets (a generator is not built yet) and runs this verifier on the assets before publishing.
-- **Version number:** `snapshot` is a free name such as `2026.11.0`; nothing parses it.
+- **Where the manifest lives:** committed in edge-ops at `fleet/snapshot.json`, and attached to that same fleet Release. RGLM has not cut the first file, so it is not in the tree yet. Attaching the file is a release-workflow edit (the host-git teammate). This repo does not change `.github/workflows/` in the install pull request. When the workflow is edited, the edge-ops fleet Release should upload `fleet/snapshot.json` next to the suite zip. `templates/workflows/release-zip.yml` already has an `extra-assets` input for a tool repo; the fleet Release is a separate job.
+- **Who cuts the first snapshot:** RGLM. It pins the public utilities that currently have a Release asset. In [catalog.json](../../catalog.json) the entries with a `releases` URL today are TalkForge, Data Noodler, and Phoenix LAI. RGLM writes each asset's real tag, file name, and SHA256 from that Release, runs `Verify-FleetSnapshot.ps1` on the downloaded files, and only then commits `fleet/snapshot.json`. A generator is not built here.
+- **Private-repo token:** Windows Credential Manager. Never in the browser, and never in this module. This module does not read a token. A later download reads Credential Manager at the moment it needs the token and does not write the token into `install-state.json` or a config file.
+- **Install root:** `%LOCALAPPDATA%\FleetHacker\apps`, the same `FleetHacker` folder the rest of the suite uses.
+- **Version number:** `snapshot` is a free name such as `2026.11.0`. Nothing parses it.
 
-## Not built (still to do for issue 34)
+## Installing (local files only)
 
-Downloading from GitHub, unpacking into the user's profile, launching, the beta channel and its checksum check, switching a tool between channels, the bundled single-file snapshot for air-gapped machines, tokens for private repos, and the hub UI. All of that needs the network or a design decision.
+[FleetInstall.psm1](FleetInstall.psm1) unpacks a snapshot that [Test-FleetSnapshot](FleetSnapshot.psm1) has already accepted, into `-Root` (default `%LOCALAPPDATA%\FleetHacker\apps`). A failed check unpacks nothing.
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\fleet-loader\Install-FleetSnapshot.ps1 `
+    -Manifest .\snapshot.json -AssetDir D:\fleet\assets -Catalog .\catalog.json
+```
+
+- **Stable.** `Install-FleetSnapshot` records each tool's channel as `stable` in `install-state.json` next to the tools (schema `edge-ops.fleet-install/1`).
+- **Beta.** `Install-FleetToolBeta` unpacks one zip only after it matches the published checksum the caller passes. It does not contact GitHub. The record's channel is `beta`.
+- **Switch back.** `Switch-FleetToolToStable` reinstalls that tool from the pinned asset and sets the channel back to `stable`.
+- **Air-gapped bundle.** `Install-FleetBundle` takes one local zip that contains `snapshot.json` and `assets\`, and unpacks it only after the caller-supplied SHA256 matches.
+- **Launch.** `Start-FleetTool -DryRun` resolves one `.ps1` or `.bat` under that tool's folder and names `System32\WindowsPowerShell\v1.0\powershell.exe` or `System32\cmd.exe`. It does not start an `.exe` from the zip. Without `-DryRun` it starts that System32 program. On a machine without Windows PowerShell it returns `E_UNSUPPORTED` and starts nothing.
+- **Unpack rules.** The zip is copied under the install folder with a read-only open, and that copy is hashed and unpacked from the same stream. If the caller's file is different after the hash, nothing is unpacked. Entry names that are absolute, contain `..`, or a drive letter are refused. The written path has to stay under the destination. A link is refused. The expanded size is capped (default 2 GiB) and so is the entry count (default 10000).
+
+## Follow-up, not this install
+
+The hub UI, and downloading a Release zip from GitHub (the pinned asset for stable, the newest Release for beta). Those are a separate issue. The download, when it is built, reads a private-repo token from Windows Credential Manager and still fails closed on a checksum mismatch before unpack. No token is read or stored here.
 
 ## Tests
 
