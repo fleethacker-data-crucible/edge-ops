@@ -3,7 +3,8 @@
   Install a verified fleet snapshot, or one beta zip, into a user folder. Windows PowerShell 5.1. ASCII only.
 .DESCRIPTION
   Offline. Nothing is downloaded. A zip is unpacked only after its SHA256 matches the stable manifest or the
-  checksum the caller passes for a beta file. A mismatch unpacks nothing. Entries that would write outside the
+  checksum the caller passes for a beta file. The bytes that are hashed are the bytes that are unpacked.
+  A mismatch, or a file that changes after that hash, unpacks nothing. Entries that would write outside the
   destination are refused. Launch starts only System32 powershell.exe or cmd.exe, and only for one .ps1 or .bat
   whose name the caller names. No .exe from a zip is started.
 #>
@@ -22,6 +23,34 @@ $script:MaxUncompressedBytes = 2147483648
 $script:IdPattern = '^[a-z0-9][a-z0-9-]{0,39}$'
 $script:HashPattern = '^[0-9a-fA-F]{64}$'
 $script:LauncherPattern = '^[A-Za-z0-9][A-Za-z0-9._-]{0,80}\.(ps1|bat)$'
+# Pester sets this to swap the caller's zip after the hash. Production leaves it null.
+$script:FleetInstallAfterHashForTest = $null
+
+function Get-FleetOpenSha256 {
+    param([Parameter(Mandatory = $true)][System.IO.Stream]$Stream)
+    if ($Stream.CanSeek) { $Stream.Position = 0 }
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    try { $bytes = $sha.ComputeHash($Stream) }
+    finally { $sha.Dispose() }
+    if ($Stream.CanSeek) { $Stream.Position = 0 }
+    return (($bytes | ForEach-Object { $_.ToString('x2') }) -join '')
+}
+
+function Copy-FleetReadLocked {
+    # One read-only open. Callers can still read the file. They cannot replace it on Windows while this runs.
+    param([Parameter(Mandatory = $true)][string]$Source, [Parameter(Mandatory = $true)][string]$Destination)
+    if (Test-FleetReparsePoint -Path $Source) { throw 'Zip is a link, not a file.' }
+    $full = [System.IO.Path]::GetFullPath($Source)
+    $inputStream = New-Object System.IO.FileStream($full, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::Read)
+    try {
+        $parent = Split-Path -Parent $Destination
+        if (-not (Test-Path -LiteralPath $parent)) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
+        $outputStream = New-Object System.IO.FileStream($Destination, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::Write, [System.IO.FileShare]::None)
+        try { $inputStream.CopyTo($outputStream) }
+        finally { $outputStream.Dispose() }
+    }
+    finally { $inputStream.Dispose() }
+}
 
 function Get-FleetInstallRoot {
     [CmdletBinding()]
@@ -66,25 +95,21 @@ function Test-FleetZipEntryName {
     return $true
 }
 
-function Expand-FleetZip {
-    <#
-    .SYNOPSIS
-      Unpacks a zip into an empty directory. Refuses a path that escapes the directory, a link, or a size cap.
-    #>
-    [CmdletBinding()]
+function Expand-FleetZipStream {
     param(
-        [Parameter(Mandatory = $true)][string]$ZipPath,
+        [Parameter(Mandatory = $true)][System.IO.Stream]$Stream,
         [Parameter(Mandatory = $true)][string]$Destination,
         [long]$MaxUncompressedBytes = $script:MaxUncompressedBytes,
         [int]$MaxEntries = $script:MaxEntries
     )
     if (Test-Path -LiteralPath $Destination) { throw "Destination already exists: $Destination" }
-    if (Test-FleetReparsePoint -Path $ZipPath) { throw 'Zip is a link, not a file.' }
     New-Item -ItemType Directory -Path $Destination | Out-Null
     $destRoot = [System.IO.Path]::GetFullPath($Destination)
+    if ($Stream.CanSeek) { $Stream.Position = 0 }
     $archive = $null
     try {
-        $archive = [System.IO.Compression.ZipFile]::OpenRead(([System.IO.Path]::GetFullPath($ZipPath)))
+        # leaveOpen: the caller still owns the stream, which is the bytes that were hashed.
+        $archive = New-Object System.IO.Compression.ZipArchive($Stream, [System.IO.Compression.ZipArchiveMode]::Read, $true)
         $count = 0
         $total = [long]0
         foreach ($entry in $archive.Entries) {
@@ -133,6 +158,26 @@ function Expand-FleetZip {
     finally {
         if ($archive) { $archive.Dispose() }
     }
+}
+
+function Expand-FleetZip {
+    <#
+    .SYNOPSIS
+      Unpacks a zip into an empty directory. Refuses a path that escapes the directory, a link, or a size cap.
+      Opens the file once with FileShare.Read and unpacks that stream.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][string]$ZipPath,
+        [Parameter(Mandatory = $true)][string]$Destination,
+        [long]$MaxUncompressedBytes = $script:MaxUncompressedBytes,
+        [int]$MaxEntries = $script:MaxEntries
+    )
+    if (Test-FleetReparsePoint -Path $ZipPath) { throw 'Zip is a link, not a file.' }
+    $full = [System.IO.Path]::GetFullPath($ZipPath)
+    $stream = New-Object System.IO.FileStream($full, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::Read)
+    try { Expand-FleetZipStream -Stream $stream -Destination $Destination -MaxUncompressedBytes $MaxUncompressedBytes -MaxEntries $MaxEntries }
+    finally { $stream.Dispose() }
 }
 
 function Read-FleetInstallState {
@@ -191,15 +236,68 @@ function Set-FleetToolRecord {
     Write-FleetInstallState -Path $path -State ([pscustomobject]@{ Tools = $kept })
 }
 
+function Expand-FleetCheckedZip {
+    # Copies the zip under the install root, hashes that copy, and unpacks the same stream.
+    # If the caller's path is different after the hash, nothing is unpacked.
+    param(
+        [Parameter(Mandatory = $true)][string]$ZipPath,
+        [Parameter(Mandatory = $true)][string]$Destination,
+        [Parameter(Mandatory = $true)][string]$ExpectedSha256,
+        [long]$ExpectedBytes = -1,
+        [long]$MaxUncompressedBytes = $script:MaxUncompressedBytes,
+        [int]$MaxEntries = $script:MaxEntries
+    )
+    $parent = Split-Path -Parent $Destination
+    if (-not (Test-Path -LiteralPath $parent)) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
+    $privateDir = Join-Path $parent '.staging'
+    if (-not (Test-Path -LiteralPath $privateDir)) { New-Item -ItemType Directory -Path $privateDir | Out-Null }
+    $private = Join-Path $privateDir ([guid]::NewGuid().ToString('N') + '.zip')
+    $stream = $null
+    try {
+        Copy-FleetReadLocked -Source $ZipPath -Destination $private
+        $stream = New-Object System.IO.FileStream($private, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::Read)
+        $hash = Get-FleetOpenSha256 -Stream $stream
+        $want = ([string]$ExpectedSha256).ToLowerInvariant()
+        if ($hash -ne $want) { throw "SHA256 is $hash, the published checksum is $want. Not unpacked." }
+        if ($ExpectedBytes -ge 0 -and [long]$stream.Length -ne [long]$ExpectedBytes) {
+            throw "Size is $($stream.Length), the manifest says $ExpectedBytes. Not unpacked."
+        }
+        if ($script:FleetInstallAfterHashForTest) { & $script:FleetInstallAfterHashForTest $ZipPath }
+        $sourceHash = ''
+        try { $sourceHash = (Get-FleetFileSha256 -Path $ZipPath).ToLowerInvariant() } catch { $sourceHash = '' }
+        if ($sourceHash -ne $hash) { throw 'The zip changed after it was checked. Not unpacked.' }
+        $again = Get-FleetOpenSha256 -Stream $stream
+        if ($again -ne $hash) { throw 'The staged zip changed after it was checked. Not unpacked.' }
+        Expand-FleetZipStream -Stream $stream -Destination $Destination -MaxUncompressedBytes $MaxUncompressedBytes -MaxEntries $MaxEntries
+    }
+    catch {
+        if (Test-Path -LiteralPath $Destination) { Remove-Item -LiteralPath $Destination -Recurse -Force -ErrorAction SilentlyContinue }
+        throw
+    }
+    finally {
+        if ($stream) { $stream.Dispose() }
+        if (Test-Path -LiteralPath $private) { Remove-Item -LiteralPath $private -Force -ErrorAction SilentlyContinue }
+    }
+}
+
 function Install-FleetZipAt {
-    param([string]$ZipPath, [string]$DestDir, [long]$MaxUncompressedBytes, [int]$MaxEntries)
+    param(
+        [string]$ZipPath,
+        [string]$DestDir,
+        [Parameter(Mandatory = $true)][string]$ExpectedSha256,
+        [long]$ExpectedBytes = -1,
+        [long]$MaxUncompressedBytes,
+        [int]$MaxEntries
+    )
+    if (-not $MaxUncompressedBytes) { $MaxUncompressedBytes = $script:MaxUncompressedBytes }
+    if (-not $MaxEntries) { $MaxEntries = $script:MaxEntries }
     $parent = Split-Path -Parent $DestDir
     if (-not (Test-Path -LiteralPath $parent)) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
     if (Test-FleetReparsePoint -Path $parent) { throw "Install folder is a link: $parent" }
     $stagingParent = Join-Path $parent '.staging'
     if (-not (Test-Path -LiteralPath $stagingParent)) { New-Item -ItemType Directory -Path $stagingParent | Out-Null }
     $staging = Join-Path $stagingParent ((Split-Path -Leaf $DestDir) + '-' + [guid]::NewGuid().ToString('N'))
-    Expand-FleetZip -ZipPath $ZipPath -Destination $staging -MaxUncompressedBytes $MaxUncompressedBytes -MaxEntries $MaxEntries
+    Expand-FleetCheckedZip -ZipPath $ZipPath -Destination $staging -ExpectedSha256 $ExpectedSha256 -ExpectedBytes $ExpectedBytes -MaxUncompressedBytes $MaxUncompressedBytes -MaxEntries $MaxEntries
     $trash = $null
     try {
         if (Test-Path -LiteralPath $DestDir) {
@@ -247,16 +345,26 @@ function Install-FleetSnapshot {
         foreach ($e in @($check.Errors)) { $errors.Add([string]$e) }
         return (New-FleetInstallResult $false $errors.ToArray() @())
     }
+    $read = Read-FleetSnapshotManifest -Path $ManifestPath
+    if (-not $read.Valid) { return (New-FleetInstallResult $false @($read.Errors) @()) }
+    $byId = @{}
+    foreach ($tool in @($read.Manifest.tools)) { $byId[[string]$tool.id] = $tool }
     $staged = New-Object System.Collections.Generic.List[object]
     $assetRoot = [System.IO.Path]::GetFullPath($AssetDir)
     try {
         foreach ($t in @($check.Results)) {
             if ([string]$t.Status -ne 'Ok') { throw "Refusing to unpack $($t.Id)." }
+            $meta = $byId[[string]$t.Id]
+            $expectedBytes = [long]-1
+            if ($meta) {
+                $bp = $meta.PSObject.Properties['bytes']
+                if ($null -ne $bp -and $null -ne $bp.Value) { $expectedBytes = [long]$bp.Value }
+            }
             $zip = Join-Path $assetRoot ([string]$t.Asset)
             $stagingParent = Join-Path $rootFull '.staging'
             if (-not (Test-Path -LiteralPath $stagingParent)) { New-Item -ItemType Directory -Path $stagingParent -Force | Out-Null }
             $staging = Join-Path $stagingParent ([string]$t.Id + '-' + [guid]::NewGuid().ToString('N'))
-            Expand-FleetZip -ZipPath $zip -Destination $staging -MaxUncompressedBytes $MaxUncompressedBytes -MaxEntries $MaxEntries
+            Expand-FleetCheckedZip -ZipPath $zip -Destination $staging -ExpectedSha256 ([string]$t.Expected) -ExpectedBytes $expectedBytes -MaxUncompressedBytes $MaxUncompressedBytes -MaxEntries $MaxEntries
             $staged.Add([pscustomobject]@{ Id = [string]$t.Id; Staging = $staging; Asset = [string]$t.Asset; Sha = [string]$t.Expected })
         }
     }
@@ -267,9 +375,6 @@ function Install-FleetSnapshot {
         $errors.Add($_.Exception.Message)
         return (New-FleetInstallResult $false $errors.ToArray() @())
     }
-    $read = Read-FleetSnapshotManifest -Path $ManifestPath
-    $byId = @{}
-    foreach ($tool in @($read.Manifest.tools)) { $byId[[string]$tool.id] = $tool }
     $installed = New-Object System.Collections.Generic.List[string]
     try {
         foreach ($s in $staged) {
@@ -332,12 +437,8 @@ function Install-FleetToolBeta {
     catch { return (New-FleetInstallResult $false @($_.Exception.Message) @()) }
     if (-not (Test-Path -LiteralPath $ZipPath -PathType Leaf)) { return (New-FleetInstallResult $false @("Zip not found: $ZipPath") @()) }
     $want = $ExpectedSha256.ToLowerInvariant()
-    $actual = (Get-FleetFileSha256 -Path $ZipPath).ToLowerInvariant()
-    if ($actual -ne $want) {
-        return (New-FleetInstallResult $false @("SHA256 is $actual, the published checksum is $want. Not unpacked.") @())
-    }
     try {
-        Install-FleetZipAt -ZipPath $ZipPath -DestDir (Join-Path $rootFull $Id) -MaxUncompressedBytes $MaxUncompressedBytes -MaxEntries $MaxEntries
+        Install-FleetZipAt -ZipPath $ZipPath -DestDir (Join-Path $rootFull $Id) -ExpectedSha256 $want -MaxUncompressedBytes $MaxUncompressedBytes -MaxEntries $MaxEntries
         $now = [DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ')
         Set-FleetToolRecord -Root $rootFull -Record ([pscustomobject]@{
             id = $Id; channel = 'beta'; snapshot = ''; tag = $Tag
@@ -373,15 +474,11 @@ function Switch-FleetToolToStable {
     $zip = Join-Path ([System.IO.Path]::GetFullPath($AssetDir)) ([string]$tool.asset)
     if (-not (Test-Path -LiteralPath $zip -PathType Leaf)) { return (New-FleetInstallResult $false @("Pinned asset missing: $zip") @()) }
     $want = ([string]$tool.sha256).ToLowerInvariant()
-    $actual = (Get-FleetFileSha256 -Path $zip).ToLowerInvariant()
-    if ($actual -ne $want) { return (New-FleetInstallResult $false @("SHA256 is $actual, the manifest says $want. Not unpacked.") @()) }
+    $expectedBytes = [long]-1
     $bytes = $tool.PSObject.Properties['bytes']
-    if ($null -ne $bytes -and $null -ne $bytes.Value) {
-        $len = (Get-Item -LiteralPath $zip -Force).Length
-        if ([long]$bytes.Value -ne $len) { return (New-FleetInstallResult $false @("Size is $len, the manifest says $($bytes.Value). Not unpacked.") @()) }
-    }
+    if ($null -ne $bytes -and $null -ne $bytes.Value) { $expectedBytes = [long]$bytes.Value }
     try {
-        Install-FleetZipAt -ZipPath $zip -DestDir (Join-Path $rootFull $Id) -MaxUncompressedBytes $MaxUncompressedBytes -MaxEntries $MaxEntries
+        Install-FleetZipAt -ZipPath $zip -DestDir (Join-Path $rootFull $Id) -ExpectedSha256 $want -ExpectedBytes $expectedBytes -MaxUncompressedBytes $MaxUncompressedBytes -MaxEntries $MaxEntries
         $now = [DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ')
         Set-FleetToolRecord -Root $rootFull -Record ([pscustomobject]@{
             id = $Id; channel = 'stable'; snapshot = [string]$read.Manifest.snapshot
@@ -408,12 +505,14 @@ function Install-FleetBundle {
     )
     if ($ExpectedSha256 -notmatch $script:HashPattern) { return (New-FleetInstallResult $false @('Checksum must be 64 hex digits.') @()) }
     if (-not (Test-Path -LiteralPath $BundleZip -PathType Leaf)) { return (New-FleetInstallResult $false @("Bundle not found: $BundleZip") @()) }
+    try { $rootFull = Get-FleetInstallRoot -Root $Root }
+    catch { return (New-FleetInstallResult $false @($_.Exception.Message) @()) }
     $want = $ExpectedSha256.ToLowerInvariant()
-    $actual = (Get-FleetFileSha256 -Path $BundleZip).ToLowerInvariant()
-    if ($actual -ne $want) { return (New-FleetInstallResult $false @("Bundle SHA256 is $actual, the published checksum is $want. Not unpacked.") @()) }
-    $temp = Join-Path ([System.IO.Path]::GetTempPath()) ('fleetbundle-' + [guid]::NewGuid().ToString('N'))
+    $tempParent = Join-Path $rootFull '.staging'
+    $temp = Join-Path $tempParent ('bundle-' + [guid]::NewGuid().ToString('N'))
     try {
-        Expand-FleetZip -ZipPath $BundleZip -Destination $temp -MaxUncompressedBytes $MaxUncompressedBytes -MaxEntries $MaxEntries
+        if (-not (Test-Path -LiteralPath $tempParent)) { New-Item -ItemType Directory -Path $tempParent -Force | Out-Null }
+        Expand-FleetCheckedZip -ZipPath $BundleZip -Destination $temp -ExpectedSha256 $want -MaxUncompressedBytes $MaxUncompressedBytes -MaxEntries $MaxEntries
         $manifest = Join-Path $temp 'snapshot.json'
         $assets = Join-Path $temp 'assets'
         if (-not (Test-Path -LiteralPath $manifest -PathType Leaf)) { return (New-FleetInstallResult $false @('Bundle has no snapshot.json.') @()) }

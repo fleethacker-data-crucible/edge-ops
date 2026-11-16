@@ -133,6 +133,32 @@ Describe 'air-gapped bundle' {
     }
 }
 
+Describe 'zip swapped after the hash' {
+    BeforeEach { $script:W = New-Work }
+    AfterEach {
+        & (Get-Module FleetInstall) { $script:FleetInstallAfterHashForTest = $null }
+        Remove-Item $W -Recurse -Force -ErrorAction SilentlyContinue
+    }
+
+    It 'refuses the install when the zip changes after the check' {
+        $path = Join-Path $W 'assets\beta.zip'
+        New-ToolZip $path @{ 'Launch-capstan.bat' = "@echo off`r`n"; 'readme.txt' = 'good-body' }
+        $sha = Get-FleetFileSha256 -Path $path
+        $hook = {
+            param($Source)
+            [System.IO.File]::WriteAllBytes($Source, [System.Text.Encoding]::ASCII.GetBytes('swapped-after-check'))
+        }
+        $mod = Get-Module FleetInstall
+        & $mod { param($h) $script:FleetInstallAfterHashForTest = $h } $hook
+        $r = Install-FleetToolBeta -ZipPath $path -Id 'capstan' -ExpectedSha256 $sha -Tag 'v9.0.0' -Root (Join-Path $W 'root')
+        $r.Ok | Should -BeFalse
+        ($r.Errors -join ' ') | Should -Match 'changed after it was checked'
+        Test-Path (Join-Path (Join-Path $W 'root') 'capstan') | Should -BeFalse
+        $readme = Join-Path (Join-Path (Join-Path $W 'root') 'capstan') 'readme.txt'
+        if (Test-Path -LiteralPath $readme) { [System.IO.File]::ReadAllText($readme) | Should -Not -Be 'swapped-after-check' }
+    }
+}
+
 Describe 'launcher' {
     BeforeEach { $script:W = New-Work }
     AfterEach { Remove-Item $W -Recurse -Force -ErrorAction SilentlyContinue }

@@ -80,7 +80,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\fleet-loader\Ins
 - **Switch back.** `Switch-FleetToolToStable` reinstalls that tool from the pinned asset and sets the channel back to `stable`.
 - **Air-gapped bundle.** `Install-FleetBundle` takes one local zip that contains `snapshot.json` and `assets\`, and unpacks it only after the caller-supplied SHA256 matches.
 - **Launch.** `Start-FleetTool -DryRun` resolves one `.ps1` or `.bat` under that tool's folder and names `System32\WindowsPowerShell\v1.0\powershell.exe` or `System32\cmd.exe`. It does not start an `.exe` from the zip. Without `-DryRun` it starts that System32 program. On a machine without Windows PowerShell it returns `E_UNSUPPORTED` and starts nothing.
-- **Unpack rules.** Entry names that are absolute, contain `..`, or a drive letter are refused. The written path has to stay under the destination. A link is refused. The expanded size is capped (default 2 GiB) and so is the entry count (default 10000).
+- **Unpack rules.** The zip is copied under the install folder with a read-only open, and that copy is hashed and unpacked from the same stream. If the caller's file is different after the hash, nothing is unpacked. Entry names that are absolute, contain `..`, or a drive letter are refused. The written path has to stay under the destination. A link is refused. The expanded size is capped (default 2 GiB) and so is the entry count (default 10000).
 
 ## Follow-up, not this install
 
