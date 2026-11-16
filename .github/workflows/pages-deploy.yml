@@ -12,8 +12,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: pages
@@ -23,6 +21,9 @@ jobs:
   build:
     # Self-hosted Windows PowerShell 5.1: Build-Site.ps1 uses only built-in .NET/PowerShell 5.1, no local tools.
     runs-on: [self-hosted, windows, powershell51, headless]
+    permissions:
+      contents: read
+      pages: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
@@ -44,6 +45,10 @@ jobs:
   deploy:
     needs: build
     runs-on: [self-hosted, linux, docker]
+    # Only the deploy job gets Pages write and the OIDC token; it does not check out code.
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
