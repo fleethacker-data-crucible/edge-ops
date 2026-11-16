@@ -41,64 +41,79 @@ function Test-SpeechInEndpoint {
     return $true
 }
 
-function Get-SpeechInLoopbackListeners {
-    # Listeners on this port. Loopback is 127.0.0.1 or ::1. Anything else is not loopback.
-    [CmdletBinding()]
+function Test-SpeechInIsWindows {
+    # Win32NT on Windows PowerShell 5.1 and on pwsh. Never decided by whether a path exists.
+    return [Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT
+}
+
+function Test-SpeechInIsLinux {
+    # $IsLinux exists on PowerShell 6+. On Windows PowerShell 5.1 it is undefined, which is false.
+    $var = Get-Variable -Name IsLinux -ErrorAction SilentlyContinue
+    if ($null -eq $var) { return $false }
+    return [bool]$var.Value
+}
+
+function Get-SpeechInLinuxListeners {
+    param([Parameter(Mandatory = $true)][int]$Port, [Parameter(Mandatory = $true)][string]$ProcRoot)
+    $rows = New-Object System.Collections.Generic.List[object]
+    foreach ($table in @('tcp', 'tcp6')) {
+        $file = Join-Path (Join-Path $ProcRoot 'net') $table
+        if (-not (Test-Path -LiteralPath $file)) { continue }
+        foreach ($line in @(Get-Content -LiteralPath $file)) {
+            $parts = @($line -split '\s+' | Where-Object { $_ })
+            if ($parts.Count -lt 10) { continue }
+            if ($parts[3] -ne '0A') { continue }
+            $addr = [string]$parts[1]
+            $colon = $addr.LastIndexOf(':')
+            if ($colon -lt 1) { continue }
+            $hexPort = $addr.Substring($colon + 1)
+            $listenPort = 0
+            if (-not [int]::TryParse($hexPort, [System.Globalization.NumberStyles]::HexNumber, [cultureinfo]::InvariantCulture, [ref]$listenPort)) { continue }
+            if ($listenPort -ne $Port) { continue }
+            $hexIp = $addr.Substring(0, $colon)
+            $ip = $hexIp
+            $loop = $false
+            if ($hexIp.Length -eq 8) {
+                $n = [Convert]::ToUInt32($hexIp, 16)
+                $ip = '{0}.{1}.{2}.{3}' -f ($n -band 0xFF), (($n -shr 8) -band 0xFF), (($n -shr 16) -band 0xFF), (($n -shr 24) -band 0xFF)
+                $loop = ($ip -eq '127.0.0.1')
+            }
+            elseif ($hexIp -eq '00000000000000000000000001000000') { $ip = '::1'; $loop = $true }
+            $inode = [string]$parts[9]
+            $owner = 0
+            $needle = 'socket:[' + $inode + ']'
+            foreach ($dir in @([System.IO.Directory]::GetDirectories($ProcRoot))) {
+                $procName = [System.IO.Path]::GetFileName($dir)
+                if ($procName -notmatch '^\d+$') { continue }
+                $fdDir = Join-Path $dir 'fd'
+                if (-not [System.IO.Directory]::Exists($fdDir)) { continue }
+                $fds = $null
+                try { $fds = [System.IO.Directory]::GetFiles($fdDir) } catch { continue }
+                foreach ($fd in $fds) {
+                    $target = ''
+                    try {
+                        $item = Get-Item -LiteralPath $fd -Force -ErrorAction Stop
+                        if ($item.Target) { $target = [string]@($item.Target)[0] }
+                    } catch { continue }
+                    if ($target -eq $needle) { $owner = [int]$procName; break }
+                }
+                if ($owner -ne 0) { break }
+            }
+            $rows.Add([pscustomobject]@{ Address = $ip; Pid = $owner; Loopback = [bool]$loop })
+        }
+    }
+    $out = @()
+    foreach ($r in $rows) { $out += $r }
+    return $out
+}
+
+function Get-SpeechInWindowsListeners {
     param([Parameter(Mandatory = $true)][int]$Port)
     $rows = New-Object System.Collections.Generic.List[object]
-    if (Test-Path -LiteralPath '/proc/net/tcp') {
-        foreach ($file in @('/proc/net/tcp', '/proc/net/tcp6')) {
-            if (-not (Test-Path -LiteralPath $file)) { continue }
-            foreach ($line in @(Get-Content -LiteralPath $file)) {
-                $parts = @($line -split '\s+' | Where-Object { $_ })
-                if ($parts.Count -lt 10) { continue }
-                if ($parts[3] -ne '0A') { continue }
-                $addr = [string]$parts[1]
-                $colon = $addr.LastIndexOf(':')
-                if ($colon -lt 1) { continue }
-                $hexPort = $addr.Substring($colon + 1)
-                $listenPort = 0
-                if (-not [int]::TryParse($hexPort, [System.Globalization.NumberStyles]::HexNumber, [cultureinfo]::InvariantCulture, [ref]$listenPort)) { continue }
-                if ($listenPort -ne $Port) { continue }
-                $hexIp = $addr.Substring(0, $colon)
-                $ip = $hexIp
-                $loop = $false
-                if ($hexIp.Length -eq 8) {
-                    $n = [Convert]::ToUInt32($hexIp, 16)
-                    $ip = '{0}.{1}.{2}.{3}' -f ($n -band 0xFF), (($n -shr 8) -band 0xFF), (($n -shr 16) -band 0xFF), (($n -shr 24) -band 0xFF)
-                    $loop = ($ip -eq '127.0.0.1')
-                }
-                elseif ($hexIp -eq '00000000000000000000000001000000') { $ip = '::1'; $loop = $true }
-                $inode = [string]$parts[9]
-                $owner = 0
-                $needle = 'socket:[' + $inode + ']'
-                foreach ($dir in @([System.IO.Directory]::GetDirectories('/proc'))) {
-                    $name = [System.IO.Path]::GetFileName($dir)
-                    if ($name -notmatch '^\d+$') { continue }
-                    $fdDir = Join-Path $dir 'fd'
-                    if (-not [System.IO.Directory]::Exists($fdDir)) { continue }
-                    $fds = $null
-                    try { $fds = [System.IO.Directory]::GetFiles($fdDir) } catch { continue }
-                    foreach ($fd in $fds) {
-                        $target = ''
-                        try {
-                            $item = Get-Item -LiteralPath $fd -Force -ErrorAction Stop
-                            if ($item.Target) { $target = [string]@($item.Target)[0] }
-                        } catch { continue }
-                        if ($target -eq $needle) { $owner = [int]$name; break }
-                    }
-                    if ($owner -ne 0) { break }
-                }
-                $rows.Add([pscustomobject]@{ Address = $ip; Pid = $owner; Loopback = [bool]$loop })
-            }
-        }
-        $out = @()
-        foreach ($r in $rows) { $out += $r }
-        return $out
-    }
-    $netstat = $null
-    if ($env:SystemRoot) { $netstat = Join-Path $env:SystemRoot 'System32\netstat.exe' }
-    if (-not $netstat -or -not (Test-Path -LiteralPath $netstat)) { return @() }
+    $sys = [Environment]::SystemDirectory
+    if (-not $sys) { return @() }
+    $netstat = Join-Path $sys 'netstat.exe'
+    if (-not (Test-Path -LiteralPath $netstat)) { return @() }
     $lines = @(& $netstat -ano -p TCP 2>$null) + @(& $netstat -ano -p TCPv6 2>$null)
     foreach ($line in $lines) {
         if ($line -match '^\s*TCP\s+(\S+):(\d+)\s+\S+\s+LISTENING\s+(\d+)\s*$' -and [int]$Matches[2] -eq $Port) {
@@ -112,24 +127,22 @@ function Get-SpeechInLoopbackListeners {
     return $out
 }
 
+function Get-SpeechInLoopbackListeners {
+    # Listeners on this port. Loopback is 127.0.0.1 or ::1. The OS picks the source, never a path that a user can create.
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][int]$Port)
+    if (Test-SpeechInIsWindows) { return @(Get-SpeechInWindowsListeners -Port $Port) }
+    if (Test-SpeechInIsLinux) { return @(Get-SpeechInLinuxListeners -Port $Port -ProcRoot '/proc') }
+    return @()
+}
+
 function Test-SpeechInProcessPath {
-    param([Parameter(Mandatory = $true)][string]$Reported, [Parameter(Mandatory = $true)][int]$ProcessId)
+    param([string]$Reported, [int]$ProcessId)
+    if ([string]::IsNullOrWhiteSpace($Reported) -or $ProcessId -le 0) { return $false }
     $want = $Reported.Trim().Trim('"')
-    if (-not $want -or $ProcessId -le 0) { return $false }
     $exe = ''
     $argv = @()
-    if (Test-Path -LiteralPath "/proc/$ProcessId/exe") {
-        if (-not $want.StartsWith('/')) { return $false }
-        try {
-            $item = Get-Item -LiteralPath "/proc/$ProcessId/exe" -Force -ErrorAction Stop
-            if ($item.Target) { $exe = [string]@($item.Target)[0] }
-        } catch { return $false }
-        if (Test-Path -LiteralPath "/proc/$ProcessId/cmdline") {
-            $raw = [System.IO.File]::ReadAllBytes("/proc/$ProcessId/cmdline")
-            $argv = @([System.Text.Encoding]::UTF8.GetString($raw).Split([char]0) | Where-Object { $_ })
-        }
-    }
-    else {
+    if (Test-SpeechInIsWindows) {
         if ($want -notmatch '^(?:[A-Za-z]:\\|\\\\)') { return $false }
         $proc = Get-CimInstance -ClassName Win32_Process -Filter "ProcessId=$ProcessId" -ErrorAction SilentlyContinue
         if (-not $proc) { return $false }
@@ -139,6 +152,21 @@ function Test-SpeechInProcessPath {
             $argv = @('-File', [string]$Matches[1])
         }
     }
+    elseif (Test-SpeechInIsLinux) {
+        if (-not $want.StartsWith('/')) { return $false }
+        $exeLink = Join-Path '/proc' ($ProcessId.ToString() + '/exe')
+        if (-not (Test-Path -LiteralPath $exeLink)) { return $false }
+        try {
+            $item = Get-Item -LiteralPath $exeLink -Force -ErrorAction Stop
+            if ($item.Target) { $exe = [string]@($item.Target)[0] }
+        } catch { return $false }
+        $cmdLine = Join-Path '/proc' ($ProcessId.ToString() + '/cmdline')
+        if (Test-Path -LiteralPath $cmdLine) {
+            $raw = [System.IO.File]::ReadAllBytes($cmdLine)
+            $argv = @([System.Text.Encoding]::UTF8.GetString($raw).Split([char]0) | Where-Object { $_ })
+        }
+    }
+    else { return $false }
     if ($exe -and [string]::Equals($exe.TrimEnd('\', '/'), $want.TrimEnd('\', '/'), [StringComparison]::OrdinalIgnoreCase)) { return $true }
     for ($i = 0; $i -lt $argv.Count - 1; $i++) {
         $a = [string]$argv[$i]
@@ -169,6 +197,7 @@ function Test-SpeechInFairleadDecision {
     $loop = @($all | Where-Object { $_.Loopback })
     if ($loop.Count -ne 1) { return 'listeners' }
     if ([int]$loop[0].Pid -ne $ReportedPid -or $ReportedPid -le 0) { return 'pid' }
+    if ([string]::IsNullOrWhiteSpace($ReportedPath)) { return 'path' }
     if (-not (Test-SpeechInProcessPath -Reported $ReportedPath -ProcessId $ReportedPid)) { return 'path' }
     return 'ok'
 }

@@ -20,9 +20,10 @@ BeforeAll {
         finally { $fs.Dispose() }
     }
 
-    function Start-FakeSpeech([string]$Mode, [string]$Key, [string]$Tool = 'fairlead', [int]$ReportedPid = -1, [string]$ReportedPath = '') {
+    function Start-FakeSpeech([string]$Mode, [string]$Key, [string]$Tool = 'fairlead', [int]$ReportedPid = -1, [string]$ReportedPath = '', [switch]$BlankPath) {
         if ($ReportedPid -lt 0) { $ReportedPid = $PID }
-        if (-not $ReportedPath) { $ReportedPath = (Get-Process -Id $PID).Path }
+        if ($BlankPath) { $ReportedPath = '' }
+        elseif (-not $ReportedPath) { $ReportedPath = (Get-Process -Id $PID).Path }
         $tcp = New-Object System.Net.Sockets.TcpListener ([System.Net.IPAddress]::Loopback, 0)
         $tcp.Start()
         $port = ([System.Net.IPEndPoint]$tcp.LocalEndpoint).Port
@@ -202,6 +203,21 @@ Describe 'Invoke-SpeechIn' {
         }
     }
 
+    It 'returns E_FORBIDDEN when the id path is empty' {
+        $key = 'client-key-not-for-logs'
+        $fake = Start-FakeSpeech 'ok' $key -BlankPath
+        try {
+            $r = Invoke-SpeechIn -AudioPath $script:Wav -Endpoint "http://127.0.0.1:$($fake.Port)/v1/audio/transcriptions" -ClientKey $key
+            $r.Ok | Should -BeFalse
+            $r.Code | Should -Be 'E_FORBIDDEN'
+            $r.Message | Should -Be 'Speech endpoint path does not match the process.'
+            $log = @(Get-Content -LiteralPath $fake.Log)
+            $log.Count | Should -Be 1
+            $log[0] | Should -Be '/__fleethacker/id auth=0'
+        }
+        finally { [void]$fake.Handle.AsyncWaitHandle.WaitOne(4000); $fake.PowerShell.Dispose(); Remove-Item $fake.Hits, $fake.Log -Force -ErrorAction SilentlyContinue }
+    }
+
     It 'refuses a non-loopback endpoint before any request' {
         $r = Invoke-SpeechIn -AudioPath $script:Wav -Endpoint 'http://example.invalid/v1/audio/transcriptions' -ClientKey 'k'
         $r.Ok | Should -BeFalse
@@ -219,6 +235,38 @@ Describe 'Test-SpeechInFairleadDecision' {
         $wide = @([pscustomobject]@{ Address = '0.0.0.0'; Pid = $PID; Loopback = $false })
         Test-SpeechInFairleadDecision -Tool 'fairlead' -ReportedPid $PID -ReportedPath (Get-Process -Id $PID).Path -Listeners $wide | Should -Be 'listeners'
         Test-SpeechInFairleadDecision -Tool 'fairlead' -ReportedPid $PID -ReportedPath (Get-Process -Id $PID).Path -Listeners @() | Should -Be 'listeners'
+        $one = @([pscustomobject]@{ Address = '127.0.0.1'; Pid = $PID; Loopback = $true })
+        Test-SpeechInFairleadDecision -Tool 'fairlead' -ReportedPid $PID -ReportedPath '' -Listeners $one | Should -Be 'path'
+        Test-SpeechInFairleadDecision -Tool 'fairlead' -ReportedPid $PID -ReportedPath '   ' -Listeners $one | Should -Be 'path'
+    }
+}
+
+Describe 'Windows listener source' {
+    It 'ignores a planted proc tree' {
+        $root = Join-Path ([System.IO.Path]::GetTempPath()) ('planted-proc-' + [guid]::NewGuid().ToString('N'))
+        $fdDir = Join-Path (Join-Path $root '424242') 'fd'
+        New-Item -ItemType Directory -Path (Join-Path $root 'net') -Force | Out-Null
+        New-Item -ItemType Directory -Path $fdDir -Force | Out-Null
+        $tcp = "0: 0100007F:0009 00000000:0000 0A 00000000:00000000 00:00000000 00000000 0 0 99999 1 0 100 0 0 10 0`n"
+        [System.IO.File]::WriteAllText((Join-Path (Join-Path $root 'net') 'tcp'), $tcp)
+        $link = Join-Path $fdDir '3'
+        if (Get-Command ln -ErrorAction SilentlyContinue) {
+            & ln -s 'socket:[99999]' $link
+            if ($LASTEXITCODE -ne 0) { Set-ItResult -Skipped -Because 'ln could not create the socket link' }
+        }
+        else {
+            $mk = Start-Process -FilePath (Join-Path ([Environment]::SystemDirectory) 'cmd.exe') -ArgumentList @('/c', 'mklink', $link, 'socket:[99999]') -Wait -PassThru -WindowStyle Hidden
+            if ($mk.ExitCode -ne 0) { Set-ItResult -Skipped -Because 'mklink could not create the socket link' }
+        }
+        $mod = Get-Module SpeechIn
+        $fromPlant = @(& $mod { param($port, $procRoot) Get-SpeechInLinuxListeners -Port $port -ProcRoot $procRoot } 9 $root)
+        @($fromPlant | Where-Object { $_.Pid -eq 424242 -and $_.Loopback }).Count | Should -Be 1
+        $fromWindows = @(& $mod { param($port) Get-SpeechInWindowsListeners -Port $port } 9)
+        @($fromWindows | Where-Object { $_.Pid -eq 424242 }).Count | Should -Be 0
+        if ([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT) {
+            @($(Get-SpeechInLoopbackListeners -Port 9) | Where-Object { $_.Pid -eq 424242 }).Count | Should -Be 0
+        }
+        Remove-Item -LiteralPath $root -Recurse -Force
     }
 }
 
